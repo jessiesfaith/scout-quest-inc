@@ -26,7 +26,7 @@ export default async function AppLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) redirect("/");
 
   const profile = await ensureProfile(supabase, user);
 

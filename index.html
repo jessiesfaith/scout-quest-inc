@@ -1,30 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scout Quest Inc — AI Platform Studio</title>
 <style>
   :root{
-    --ink:#0b1424; --ink2:#0f1e36; --ink3:#16294a;
-    --teal:#16b8a6; --teal-deep:#0f766e; --teal-soft:#dff5f1;
-    --gold:#fbbf24; --gold-soft:#fef3d6;
-    --bg:#f6f8fb; --card:#ffffff; --text:#0f1826; --muted:#5b6775; --line:#e6ebf2;
+    --teal:#16b8a6; --teal-deep:#0f766e; --gold:#fbbf24;
+  }
+  /* dark (default) */
+  html[data-theme="dark"]{
+    --bg:#070d1a; --bg2:#0b1424; --card:#0f1e36; --text:#eaf0f8; --muted:#9fb0c6;
+    --line:rgba(255,255,255,.10); --navbg:rgba(7,13,26,.86); --navtext:#c7d2e0;
+    --star:#ffffff; --starglow:rgba(120,200,255,.9); --heroink:#eaf0f8;
+  }
+  /* light */
+  html[data-theme="light"]{
+    --bg:#f6f8fb; --bg2:#eef2f8; --card:#ffffff; --text:#0f1826; --muted:#5b6775;
+    --line:#e6ebf2; --navbg:rgba(11,20,36,.90); --navtext:#c7d2e0;
+    --star:#1c3a63; --starglow:rgba(22,184,166,.55); --heroink:#eaf0f8;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{margin:0;background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55;
+    transition:background .3s ease,color .3s ease}
   a{color:inherit;text-decoration:none}
   .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+
+  /* starfield */
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .star{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--star);
+    box-shadow:0 0 6px 1px var(--starglow);opacity:.65;
+    animation:floatstar ease-in infinite}
+  @keyframes floatstar{
+    0%{transform:scale(.15) translateY(6px);opacity:0}
+    25%{opacity:.9}
+    70%{opacity:.85}
+    100%{transform:scale(2.1) translateY(-10px);opacity:0}
+  }
+  .layer{position:relative;z-index:1}
+
   /* nav */
-  nav{position:sticky;top:0;z-index:20;background:rgba(11,20,36,.86);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
+  nav{position:sticky;top:0;z-index:20;background:var(--navbg);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
   nav .row{display:flex;align-items:center;gap:22px;height:64px}
   .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:17px;letter-spacing:.01em}
   .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--teal-deep));display:flex;align-items:center;justify-content:center;flex:0 0 auto}
   .mark svg{width:18px;height:18px}
   nav .links{display:flex;gap:22px;margin-left:14px}
-  nav .links a{color:#c7d2e0;font-size:14px;font-weight:600}
+  nav .links a{color:var(--navtext);font-size:14px;font-weight:600}
   nav .links a:hover{color:#fff}
   nav .cta{margin-left:auto;display:flex;gap:10px;align-items:center}
   .btn{border-radius:10px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;border:none;display:inline-block}
@@ -33,227 +57,285 @@
   .btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.22)}
   .btn.ghost:hover{border-color:#fff}
   .btn.gold{background:var(--gold);color:#3a2a02}
+  .themebtn{background:transparent;border:1px solid rgba(255,255,255,.22);color:#fff;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .themebtn:hover{border-color:#fff}
   @media(max-width:760px){nav .links{display:none}}
+
   /* hero */
-  .hero{background:radial-gradient(1100px 500px at 15% -10%,#1c3a63 0%,transparent 55%),linear-gradient(180deg,var(--ink) 0%,var(--ink2) 100%);color:#fff;padding:64px 0 76px}
-  .hero .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}
+  .hero{position:relative;background:
+      radial-gradient(1100px 500px at 15% -10%,#1c3a63 0%,transparent 55%),
+      linear-gradient(180deg,#070d1a 0%,#0b1424 100%);color:var(--heroink);padding:64px 0 76px;overflow:hidden}
+  .hero .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center;position:relative;z-index:2}
   .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);background:rgba(22,184,166,.12);border:1px solid rgba(22,184,166,.3);padding:6px 12px;border-radius:20px}
-  .hero h1{font-size:47px;line-height:1.05;letter-spacing:-.02em;margin:18px 0 16px;font-weight:800}
-  .hero h1 .hl{color:var(--teal)}
-  .hero p.lead{font-size:17.5px;color:#c7d2e0;max-width:540px;margin:0 0 26px}
-  .hero .actions{display:flex;gap:12px;flex-wrap:wrap}
-  .hero .btn{padding:13px 22px;font-size:15px}
-  .trust{display:flex;gap:18px;flex-wrap:wrap;margin-top:30px;color:#93a3b8;font-size:12.5px}
-  .trust span{display:inline-flex;align-items:center;gap:7px}
-  .trust i{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block}
-  /* login card */
-  .login{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px 24px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
-  .login h3{margin:0 0 4px;font-size:18px;color:#fff}
-  .login .sub{color:#93a3b8;font-size:13px;margin:0 0 18px}
-  .field{margin-bottom:13px}
-  .field label{display:block;font-size:12px;font-weight:700;color:#c7d2e0;margin-bottom:6px}
-  .field input{width:100%;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;padding:11px 13px;font-size:14px;font-family:inherit}
-  .field input::placeholder{color:#7c8aa0}
-  .field input:focus{outline:none;border-color:var(--teal)}
-  .login .btn{width:100%;padding:13px;margin-top:4px}
-  .login .alt{text-align:center;color:#93a3b8;font-size:12.5px;margin-top:14px}
-  .login .alt a{color:var(--teal);font-weight:700}
-  .login .note{font-size:11.5px;color:#7c8aa0;text-align:center;margin-top:12px}
-  @media(max-width:860px){.hero .grid{grid-template-columns:1fr}.hero h1{font-size:36px}}
+  .hero h1{font-size:46px;line-height:1.08;margin:18px 0 14px;font-weight:850;letter-spacing:-.02em}
+  .hero h1 .accent{background:linear-gradient(120deg,var(--teal),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{font-size:18px;color:#c9d6e6;max-width:560px;margin:0 0 26px}
+  .hero .btns{display:flex;gap:12px;flex-wrap:wrap}
+  .safety-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px;backdrop-filter:blur(4px)}
+  .safety-card h3{margin:0 0 6px;font-size:15px;color:var(--gold);letter-spacing:.02em}
+  .safety-card ul{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:12px}
+  .safety-card li{display:flex;gap:10px;font-size:14px;color:#dbe6f2}
+  .safety-card li b{color:#fff}
+  .chk{color:var(--teal);flex:0 0 auto;font-weight:800}
+  @media(max-width:900px){.hero .grid{grid-template-columns:1fr}.hero h1{font-size:36px}}
+
+  /* neural-net band */
+  .band{position:relative;height:280px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center}
+  .nnband{background:linear-gradient(120deg,#08111f 0%,#123a5e 50%,#0c2b3f 100%)}
+  .nnband svg{position:absolute;inset:0;width:100%;height:100%}
+  .band .caption{position:relative;z-index:2;color:#fff;max-width:720px;padding:0 22px}
+  .band .caption .k{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);font-weight:800}
+  .band .caption h2{font-size:30px;margin:8px 0 8px;font-weight:800}
+  .band .caption p{color:#cfe0ee;font-size:15px;margin:0}
+  .teamband{background:
+      linear-gradient(rgba(10,20,36,.52),rgba(10,20,36,.70)),
+      url('https://images.unsplash.com/photo-1758873269117-d5845126928a?fm=jpg&q=70&w=2000&auto=format&fit=crop') center/cover no-repeat,
+      #0e1c30}
+
   /* sections */
-  section.band{padding:64px 0}
-  .kicker{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep)}
-  h2.title{font-size:32px;letter-spacing:-.02em;margin:8px 0 10px;font-weight:800}
-  .sub2{color:var(--muted);font-size:16px;max-width:640px;margin:0 0 30px}
-  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .pillar{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px;border-top:4px solid var(--teal)}
-  .pillar.safe{border-top-color:var(--teal)} .pillar.scale{border-top-color:#2563eb} .pillar.frontier{border-top-color:var(--gold)}
-  .pillar .ic{width:44px;height:44px;border-radius:12px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
-  .pillar.scale .ic{background:#e6effe} .pillar.frontier .ic{background:var(--gold-soft)}
-  .pillar .ic svg{width:23px;height:23px}
-  .pillar h3{margin:0 0 7px;font-size:18px}
-  .pillar p{margin:0;font-size:14px;color:var(--muted)}
+  section.pad{padding:72px 0;position:relative}
+  .kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);font-weight:800;text-align:center}
+  h2.sec{font-size:32px;text-align:center;margin:8px 0 10px;font-weight:820;letter-spacing:-.01em}
+  p.sub{text-align:center;color:var(--muted);max-width:660px;margin:0 auto 42px;font-size:16px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;transition:transform .15s ease,box-shadow .15s ease}
+  .card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(10,25,55,.12)}
+  .card .ic{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,rgba(22,184,166,.16),rgba(251,191,36,.14));display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+  .card h3{margin:0 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--muted);font-size:14px}
+  @media(max-width:900px){.cards{grid-template-columns:1fr}}
+
+  .values{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .value{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .value h4{margin:0 0 6px;font-size:15px;color:var(--teal)}
+  .value p{margin:0;font-size:13px;color:var(--muted)}
+  @media(max-width:900px){.values{grid-template-columns:1fr 1fr}}
+
   /* careers */
-  .careers{background:linear-gradient(180deg,#0f1e36,#0b1424);color:#fff;border-radius:22px;padding:46px 40px;margin-top:6px}
-  .careers h2{font-size:30px;letter-spacing:-.02em;margin:6px 0 12px;font-weight:800;max-width:640px}
-  .careers p.lead{color:#c7d2e0;font-size:16px;max-width:620px;margin:0 0 26px}
-  .values{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:26px 0 30px}
-  .value{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:16px}
-  .value b{display:block;font-size:14.5px;margin-bottom:4px}
-  .value span{font-size:12.5px;color:#93a3b8}
-  .roles{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:26px}
-  .role{background:rgba(22,184,166,.12);border:1px solid rgba(22,184,166,.3);color:#a7 efe0;color:#9fece0;border-radius:20px;padding:8px 15px;font-size:13px;font-weight:600}
-  @media(max-width:860px){.pillars{grid-template-columns:1fr}.values{grid-template-columns:1fr 1fr}.careers{padding:32px 22px}}
-  /* brand system */
-  .brandsys{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 24px}
-  .bs-grid{display:grid;grid-template-columns:1.2fr 1fr 1.2fr;gap:26px}
-  .swatches{display:flex;flex-wrap:wrap;gap:10px}
-  .sw{width:76px}
-  .sw .chip{height:44px;border-radius:9px;border:1px solid var(--line)}
-  .sw small{display:block;font-size:10.5px;color:var(--muted);margin-top:4px}
-  .typerow{margin:4px 0}
-  .voice li{font-size:13px;color:var(--muted);margin:5px 0}
-  @media(max-width:860px){.bs-grid{grid-template-columns:1fr}}
-  footer{padding:34px 0;color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:52px}
-  footer .row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  .careers{background:var(--bg2)}
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
+  .role{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .role .tag{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+  .role h4{margin:8px 0 6px;font-size:16px}
+  .role p{margin:0 0 14px;color:var(--muted);font-size:14px}
+  @media(max-width:900px){.roles{grid-template-columns:1fr}}
+
+  /* login */
+  .login{background:linear-gradient(180deg,#0b1424,#070d1a);color:#fff;text-align:center;padding:66px 0}
+  .login h2{font-size:30px;margin:0 0 8px}
+  .login p{color:#c9d6e6;margin:0 0 24px}
+  .loginbox{max-width:400px;margin:0 auto;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:26px;text-align:left}
+  .loginbox label{font-size:13px;font-weight:700;color:#dbe6f2;display:block;margin:0 0 6px}
+  .loginbox input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font-size:14px;margin-bottom:16px}
+  .loginbox input::placeholder{color:#8fa2b8}
+  .loginbox .btn.primary{width:100%}
+  .loginbox .note{font-size:12px;color:#8fa2b8;margin:14px 0 0;text-align:center}
+
+  footer{background:#070d1a;color:#8fa2b8;padding:34px 0;font-size:13px}
+  footer .row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  footer a{color:#c7d2e0}
 </style>
 </head>
 <body>
 
+<div id="stars"></div>
+
+<div class="layer">
+<!-- NAV -->
 <nav>
   <div class="wrap row">
-    <a class="brand" href="#top">
-      <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z" fill="#fff"/></svg></span>
-      Scout Quest <span style="color:#7c8aa0;font-weight:600">Inc</span>
-    </a>
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5z" fill="#04211d"/></svg></span>
+      Scout Quest Inc
+    </div>
     <div class="links">
       <a href="#platform">Platform</a>
-      <a href="#safety">Safety</a>
+      <a href="#values">Values</a>
       <a href="#careers">Careers</a>
     </div>
     <div class="cta">
-      <a class="btn ghost" href="#signin">Sign in</a>
-      <a class="btn primary" href="#careers">Join us</a>
+      <button class="themebtn" id="themeToggle" title="Toggle dark / light" aria-label="Toggle theme">🌙</button>
+      <a href="#login" class="btn primary">Sign in</a>
     </div>
   </div>
 </nav>
 
-<header class="hero" id="top">
+<!-- HERO -->
+<header class="hero">
   <div class="wrap grid">
     <div>
       <span class="eyebrow">AI Platform Studio</span>
-      <h1>The safe intelligence behind how <span class="hl">kids learn.</span></h1>
-      <p class="lead">Scout Quest Inc is an AI platform studio. We build governed, frontier-grade AI for education and healthcare — engineered so a child is never the thing that breaks. Come build it with us.</p>
-      <div class="actions">
-        <a class="btn primary" href="#careers">See open roles</a>
-        <a class="btn ghost" href="#signin">Sign in to the studio</a>
-      </div>
-      <div class="trust">
-        <span><i></i>Independent evaluation</span>
-        <span><i></i>Append-only audit ledger</span>
-        <span><i></i>Local-first privacy</span>
-        <span><i></i>Fail-closed by design</span>
+      <h1>Build the <span class="accent">safe frontier</span> of learning and speech.</h1>
+      <p class="lead">Scout Quest Inc is an AI-native studio building education, tutoring, and clinical-speech products where safety comes first — for every age — and the ambition reaches all the way to frontier intelligence.</p>
+      <div class="btns">
+        <a href="#careers" class="btn primary">See open roles</a>
+        <a href="#platform" class="btn ghost">Explore the platform</a>
       </div>
     </div>
-    <div class="login" id="signin">
-      <h3>Sign in to the studio</h3>
-      <p class="sub">Team access to the Scout Quest company OS.</p>
-      <form id="loginform" onsubmit="return false">
-        <div class="field"><label>Work email</label><input type="email" placeholder="you@scoutquest.education" autocomplete="username"></div>
-        <div class="field"><label>Password</label><input type="password" placeholder="••••••••" autocomplete="current-password"></div>
-        <button class="btn primary" id="signinbtn" type="submit">Sign in</button>
-        <div id="signinmsg" class="note"></div>
-      </form>
-      <div class="alt">New to the team? <a href="#careers">Request access →</a></div>
-      <div class="note">Invite-only during private beta.</div>
+    <div class="safety-card">
+      <h3>SAFETY-FIRST BY DESIGN</h3>
+      <ul>
+        <li><span class="chk">✓</span><span><b>Governed from day one.</b> An enterprise constitution, RLS, and audit trails behind every product.</span></li>
+        <li><span class="chk">✓</span><span><b>All ages protected.</b> Kid-safe controls, parent panels, and clinical-grade data boundaries.</span></li>
+        <li><span class="chk">✓</span><span><b>Frontier ambition.</b> Frontier-scale intelligence, deployed responsibly and transparently.</span></li>
+      </ul>
     </div>
   </div>
 </header>
 
-<section class="band" id="platform">
+<!-- NEURAL-NET / SCIENCE / CLASSROOM BAND -->
+<div class="band nnband">
+  <svg id="nnsvg" preserveAspectRatio="none"></svg>
+  <div class="caption">
+    <div class="k">Intelligence · Science · Education</div>
+    <h2>Where neural networks meet the classroom</h2>
+    <p>Frontier models, learning science, and clinical rigor — engineered into products people can trust.</p>
+  </div>
+</div>
+
+<!-- PLATFORM -->
+<section class="pad" id="platform">
   <div class="wrap">
-    <span class="kicker">What we build</span>
-    <h2 class="title">A studio, not just a product.</h2>
-    <p class="sub2">One governed platform. Many products. We build each capability once — safely — and scale it across everything from classrooms to clinics.</p>
-    <div class="pillars">
-      <div class="pillar safe" id="safety">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="#0f766e" stroke-width="1.8" fill="#dff5f1"/><path d="M9 12l2 2 4-4" stroke="#0f766e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <h3>Kid-safe by design</h3>
-        <p>Safety isn't a feature — it's the architecture. Regulated data (COPPA · FERPA · HIPAA) stays local by default, and every model output is independently evaluated before it ever reaches a child.</p>
-      </div>
-      <div class="pillar scale">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        <h3>Built to scale</h3>
-        <p>A modular company OS on governed rails — one shared agent library, cloned across products, with audit, spend caps, and role-based access built in. Enterprise-grade and investor-ready from day one.</p>
-      </div>
-      <div class="pillar frontier">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="#b45309" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="#b45309" stroke-width="1.8" stroke-linecap="round"/></svg></div>
-        <h3>Frontier intelligence</h3>
-        <p>The hard problem: adaptive, private-tutor-quality learning at consumer scale. We build the most capable systems the mission demands — and we govern them like the stakes are real. Because they are.</p>
-      </div>
+    <div class="kicker">The Platform</div>
+    <h2 class="sec">One studio, a portfolio of products</h2>
+    <p class="sub">Every product runs on the same governed company OS — shared agents, roles and access, change logs, and work orders.</p>
+    <div class="cards">
+      <div class="card"><div class="ic">🎓</div><h3>Scout Quest Education</h3><p>District and classroom learning built on quests, mastery, and real learning science.</p></div>
+      <div class="card"><div class="ic">🎮</div><h3>Scout Quest Game</h3><p>Play-first learning that keeps kids engaged while staying safe and age-appropriate.</p></div>
+      <div class="card"><div class="ic">🧭</div><h3>Scout Quest Tutor</h3><p>A B2C tutor with a parent control panel and a kid-safe quest experience.</p></div>
+      <div class="card"><div class="ic">🗣️</div><h3>Soundwiserx</h3><p>Clinical speech evaluation with strict, governed data boundaries.</p></div>
+      <div class="card"><div class="ic">🔖</div><h3>AI Bookmark</h3><p>Save, organize, and resurface what matters — powered by helpful agents.</p></div>
+      <div class="card"><div class="ic">⚙️</div><h3>The Company OS</h3><p>IT, HR, Finance, Products — modular, role-gated, and audited end to end.</p></div>
     </div>
   </div>
 </section>
 
-<section class="band" id="careers" style="padding-top:8px">
+<!-- VALUES -->
+<section class="pad" id="values" style="background:var(--bg2)">
   <div class="wrap">
-    <div class="careers">
-      <span class="eyebrow">Careers</span>
-      <h2>Build the intelligence layer for how the next generation learns.</h2>
-      <p class="lead">We're a small team taking on a big, careful problem: frontier AI that teaches — and never cuts a corner where a kid is on the other side. If you want to do the most ambitious work of your career on rails you can be proud of, this is the room.</p>
-      <div class="values">
-        <div class="value"><b>Governed, not reckless</b><span>The hardest capability, shipped safely — evaluated, audited, fail-closed.</span></div>
-        <div class="value"><b>Evidence over vibes</b><span>Reading science, learning science, real research back every decision.</span></div>
-        <div class="value"><b>Ship real things</b><span>Products kids, teachers, parents, and clinicians actually use.</span></div>
-        <div class="value"><b>Own the hard part</b><span>You take the frontier problem in your field — and the accountability with it.</span></div>
-      </div>
-      <div class="roles">
-        <span class="role">AI &amp; Platform Engineering</span>
-        <span class="role">Security &amp; Compliance</span>
-        <span class="role">Product &amp; Design</span>
-        <span class="role">UX &amp; Learning-Science Research</span>
-        <span class="role">Clinical / Speech</span>
-        <span class="role">Founding &amp; Ops</span>
-      </div>
-      <a class="btn gold" href="#signin">Request access &amp; introduce yourself</a>
+    <div class="kicker">What we value</div>
+    <h2 class="sec">Principles we build by</h2>
+    <p class="sub">A safety-first platform across all ages — and, when it's product-specific, held to the same bar.</p>
+    <div class="values">
+      <div class="value"><h4>Safety first</h4><p>Every feature ships behind governance, review, and audit — no exceptions.</p></div>
+      <div class="value"><h4>Trust by design</h4><p>Privacy, RLS, and clear data boundaries are the default, not an add-on.</p></div>
+      <div class="value"><h4>Real learning</h4><p>Grounded in learning science and clinical rigor, not hype.</p></div>
+      <div class="value"><h4>Frontier ambition</h4><p>We aim for frontier-scale intelligence, deployed responsibly.</p></div>
     </div>
   </div>
 </section>
 
-<section class="band" style="padding-top:8px">
+<!-- CAREERS -->
+<section class="pad careers" id="careers">
   <div class="wrap">
-    <span class="kicker">Brand system</span>
-    <h2 class="title">The schema.</h2>
-    <p class="sub2">A compact brand kit so everything — this page, decks, the product — reads as one company.</p>
-    <div class="brandsys">
-      <div class="bs-grid">
-        <div>
-          <h3 style="margin:0 0 12px;font-size:15px">Palette</h3>
-          <div class="swatches">
-            <div class="sw"><div class="chip" style="background:#0b1424"></div><small>Ink #0b1424</small></div>
-            <div class="sw"><div class="chip" style="background:#16b8a6"></div><small>Teal #16b8a6</small></div>
-            <div class="sw"><div class="chip" style="background:#0f766e"></div><small>Teal-deep #0f766e</small></div>
-            <div class="sw"><div class="chip" style="background:#fbbf24"></div><small>Gold #fbbf24</small></div>
-            <div class="sw"><div class="chip" style="background:#2563eb"></div><small>Blue #2563eb</small></div>
-            <div class="sw"><div class="chip" style="background:#f6f8fb"></div><small>Bg #f6f8fb</small></div>
-          </div>
-          <p style="font-size:12.5px;color:var(--muted);margin:14px 0 0"><b>Ink</b> for authority, <b>teal</b> for the brand, <b>gold</b> for energy &amp; CTAs, <b>blue</b> for scale. Neutrals do the heavy lifting.</p>
-        </div>
-        <div>
-          <h3 style="margin:0 0 12px;font-size:15px">Type</h3>
-          <div class="typerow" style="font-size:26px;font-weight:800;letter-spacing:-.02em">Display — bold, tight</div>
-          <div class="typerow" style="font-size:15px;color:var(--muted)">Body — clean system sans, generous line-height</div>
-          <div class="typerow" style="font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep);margin-top:8px">Eyebrow — uppercase, tracked</div>
-          <p style="font-size:12.5px;color:var(--muted);margin:14px 0 0">One family, three weights. Headlines carry the ambition; body stays quiet and readable.</p>
-        </div>
-        <div>
-          <h3 style="margin:0 0 12px;font-size:15px">Voice</h3>
-          <ul class="voice" style="margin:0;padding-left:18px">
-            <li><b>Confident, not loud.</b> We state what we do plainly.</li>
-            <li><b>Safety-first.</b> Kids are named, never abstracted.</li>
-            <li><b>Precise.</b> Governance words mean specific things.</li>
-            <li><b>Ambitious without hype.</b> Frontier work, honest claims.</li>
-          </ul>
-          <p style="font-size:12.5px;color:var(--muted);margin:12px 0 0">Tagline: <b>“Safe intelligence, built to scale.”</b></p>
-        </div>
-      </div>
+    <div class="kicker">Careers</div>
+    <h2 class="sec">Join a company ready to scale</h2>
+    <p class="sub">We're a small, senior team building carefully. If you want to ship frontier products with safety at the core, we'd love to meet you.</p>
+    <div class="roles">
+      <div class="role"><div class="tag">Engineering</div><h4>Full-stack / AI Engineer</h4><p>Build the company OS and product surfaces on Next.js, Supabase, and governed agents.</p><a href="#login" class="btn gold">Apply</a></div>
+      <div class="role"><div class="tag">Product</div><h4>Product Designer</h4><p>Design kid-safe, all-ages experiences with parent controls and clarity.</p><a href="#login" class="btn gold">Apply</a></div>
+      <div class="role"><div class="tag">Clinical</div><h4>Speech / Clinical Lead</h4><p>Shape Soundwiserx evaluation with clinical rigor and strict data governance.</p><a href="#login" class="btn gold">Apply</a></div>
     </div>
+  </div>
+</section>
+
+<!-- PEOPLE-AROUND-A-TABLE BAND -->
+<div class="band teamband">
+  <div class="caption">
+    <div class="k">Our team</div>
+    <h2>Small team, big table</h2>
+    <p>Senior people, shipping together — with room for you.</p>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<section class="login" id="login">
+  <div class="wrap">
+    <h2>Sign in to Scout Quest Inc</h2>
+    <p>Access is invite-only. Team members sign in below.</p>
+    <form class="loginbox" onsubmit="return false">
+      <label for="em">Email</label>
+      <input id="em" type="email" placeholder="you@scoutquest.inc" autocomplete="email">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button type="submit" class="btn primary">Sign in</button>
+      <p class="note">Need access? Ask your Scout Quest Inc owner for an invite.</p>
+    </form>
   </div>
 </section>
 
 <footer>
   <div class="wrap row">
-    <div>© 2026 Scout Quest Inc — AI Platform Studio · scoutquest.education</div>
-    <div>Governed by the Enterprise Constitution · COPPA · FERPA · HIPAA</div>
+    <div>© <span id="yr"></span> Scout Quest Inc — an AI Platform Studio.</div>
+    <div><a href="#platform">Platform</a> · <a href="#careers">Careers</a> · <a href="#login">Sign in</a></div>
   </div>
 </footer>
+</div>
 
 <script>
-  var b = document.getElementById('signinbtn');
-  if(b){ b.addEventListener('click', function(){
-    var m = document.getElementById('signinmsg');
-    if(m){ m.textContent = 'Access is invite-only during the private beta — request access below.'; m.style.color = '#9fece0'; }
-  }); }
+  // year
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // theme toggle (default dark)
+  var root = document.documentElement, tb = document.getElementById('themeToggle');
+  function setTheme(t){ root.setAttribute('data-theme', t); tb.textContent = t === 'dark' ? '🌙' : '☀️'; }
+  tb.addEventListener('click', function(){
+    setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  // starfield
+  (function(){
+    var host = document.getElementById('stars');
+    var N = 70;
+    for(var i=0;i<N;i++){
+      var s = document.createElement('div');
+      s.className = 'star';
+      var size = 1 + Math.random()*2.6;
+      s.style.width = size+'px'; s.style.height = size+'px';
+      s.style.left = (Math.random()*100)+'%';
+      s.style.top = (Math.random()*100)+'%';
+      s.style.animationDuration = (2.4 + Math.random()*2.8)+'s';
+      s.style.animationDelay = (-Math.random()*5)+'s';
+      s.style.opacity = (0.4 + Math.random()*0.5).toFixed(2);
+      host.appendChild(s);
+    }
+  })();
+
+  // neural-network band
+  (function(){
+    var svg = document.getElementById('nnsvg');
+    if(!svg) return;
+    var W = 1200, H = 280;
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    var cols = [120, 360, 600, 840, 1080];
+    var counts = [4, 6, 6, 6, 4];
+    var nodes = [];
+    cols.forEach(function(x, ci){
+      var c = counts[ci], layer = [];
+      for(var i=0;i<c;i++){
+        var y = (H/(c+1))*(i+1) + (i%2? -8:8);
+        layer.push({x:x, y:y});
+      }
+      nodes.push(layer);
+    });
+    var frag = '';
+    for(var l=0;l<nodes.length-1;l++){
+      nodes[l].forEach(function(a){
+        nodes[l+1].forEach(function(b){
+          frag += '<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="rgba(22,184,166,0.18)" stroke-width="1"/>';
+        });
+      });
+    }
+    nodes.forEach(function(layer, li){
+      layer.forEach(function(n){
+        var fill = li%2 ? '#fbbf24' : '#16b8a6';
+        frag += '<circle cx="'+n.x+'" cy="'+n.y+'" r="6" fill="'+fill+'" opacity="0.9"/>';
+        frag += '<circle cx="'+n.x+'" cy="'+n.y+'" r="12" fill="'+fill+'" opacity="0.14"/>';
+      });
+    });
+    svg.innerHTML = frag;
+  })();
+
 </script>
 </body>
 </html>

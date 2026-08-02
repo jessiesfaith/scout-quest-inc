@@ -2,7 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Next 16 proxy (successor to middleware): refreshes the Supabase session cookie
-// and redirects unauthenticated users to /login.
+// and redirects unauthenticated users to the landing page ("/"), which hosts
+// the sign-in form.
 export default async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
