@@ -5,8 +5,8 @@
 -- Files are reachable only through server-generated signed URLs
 -- after a permission check; the bucket itself stays private.
 -- Paste into Supabase → SQL Editor → Run.
--- Safe to re-run (idempotent). Requires 0003; create the
--- `contracts` bucket in Storage first (Public OFF).
+-- Safe to re-run (idempotent). Requires 0003. Creates the
+-- `contracts` bucket itself — no dashboard step needed.
 -- ============================================================
 
 -- ---------- Bucket: private, size-capped, type-restricted ----------
