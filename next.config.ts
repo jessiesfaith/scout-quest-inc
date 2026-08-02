@@ -1,10 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The "/" route handler serves index.html from the repo root at request
-  // time — make sure Vercel's serverless bundle includes the file.
+  // These routes read files from the repo at request time — make sure
+  // Vercel's serverless bundles include them.
   outputFileTracingIncludes: {
     "/": ["./index.html"],
+    "/hr/constitution": ["./docs/enterprise-constitution-v1.3.md"],
+  },
+
+  experimental: {
+    // Contract uploads run through a Server Action; the default 1 MB body
+    // cap would reject files the 10 MB UI limit accepts.
+    serverActions: { bodySizeLimit: "12mb" },
   },
 
   async headers() {

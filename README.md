@@ -24,10 +24,12 @@ change in the HTML, update the wire script to match.
    key is browser-safe; `SUPABASE_SECRET_KEY` is server-only, never
    `NEXT_PUBLIC_`, never committed. Nothing uses it yet.
 3. Run the migrations **in order** — paste each into Supabase → SQL Editor →
-   Run: `0001` → `0002` → `0003` → `0004` → `0005` (see
+   Run: `0001` → `0002` → `0003` → `0004` → `0005` → `0006` (see
    [supabase/migrations/](supabase/migrations/)). Re-running an older file
    loosens what a later one tightened, so always re-run the later ones after
    it. Migrate before deploying app code that expects the schema.
+   `0006` creates the private `contracts` storage bucket (and forces it
+   private if it already exists), so no dashboard step is needed.
 4. Supabase → Authentication → Sign In / Providers → Email: **Confirm email
    OFF** for the private beta (accounts are created by the owner, so there is
    no self-signup to confirm; password reset has its own flow at

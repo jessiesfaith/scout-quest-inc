@@ -41,3 +41,85 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* Read-only governance markdown (HR › Constitution) */
+.prose-constitution {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--foreground);
+  overflow-x: auto;
+}
+.prose-constitution h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.prose-constitution h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 28px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.prose-constitution h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 20px 0 6px;
+  color: var(--accent);
+}
+.prose-constitution p {
+  margin: 0 0 12px;
+}
+.prose-constitution ul,
+.prose-constitution ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  list-style: revert;
+}
+.prose-constitution li {
+  margin: 5px 0;
+}
+.prose-constitution strong {
+  color: #fff;
+  font-weight: 600;
+}
+.prose-constitution code {
+  background: var(--surface-raised);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+}
+.prose-constitution a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-constitution hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+.prose-constitution blockquote {
+  border-left: 3px solid var(--accent);
+  margin: 0 0 12px;
+  padding-left: 14px;
+  color: var(--muted);
+}
+.prose-constitution table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+.prose-constitution th,
+.prose-constitution td {
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-constitution th {
+  background: var(--surface-raised);
+  font-weight: 600;
+}

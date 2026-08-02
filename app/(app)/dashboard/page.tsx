@@ -30,18 +30,21 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        <div className="rounded-2xl border border-dashed border-border p-5 text-muted/60">
-          <div className="text-xs font-medium uppercase tracking-wider">
-            Contracts
+        <Link
+          href="/hr/contracts"
+          className="rounded-2xl border border-border bg-surface p-5 transition hover:border-accent/50"
+        >
+          <div className="text-xs font-medium uppercase tracking-wider text-muted">
+            HR › Contracts
           </div>
-          <div className="mt-2 text-sm">Stage 2</div>
-        </div>
+          <div className="mt-2 text-sm">NDAs and agreements per member</div>
+        </Link>
 
         <div className="rounded-2xl border border-dashed border-border p-5 text-muted/60">
           <div className="text-xs font-medium uppercase tracking-wider">
             Work orders
           </div>
-          <div className="mt-2 text-sm">Stage 2</div>
+          <div className="mt-2 text-sm">Coming next</div>
         </div>
       </div>
     </div>

@@ -10,7 +10,15 @@ export const metadata = {
 
 const NAV = [
   { section: "Company", items: [{ label: "Dashboard", href: "/dashboard" }] },
-  { section: "HR", items: [{ label: "Team", href: "/hr/team" }] },
+  {
+    section: "HR",
+    items: [
+      { label: "Team", href: "/hr/team" },
+      { label: "Contracts", href: "/hr/contracts" },
+      { label: "Mission & Values", href: "/hr/mission-values" },
+      { label: "Constitution", href: "/hr/constitution" },
+    ],
+  },
 ];
 
 const IT_NAV = [{ label: "Identity & Access", href: "/it/identity-access" }];
@@ -21,7 +29,6 @@ const UPCOMING = [
   "Security Tooling",
   "Products",
   "Finance",
-  "Contracts",
   "Projects",
 ];
 
