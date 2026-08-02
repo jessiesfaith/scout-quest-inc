@@ -1,5 +1,9 @@
 # Scout Quest Inc — Company OS
 
+> **Picking this up in a new session? Read [HANDOFF.md](HANDOFF.md) first.**
+> It covers current state, outstanding actions, and the rules that were
+> learned the hard way.
+
 Internal operating system for Scout Quest Inc. Core loop: sign in → add a team
 member → reload → still there. Access model: anyone can create an account
 (signing the NDA + privacy notice electronically), but nobody enters until the
