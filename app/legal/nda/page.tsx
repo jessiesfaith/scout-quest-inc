@@ -14,15 +14,15 @@ export default function NdaPage() {
   return (
     <div className={s.legal}>
       <div className={s.legalWrap}>
-        <Link href="/signup" className={s.legalBack}>
-          ← Back to sign-up
+        <Link href="/#login" className={s.legalBack}>
+          ← Back to sign in
         </Link>
 
         <h1>One-Way Non-Disclosure Agreement</h1>
         <div className={s.legalCo}>Scout Quest Education</div>
         <div className={s.legalMeta}>
-          Version {NDA_VERSION} · Private preview · accepted electronically at
-          sign-up
+          Version {NDA_VERSION} · Private preview · accepted electronically
+          when you request an account
         </div>
 
         <p>
@@ -149,9 +149,9 @@ export default function NdaPage() {
             This Agreement is accepted electronically. By checking &ldquo;I
             have read and agree to the Non-Disclosure Agreement,&rdquo;
             confirming that the name you entered is your legal name, and
-            creating your account, you sign this Agreement as the Recipient.
-            Your first and last name, email address, this version number, and
-            the date and time of acceptance are recorded as your electronic
+            submitting your account request, you sign this Agreement as the
+            Recipient. Your name, email address, this version number, and the
+            date and time of acceptance are recorded as your electronic
             signature, which the Parties agree has the same legal effect as a
             handwritten signature and may be signed in counterparts.
           </p>

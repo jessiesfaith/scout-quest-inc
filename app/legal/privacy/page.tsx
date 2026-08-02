@@ -14,8 +14,8 @@ export default function PrivacyPage() {
   return (
     <div className={s.legal}>
       <div className={s.legalWrap}>
-        <Link href="/signup" className={s.legalBack}>
-          ← Back to sign-up
+        <Link href="/#login" className={s.legalBack}>
+          ← Back to sign in
         </Link>
 
         <h1>🪐 Privacy preview</h1>

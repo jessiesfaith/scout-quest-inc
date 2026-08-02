@@ -8,6 +8,15 @@ account always gets in with just email + password — lockout-proof by design.
 
 **Stack:** Next.js (App Router) · Supabase (Auth + Postgres with RLS) · Tailwind.
 
+## The public site
+
+`index.html` at the repo root **is** the live marketing site — hand-built and
+served verbatim by `app/route.ts` at `/`. Edit that file directly; every save
+shows up on the next request. The app injects exactly one thing:
+`public/login-wire.js`, which binds the page's existing form ids
+(`lg-signin`, `lg-create`, `lg-reset`) to real Supabase auth. If those ids
+change in the HTML, update the wire script to match.
+
 ## Local setup
 
 1. `npm install`
@@ -15,30 +24,32 @@ account always gets in with just email + password — lockout-proof by design.
    key is browser-safe; `SUPABASE_SECRET_KEY` is server-only, never
    `NEXT_PUBLIC_`, never committed. Nothing uses it yet.
 3. Run the migrations **in order** — paste each into Supabase → SQL Editor →
-   Run:
-   1. [supabase/migrations/0001_stage1_profiles_team_members.sql](supabase/migrations/0001_stage1_profiles_team_members.sql)
-   2. [supabase/migrations/0002_roles_signup_nda.sql](supabase/migrations/0002_roles_signup_nda.sql)
-   (If you ever re-run 0001, re-run 0002 after it — 0002 tightens policies
-   0001 creates. Always migrate before deploying app code that expects it.)
-4. Supabase → Authentication → Sign In / Providers → Email: signups enabled;
-   turn **Confirm email OFF** for the private beta (the app handles the ON
-   case with a "check your email" message, but there is no reset/confirm page
-   yet). Multi-Factor: TOTP enabled (default).
-5. `npm run dev` → http://localhost:3000 → sign in from the landing page, or
-   create an account at `/signup`.
+   Run: `0001` → `0002` → `0003` → `0004` → `0005` (see
+   [supabase/migrations/](supabase/migrations/)). Re-running an older file
+   loosens what a later one tightened, so always re-run the later ones after
+   it. Migrate before deploying app code that expects the schema.
+4. Supabase → Authentication → Sign In / Providers → Email: **Confirm email
+   OFF** for the private beta (accounts are created by the owner, so there is
+   no self-signup to confirm; password reset has its own flow at
+   `/reset-password`). Multi-Factor: TOTP enabled (default).
+5. `npm run dev` → http://localhost:3000 → sign in from the page's sign-in
+   box.
 
 ## Access model
 
 - **Owner** (`is_owner`, guaranteed by migration for the owner email): always
-  in with password only; sees Admin › Access & roles.
-- **Everyone else:** create account at `/signup` (legal name + NDA + privacy
-  consent recorded as an electronic signature) → enroll TOTP 2FA at `/mfa` →
-  wait at `/pending` until the owner assigns a role at `/admin/access`.
+  in with password only; sees IT › Identity & Access.
+- **Everyone else:** request an account from the site's sign-in box (name +
+  email + NDA/privacy consent, recorded as an electronic signature in
+  `account_requests`) → the owner reviews and creates the login in Supabase →
+  they enroll TOTP 2FA at `/mfa` → they wait at `/pending` until the owner
+  assigns a role in IT › Identity & Access.
 - Enforced in the database, not just the UI: `has_access()` requires
   owner OR (role assigned AND an aal2 session), so a stolen password without
-  the 2FA device gets nothing from the REST API either.
+  the 2FA device gets nothing from the REST API either. Writes additionally
+  require the matching `has_perm('Module: Tab')` key.
 - Lost 2FA device: the owner deletes the user in Supabase → Authentication →
-  Users; they sign up again. (In-app recovery is a later stage.)
+  Users and re-creates them. (In-app recovery is a later stage.)
 
 ## Guarantees
 
@@ -52,21 +63,23 @@ account always gets in with just email + password — lockout-proof by design.
 
 ## Structure
 
-- `index.html` — landing-page design reference (not served; `app/page.tsx` is
-  the converted version — edit the app, not the HTML)
-- `app/page.tsx` + `app/landing.module.css` — public landing with the sign-in
-  card (email + password, Supabase Auth → `/dashboard`)
+- `index.html` — **the live public site**, hand-authored; edit it directly
+- `app/route.ts` — serves `index.html` at `/` and injects the login wiring
+- `public/login-wire.js` — binds the page's form ids to Supabase auth
+- `app/auth/` — `login`, `request-account`, `reset`, `signout` route handlers
+  (all same-origin-checked)
+- `app/reset-password/` — sets a new password from a reset-email link
 - `proxy.ts` — session refresh + auth redirect (Next 16 successor to middleware)
 - `lib/supabase/` — browser and server Supabase clients
-- `app/signup/` — account creation with NDA/privacy consent (NDA checkbox
-  unlocks only after opening the NDA)
+- `lib/permission-keys.ts` — canonical permission keys (must match the RLS
+  policies byte for byte)
 - `app/legal/` — NDA and privacy notice (ported from Scout Quest Education)
 - `app/mfa/` — TOTP enrollment + verification
 - `app/pending/` — signed-in, role-less waiting room
-- `app/(app)/` — authenticated shell (sidebar, topbar); dashboard at
-  `/dashboard`
-- `app/(app)/hr/team/` — HR › Team: live list + Add member (server action insert)
-- `app/(app)/admin/access/` — owner-only: create roles, assign/revoke access
+- `app/(app)/` — authenticated shell (sidebar); dashboard at `/dashboard`
+- `app/(app)/hr/team/` — HR › Team: live list + Add member
+- `app/(app)/it/identity-access/` — roles builder, role assignment, account
+  linking (needs `IT: Identity & Access`)
 - `supabase/migrations/` — SQL to paste into the Supabase SQL Editor, in order
 
 ## Architecture doc & deliberate deviations

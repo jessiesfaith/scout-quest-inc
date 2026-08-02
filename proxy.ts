@@ -34,14 +34,14 @@ export default async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Public: the landing page (with its sign-in card), account creation,
-  // legal documents, and auth endpoints.
+  // Public: the marketing site (Jessica's index.html served at "/"),
+  // legal documents, auth endpoints, and the password-reset landing.
   const path = request.nextUrl.pathname;
   const isPublic =
     path === "/" ||
     path.startsWith("/auth") ||
-    path.startsWith("/signup") ||
-    path.startsWith("/legal");
+    path.startsWith("/legal") ||
+    path.startsWith("/reset-password");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -49,9 +49,8 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Signed-in users don't need the landing page or signup — and submitting
-  // signup while signed in would silently swap their session.
-  if (user && (path === "/" || path.startsWith("/signup"))) {
+  // Signed-in users go to the app, not the marketing page.
+  if (user && path === "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
@@ -62,7 +61,8 @@ export default async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except Next internals and static assets.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Everything except Next internals and static assets (including
+    // public/ scripts like login-wire.js).
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js|css|txt|map)$).*)",
   ],
 };

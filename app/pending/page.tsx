@@ -18,10 +18,10 @@ export default async function PendingPage() {
     <div className={s.page}>
       <section className={s.login} style={{ minHeight: "100vh" }}>
         <div className={s.wrap}>
-          <h2>Awaiting a user role assigned to your account</h2>
+          <h2>You&apos;re in — a role is on its way</h2>
           <p>
-            The owner needs to assign your role before you can enter the
-            company OS.
+            A role will be assigned to your account soon so you can access the
+            platform.
           </p>
           <div className={s.loginBox} style={{ textAlign: "center" }}>
             <p style={{ margin: 0, color: "#dbe6f2", fontSize: 14 }}>
