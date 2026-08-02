@@ -38,7 +38,8 @@ never redesign the screens from scratch.
    key is browser-safe; `SUPABASE_SECRET_KEY` is server-only, never
    `NEXT_PUBLIC_`, never committed. Nothing uses it yet.
 3. Run the migrations **in order** — paste each into Supabase → SQL Editor →
-   Run every file in `0001` … `0010` order (see
+   Run every file in `supabase/migrations/` in filename order — currently
+   `0001` … `0011`, and any later ones as they land (see
    [supabase/migrations/](supabase/migrations/)). Re-running an older file
    loosens what a later one tightened, so always re-run the later ones after
    it. Migrate before deploying app code that expects the schema.

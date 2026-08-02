@@ -9,6 +9,45 @@
   border-top-color: var(--g);
 }
 
+/* Gantt: expandable task rows (the mockup had a flat chart). */
+.os .gtoggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-align: left;
+  width: 100%;
+}
+.os .gtoggle:hover {
+  color: var(--a);
+}
+.os .gcount {
+  font-size: 10px;
+  font-weight: 700;
+  background: #eef2f7;
+  color: var(--muted);
+  border-radius: 10px;
+  padding: 1px 6px;
+}
+.os .gchild .glabel {
+  padding-left: 26px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.os .gchild .gtrack {
+  height: 16px;
+}
+.os .gchild .gbar {
+  top: 2px;
+  height: 12px;
+  opacity: 0.85;
+}
+
 /* Zero-Day: report list with the reviewer's guide alongside. */
 .os .zd-grid {
   display: grid;

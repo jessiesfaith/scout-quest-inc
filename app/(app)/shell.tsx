@@ -8,17 +8,22 @@ import "./os-extra.css";
 
 export type Crumb = { label: string; href?: string };
 
+export type SubNavItem = { label: string; href: string; on?: boolean };
+
 export function OsShell({
   email,
   isOwner,
   crumbs,
   lead,
+  nav,
   children,
 }: {
   email: string;
   isOwner: boolean;
   crumbs: Crumb[];
   lead?: string;
+  /** Sibling screens within the same module. */
+  nav?: SubNavItem[];
   children: React.ReactNode;
 }) {
   return (
@@ -89,6 +94,19 @@ export function OsShell({
             </span>
           ))}
         </div>
+        {nav && nav.length > 0 && (
+          <div className="i2nav">
+            {nav.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`i2tab${n.on ? " on" : ""}`}
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
+        )}
         {lead && <p className="lead">{lead}</p>}
         {children}
       </div>

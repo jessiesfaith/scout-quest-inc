@@ -133,6 +133,20 @@ export async function addPlanItem(
   const { supabase, id } = await productId(key);
   if (!id) return { error: "Unknown product." };
 
+  // One level of nesting only: a task cannot itself be a parent.
+  const parentId = String(formData.get("parent_id") ?? "").trim();
+  if (parentId) {
+    const { data: parent } = await supabase
+      .from("plan_items")
+      .select("id, parent_id, product_id")
+      .eq("id", parentId)
+      .maybeSingle();
+    if (!parent || parent.product_id !== id)
+      return { error: "That parent item is not on this product." };
+    if (parent.parent_id)
+      return { error: "Tasks cannot be nested under another task." };
+  }
+
   const { data: last } = await supabase
     .from("plan_items")
     .select("sort")
@@ -143,6 +157,7 @@ export async function addPlanItem(
 
   const { error } = await supabase.from("plan_items").insert({
     product_id: id,
+    parent_id: parentId || null,
     title,
     status,
     start_date: start || null,

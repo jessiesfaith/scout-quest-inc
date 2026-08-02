@@ -67,6 +67,12 @@ export default async function IdentityAccessPage() {
         { label: "Identity & Access" },
       ]}
       lead="Create roles as sets of permissions (checkboxes over modules and tabs), then assign roles to team members. A member can hold more than one role. Roles only take effect once the member's login account is linked."
+      nav={[
+        { label: "Identity & Access", href: "/it/identity-access", on: true },
+        { label: "Agent Platform", href: "/it/agent-platform" },
+        { label: "Access Requests", href: "/it/access-requests" },
+        { label: "Zero-Day", href: "/it/zero-day" },
+      ]}
     >
       {loadError ? (
         <p className="note" style={{ color: "var(--danger)" }}>

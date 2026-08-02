@@ -36,7 +36,7 @@ type Area = {
   note: string | null;
   sort: number;
 };
-type PlanItem = PlanRow & { id: string };
+type PlanItem = PlanRow & { id: string; parent_id: string | null };
 type Website = { id: string; label: string; url: string };
 type Agent = {
   id: string;
@@ -109,7 +109,7 @@ export default async function ProductPage({
       .returns<Area[]>(),
     supabase
       .from("plan_items")
-      .select("id, title, start_date, end_date, status")
+      .select("id, title, start_date, end_date, status, parent_id")
       .eq("product_id", product.id)
       .order("sort")
       .order("id")
@@ -155,6 +155,27 @@ export default async function ProductPage({
   const loadError =
     areasError ?? plansError ?? sitesError ?? agentsError ?? changesError ?? missionError;
 
+  // Nest tasks under their parent so the Gantt can collapse them.
+  const planList = plans ?? [];
+  const tasksByParent = new Map<string, PlanItem[]>();
+  for (const p of planList) {
+    if (!p.parent_id) continue;
+    const list = tasksByParent.get(p.parent_id) ?? [];
+    list.push(p);
+    tasksByParent.set(p.parent_id, list);
+  }
+  const planTree = planList
+    .filter((p) => !p.parent_id)
+    .map((p) => ({ ...p, children: tasksByParent.get(p.id) ?? [] }));
+
+  // Table rows follow the tree, so a task always sits directly under its
+  // own parent — sorting by `sort` alone would strand new tasks at the
+  // bottom, indented beneath an unrelated row.
+  const planRows = planTree.flatMap((p) => [
+    { row: p as PlanItem, childCount: p.children.length },
+    ...p.children.map((c) => ({ row: c, childCount: 0 })),
+  ]);
+
   const areaList = areas ?? [];
   const counts = {
     live: areaList.filter((a) => a.status === "live").length,
@@ -199,16 +220,21 @@ export default async function ProductPage({
             The schedule for {product.name}. Bars are positioned from each
             item&apos;s start and end dates.
           </p>
-          <Gantt rows={plans ?? []} />
+          <Gantt rows={planTree} />
 
           {canPlan && (
             <>
-              <h2 className="sec">Add a plan item</h2>
-              <AddPlanForm productKey={key} />
+              <h2 className="sec">Add a plan item or task</h2>
+              <AddPlanForm
+                productKey={key}
+                parents={planList
+                  .filter((p) => !p.parent_id)
+                  .map((p) => ({ id: p.id, title: p.title }))}
+              />
             </>
           )}
 
-          {(plans ?? []).length > 0 && (
+          {planList.length > 0 && (
             <div className="card" style={{ marginTop: 14 }}>
               <table>
                 <thead>
@@ -221,9 +247,19 @@ export default async function ProductPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {(plans ?? []).map((p) => (
+                  {planRows.map(({ row: p, childCount }) => (
                     <tr key={p.id}>
-                      <td>{p.title}</td>
+                      <td style={p.parent_id ? { paddingLeft: 30 } : undefined}>
+                        {p.parent_id && (
+                          <span style={{ color: "var(--muted)" }}>↳ </span>
+                        )}
+                        {p.title}
+                        {childCount > 0 && (
+                          <span className="gcount" style={{ marginLeft: 6 }}>
+                            {childCount} task{childCount === 1 ? "" : "s"}
+                          </span>
+                        )}
+                      </td>
                       <td>{p.start_date ?? "—"}</td>
                       <td>{p.end_date ?? "—"}</td>
                       <td>
@@ -233,7 +269,11 @@ export default async function ProductPage({
                       </td>
                       {canPlan && (
                         <td>
-                          <DeletePlanItem id={p.id} productKey={key} />
+                          <DeletePlanItem
+                            id={p.id}
+                            productKey={key}
+                            childCount={childCount}
+                          />
                         </td>
                       )}
                     </tr>

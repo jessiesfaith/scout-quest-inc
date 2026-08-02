@@ -57,6 +57,12 @@ export default async function ZeroDayPage() {
         { label: "Zero-Day" },
       ]}
       lead="Security and evaluation reviews run on this codebase, archived by date and time. Entries cannot be edited or deleted once filed — not by anyone, including you. Reports are filed by hand today, so an empty stretch means no review was filed, not that nothing needed one."
+      nav={[
+        { label: "Identity & Access", href: "/it/identity-access" },
+        { label: "Agent Platform", href: "/it/agent-platform" },
+        { label: "Access Requests", href: "/it/access-requests" },
+        { label: "Zero-Day", href: "/it/zero-day", on: true },
+      ]}
     >
       {error ? (
         <p className="note" style={{ color: "var(--danger)" }}>

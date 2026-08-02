@@ -76,9 +76,12 @@ export default async function ProductsPage() {
         .from("products")
         .select("id, key, name, status")
         .returns<Product[]>(),
+      // Only top-level items become tasks under a product here; nesting
+      // them further would list a task twice on the consolidated chart.
       supabase
         .from("plan_items")
-        .select("product_id, title, start_date, end_date, status")
+        .select("id, product_id, title, start_date, end_date, status")
+        .is("parent_id", null)
         .order("sort")
         .order("id")
         .returns<PlanRow[]>(),
@@ -91,15 +94,24 @@ export default async function ProductsPage() {
   });
   const nameById = new Map(list.map((p) => [p.id, p.name]));
 
-  // Consolidated view: one bar per product, spanning its plan items.
+  // Consolidated view: one bar per product spanning its plan items, with
+  // those items as collapsible tasks underneath.
   const spans = new Map<string, PlanRow>();
   for (const row of plans ?? []) {
     if (!row.product_id) continue;
     const cur = spans.get(row.product_id);
     if (!cur) {
-      spans.set(row.product_id, { ...row, title: nameById.get(row.product_id) ?? "" });
+      spans.set(row.product_id, {
+        id: row.product_id,
+        title: nameById.get(row.product_id) ?? "",
+        start_date: row.start_date,
+        end_date: row.end_date,
+        status: row.status,
+        children: [row],
+      });
       continue;
     }
+    cur.children!.push(row);
     if (row.start_date && (!cur.start_date || row.start_date < cur.start_date))
       cur.start_date = row.start_date;
     if (row.end_date && (!cur.end_date || row.end_date > cur.end_date))

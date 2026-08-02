@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addArea,
   setAreaStatus,
@@ -143,7 +143,13 @@ export function DeleteArea(props: { id: string; productKey: string }) {
 
 // ---------- Plan Board ----------
 
-export function AddPlanForm({ productKey }: { productKey: string }) {
+export function AddPlanForm({
+  productKey,
+  parents,
+}: {
+  productKey: string;
+  parents: { id: string; title: string }[];
+}) {
   const [state, formAction, pending] = useActionState(addPlanItem, init);
   const { formRef, mark } = useResetOnSuccess(pending, state);
 
@@ -161,6 +167,17 @@ export function AddPlanForm({ productKey }: { productKey: string }) {
         <div className="field" style={{ gridColumn: "span 2" }}>
           <label htmlFor="title">Item *</label>
           <input id="title" name="title" required placeholder="Parent control panel" />
+        </div>
+        <div className="field">
+          <label htmlFor="parent_id">Task under</label>
+          <select id="parent_id" name="parent_id" defaultValue="">
+            <option value="">— top level —</option>
+            {parents.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="start_date">Start</label>
@@ -187,14 +204,61 @@ export function AddPlanForm({ productKey }: { productKey: string }) {
   );
 }
 
-export function DeletePlanItem(props: { id: string; productKey: string }) {
+// Deleting a parent cascades to its tasks, so name the blast radius before
+// doing it — same two-step used for roles and contracts.
+export function DeletePlanItem({
+  id,
+  productKey,
+  childCount = 0,
+}: {
+  id: string;
+  productKey: string;
+  childCount?: number;
+}) {
+  const [state, formAction, pending] = useActionState(deletePlanItem, init);
+  const [confirming, setConfirming] = useState(false);
+
+  if (childCount === 0) {
+    return (
+      <DeleteBtn
+        action={deletePlanItem}
+        name="item_id"
+        id={id}
+        productKey={productKey}
+      />
+    );
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        className="minibtn del"
+        onClick={() => setConfirming(true)}
+      >
+        Remove (+{childCount} task{childCount === 1 ? "" : "s"})
+      </button>
+    );
+  }
+
   return (
-    <DeleteBtn
-      action={deletePlanItem}
-      name="item_id"
-      id={props.id}
-      productKey={props.productKey}
-    />
+    <form action={formAction} style={{ display: "inline" }}>
+      <input type="hidden" name="item_id" value={id} />
+      <input type="hidden" name="product_key" value={productKey} />
+      <button type="submit" className="minibtn del" disabled={pending}>
+        {pending
+          ? "…"
+          : `Confirm — also deletes ${childCount} task${childCount === 1 ? "" : "s"}`}
+      </button>
+      <button
+        type="button"
+        className="minibtn"
+        onClick={() => setConfirming(false)}
+      >
+        Keep
+      </button>
+      {state.error && <span className="err">{state.error}</span>}
+    </form>
   );
 }
 
