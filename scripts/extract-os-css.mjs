@@ -5,7 +5,9 @@
 //   node scripts/extract-os-css.mjs
 import { readFileSync, writeFileSync } from "node:fs";
 
-const SRC = "design/agent_platform_dashboard.html";
+// Jessica saves the design at the repo root, same as index.html for the
+// public site. Edit that file; re-run this script to pick up style changes.
+const SRC = "SCOUT_QUEST_INC_COMPANY_OS.html";
 const OUT = "app/(app)/os.css";
 const ROOT = ".os";
 

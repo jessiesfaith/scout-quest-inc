@@ -8,14 +8,28 @@ account always gets in with just email + password — lockout-proof by design.
 
 **Stack:** Next.js (App Router) · Supabase (Auth + Postgres with RLS) · Tailwind.
 
-## The public site
+## Two hand-built HTML files drive the look — do not recreate them
 
-`index.html` at the repo root **is** the live marketing site — hand-built and
-served verbatim by `app/route.ts` at `/`. Edit that file directly; every save
-shows up on the next request. The app injects exactly one thing:
+**`index.html`** at the repo root **is** the live marketing site, served
+verbatim by `app/route.ts` at `/`. Edit that file directly; every save shows
+up on the next request. The app injects exactly one thing:
 `public/login-wire.js`, which binds the page's existing form ids
 (`lg-signin`, `lg-create`, `lg-reset`) to real Supabase auth. If those ids
 change in the HTML, update the wire script to match.
+
+**`SCOUT_QUEST_INC_COMPANY_OS.html`** at the repo root is the design source
+for the signed-in Company OS. Its stylesheet is extracted and scoped under
+`.os` by `scripts/extract-os-css.mjs` into `app/(app)/os.css`:
+
+```bash
+node scripts/extract-os-css.mjs
+```
+
+The OS screens can't be served verbatim like the marketing page — they read
+and write the database — so the app reuses the design's markup and classes
+(`.card`, `.tile`, `.modcard`, `.badge`, `.tag`, `.finding`, `.crumbs`) with
+live data. When the design changes, re-run the script and adjust markup;
+never redesign the screens from scratch.
 
 ## Local setup
 
