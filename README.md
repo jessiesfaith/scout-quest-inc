@@ -69,7 +69,29 @@ account always gets in with just email + password — lockout-proof by design.
 - `app/(app)/admin/access/` — owner-only: create roles, assign/revoke access
 - `supabase/migrations/` — SQL to paste into the Supabase SQL Editor, in order
 
-## Stage 2 seam
+## Architecture doc & deliberate deviations
 
-Contracts, work orders, products — new tables gate on `public.has_access()`
-(or finer per-role checks layered on `roles`); the shell and auth flow stay.
+[SCOUT_QUEST_INC_DEPLOYMENT_ARCHITECTURE.md](SCOUT_QUEST_INC_DEPLOYMENT_ARCHITECTURE.md)
+is the schema/auth source of truth. The live migrations implement it as a
+superset with four deliberate deviations (all owner-ruled or review-driven):
+
+1. **Strict reads** — the doc says any authenticated user can read
+   non-sensitive tables; the owner ruled stricter: no role → no reads,
+   role-less users see only the awaiting-role page (`has_access()` gates
+   every non-sensitive select).
+2. **In-app 2FA** — mandatory TOTP for non-owner accounts (owner exempt,
+   anti-lockout ruling), enforced at the RLS layer via the `aal` claim —
+   on top of the doc's account-level 2FA requirement for Supabase/Vercel.
+3. **Consent records** — `profiles` carries NDA/privacy acceptance columns
+   (electronic signature at account request); the doc's `name` is
+   `full_name` here.
+4. **Review hardening** — account-link guard trigger on
+   `team_members.profile_id`, delete-restricted `contracts` FK, and
+   `change_log.created_by` bound to the real author.
+
+## Stage 2/3 remainder
+
+Identity & Access screen (roles builder + assignment + account-request
+queue), then contracts, boards, work orders, change log, mission/values per
+module — schema already live via migration 0003. Stage 3: ledger/git ingest
+seams.
