@@ -3,6 +3,10 @@
 -- Roles + self-serve signup + NDA/privacy acceptance records.
 -- Paste this whole block into Supabase → SQL Editor → Run.
 -- Safe to re-run (idempotent). Requires 0001.
+-- BUT: migration 0003 supersedes the has_access() helper and
+-- several policies defined here. If you ever re-run this file
+-- after 0003 has been applied, re-run 0003 right after it, or
+-- access control silently downgrades.
 -- ============================================================
 
 -- ---------- Roles ----------

@@ -2,11 +2,11 @@
 -- Scout Quest Inc — Company OS — Stage 1 migration
 -- Tables: profiles, team_members. RLS ON for both.
 -- Paste this whole block into Supabase → SQL Editor → Run.
--- Safe to re-run (idempotent) — BUT: migration 0002 tightens
--- policies and the trigger defined here. If you ever re-run
--- this file after 0002 has been applied, re-run 0002 right
--- after it, or access control reverts to the looser Stage 1
--- rules.
+-- Safe to re-run (idempotent) — BUT: migrations 0002 and 0003
+-- tighten policies, helpers, and the trigger defined here. If
+-- you ever re-run this file, re-run 0002 AND 0003 right after
+-- it (in that order), or access control silently reverts to
+-- the looser Stage 1 rules.
 -- ============================================================
 
 -- ---------- Tables ----------
