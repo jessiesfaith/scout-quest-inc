@@ -159,8 +159,10 @@ function SignInSection() {
             {pending ? "Signing in…" : "Sign in"}
           </button>
           {error && <p className={`${s.note} ${s.noteError}`}>{error}</p>}
+          {/* Intentional deviation from index.html: self-serve account creation. */}
           <p className={s.note}>
-            Need access? Ask your Scout Quest Inc owner for an invite.
+            New to the team? <a href="/signup">Create an account</a> — an admin
+            assigns your role before you can enter.
           </p>
         </form>
       </div>

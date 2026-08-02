@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/profile";
-import { COMPANY_NAME } from "@/lib/constants";
+import { COMPANY_NAME, OWNER_EMAIL } from "@/lib/constants";
 
 export const metadata = {
   title: "Scout Quest Inc — Company OS",
@@ -14,7 +14,7 @@ const NAV = [
 ];
 
 // Stage 2 seam — listed so the shell shows the shape of the OS, not clickable yet.
-const UPCOMING = ["Roles & permissions", "Contracts", "Work orders", "Products"];
+const UPCOMING = ["Contracts", "Work orders", "Products"];
 
 export default async function AppLayout({
   children,
@@ -29,6 +29,20 @@ export default async function AppLayout({
   if (!user) redirect("/");
 
   const profile = await ensureProfile(supabase, user);
+  // Email fallback keeps the owner in even if the profiles read fails
+  // (e.g. a deploy that outruns its migration) — lockout-proof by design.
+  const isOwner = (profile?.is_owner ?? false) || user.email === OWNER_EMAIL;
+
+  // The owner always gets in with just email + password.
+  // Everyone else: mandatory TOTP 2FA, then a role assigned by an admin.
+  if (!isOwner) {
+    const { data: aal } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (!aal || aal.nextLevel !== "aal2" || aal.currentLevel !== "aal2") {
+      redirect("/mfa");
+    }
+    if (!profile?.role_id) redirect("/pending");
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -72,6 +86,20 @@ export default async function AppLayout({
               ))}
             </div>
           ))}
+
+          {isOwner && (
+            <div>
+              <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
+                Admin
+              </div>
+              <Link
+                href="/admin/access"
+                className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
+              >
+                Access &amp; roles
+              </Link>
+            </div>
+          )}
 
           <div>
             <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">

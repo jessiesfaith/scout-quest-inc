@@ -34,9 +34,14 @@ export default async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Public: the landing page (with its sign-in card) and auth endpoints.
+  // Public: the landing page (with its sign-in card), account creation,
+  // legal documents, and auth endpoints.
   const path = request.nextUrl.pathname;
-  const isPublic = path === "/" || path.startsWith("/auth");
+  const isPublic =
+    path === "/" ||
+    path.startsWith("/auth") ||
+    path.startsWith("/signup") ||
+    path.startsWith("/legal");
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -44,7 +49,9 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && path === "/") {
+  // Signed-in users don't need the landing page or signup — and submitting
+  // signup while signed in would silently swap their session.
+  if (user && (path === "/" || path.startsWith("/signup"))) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

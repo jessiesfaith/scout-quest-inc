@@ -548,6 +548,128 @@
   color: #fca5a5;
 }
 
+/* signup consent */
+.consent {
+  margin: 4px 0 16px;
+  display: grid;
+  gap: 10px;
+}
+.consentRow {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: #dbe6f2;
+  cursor: pointer;
+}
+.consentRow input {
+  width: auto;
+  margin: 3px 0 0;
+  accent-color: var(--teal);
+  cursor: pointer;
+}
+.consentRow a {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.consentLocked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.consentLocked input {
+  cursor: not-allowed;
+}
+.consentHint {
+  margin: -4px 0 0 25px;
+  font-size: 11.5px;
+  color: var(--gold);
+}
+
+/* legal documents (NDA, privacy) */
+.legal {
+  background: linear-gradient(180deg, #0b1424, #070d1a);
+  color: #dbe6f2;
+  min-height: 100vh;
+  padding: 48px 0 64px;
+}
+.legalWrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 22px;
+  font-size: 15px;
+  line-height: 1.62;
+}
+.legalWrap h1 {
+  font-size: 26px;
+  color: #fff;
+  margin: 18px 0 2px;
+  line-height: 1.15;
+}
+.legalCo {
+  color: var(--gold);
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+.legalMeta {
+  color: #8fa2b8;
+  font-size: 12.5px;
+  font-family: var(--font-mono), monospace;
+  margin-bottom: 24px;
+}
+.legalWrap h3 {
+  font-weight: 700;
+  color: #fff;
+  font-size: 15px;
+  margin: 22px 0 6px;
+}
+.legalWrap p {
+  margin: 0 0 12px;
+}
+.legalWrap ul {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+}
+.legalWrap li {
+  margin: 7px 0;
+}
+.legalWrap a {
+  color: var(--teal);
+}
+.legalAccept {
+  margin-top: 26px;
+  padding: 16px 18px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 12px;
+}
+.legalAccept h3 {
+  margin-top: 0;
+  color: var(--gold);
+}
+.legalNote {
+  background: rgba(22, 184, 166, 0.07);
+  border: 1px solid rgba(22, 184, 166, 0.25);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  margin: 22px 0 0;
+}
+.legalFoot {
+  margin-top: 34px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: #8fa2b8;
+  font-size: 12.5px;
+}
+.legalBack {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--gold);
+  font-size: 13px;
+}
+
 /* footer */
 .footer {
   background: #070d1a;

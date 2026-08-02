@@ -28,17 +28,8 @@
   a{color:inherit;text-decoration:none}
   .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
 
-  /* starfield */
-  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-  .star{position:absolute;width:3px;height:3px;border-radius:50%;background:var(--star);
-    box-shadow:0 0 6px 1px var(--starglow);opacity:.65;
-    animation:floatstar ease-in infinite}
-  @keyframes floatstar{
-    0%{transform:scale(.15) translateY(6px);opacity:0}
-    25%{opacity:.9}
-    70%{opacity:.85}
-    100%{transform:scale(2.1) translateY(-10px);opacity:0}
-  }
+  /* starfield (canvas — soft drifting lavender particles) */
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none;display:block}
   .layer{position:relative;z-index:1}
 
   /* nav */
@@ -63,8 +54,8 @@
 
   /* hero */
   .hero{position:relative;background:
-      radial-gradient(1100px 500px at 15% -10%,#1c3a63 0%,transparent 55%),
-      linear-gradient(180deg,#070d1a 0%,#0b1424 100%);color:var(--heroink);padding:64px 0 76px;overflow:hidden}
+      radial-gradient(1100px 500px at 15% -10%,rgba(28,58,99,.5) 0%,transparent 55%),
+      linear-gradient(180deg,rgba(7,13,26,.55) 0%,rgba(11,20,36,.68) 100%);color:var(--heroink);padding:64px 0 76px;overflow:hidden}
   .hero .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center;position:relative;z-index:2}
   .eyebrow{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);background:rgba(22,184,166,.12);border:1px solid rgba(22,184,166,.3);padding:6px 12px;border-radius:20px}
   .hero h1{font-size:46px;line-height:1.08;margin:18px 0 14px;font-weight:850;letter-spacing:-.02em}
@@ -81,16 +72,28 @@
 
   /* neural-net band */
   .band{position:relative;height:280px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center}
-  .nnband{background:linear-gradient(120deg,#08111f 0%,#123a5e 50%,#0c2b3f 100%)}
-  .nnband svg{position:absolute;inset:0;width:100%;height:100%}
+  .nnband{background:#08111f}
+  .bandtrack{position:absolute;inset:0;display:flex;width:300%;height:100%;animation:bandpan 20s ease-in-out infinite}
+  .bandslide{position:relative;width:33.3333%;flex:0 0 33.3333%;height:100%}
+  .nnone{background:linear-gradient(120deg,#08111f 0%,#123a5e 50%,#0c2b3f 100%)}
+  .nnone svg{position:absolute;inset:0;width:100%;height:100%}
+  .nntwo{background:linear-gradient(120deg,#08131f 0%,#10243b 50%,#191636 100%)}
+  .nntwo svg{position:absolute;inset:0;width:100%;height:100%}
+  @keyframes bandpan{
+    0%{transform:translateX(0)}
+    25%{transform:translateX(0)}
+    37%{transform:translateX(-33.3333%)}
+    62%{transform:translateX(-33.3333%)}
+    74%{transform:translateX(-66.6667%)}
+    100%{transform:translateX(-66.6667%)}
+  }
   .band .caption{position:relative;z-index:2;color:#fff;max-width:720px;padding:0 22px}
   .band .caption .k{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);font-weight:800}
   .band .caption h2{font-size:30px;margin:8px 0 8px;font-weight:800}
   .band .caption p{color:#cfe0ee;font-size:15px;margin:0}
-  .teamband{background:
-      linear-gradient(rgba(10,20,36,.52),rgba(10,20,36,.70)),
-      url('https://images.unsplash.com/photo-1758873269117-d5845126928a?fm=jpg&q=70&w=2000&auto=format&fit=crop') center/cover no-repeat,
-      #0e1c30}
+  .teamband{background:#0e1c30}
+  .tmone{background:linear-gradient(rgba(10,20,36,.52),rgba(10,20,36,.70)),url('https://images.unsplash.com/photo-1758873269117-d5845126928a?fm=jpg&q=70&w=2000&auto=format&fit=crop') center/cover no-repeat,#0e1c30}
+  .tmtwo{background:linear-gradient(rgba(10,20,36,.50),rgba(10,20,36,.66)),url('https://images.unsplash.com/photo-1702047063975-0841a0621b5a?fm=jpg&q=70&w=2000&auto=format&fit=crop') center/cover no-repeat,#0e1c30}
 
   /* sections */
   section.pad{padding:72px 0;position:relative}
@@ -112,7 +115,7 @@
   @media(max-width:900px){.values{grid-template-columns:1fr 1fr}}
 
   /* careers */
-  .careers{background:var(--bg2)}
+  .careers{background:transparent}
   .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px}
   .role{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
   .role .tag{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
@@ -120,8 +123,29 @@
   .role p{margin:0 0 14px;color:var(--muted);font-size:14px}
   @media(max-width:900px){.roles{grid-template-columns:1fr}}
 
+  /* careers page (opens on Apply) */
+  .careerspage{position:fixed;inset:0;z-index:70;background:var(--bg);color:var(--text);overflow-y:auto;display:none}
+  .careerspage.open{display:block}
+  .cpbar{position:sticky;top:0;background:var(--navbg);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07);z-index:2}
+  .cpbar .row{display:flex;align-items:center;gap:16px;height:60px}
+  .cpback{background:transparent;border:1px solid rgba(255,255,255,.22);color:#fff;border-radius:10px;padding:8px 15px;font-weight:700;cursor:pointer;font-size:14px}
+  .cpback:hover{border-color:#fff}
+  .cptitle{color:#fff;font-weight:800;font-size:15px}
+  .cphero{display:grid;grid-template-columns:1.1fr .9fr;gap:38px;align-items:center;padding:46px 0 40px}
+  .cphero h2{font-size:32px;margin:14px 0 12px;letter-spacing:-.01em}
+  .cphero p{color:var(--muted);font-size:16px;max-width:520px;margin:0}
+  .cphero .photo{border-radius:18px;aspect-ratio:4/5;background:#0e1c30;background-size:cover;background-position:center;box-shadow:0 22px 55px rgba(4,9,18,.45)}
+  .joblist{display:grid;gap:16px;padding-bottom:64px}
+  .job{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;justify-content:space-between;gap:18px;align-items:center;flex-wrap:wrap}
+  .job .meta{max-width:660px}
+  .job .tag{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+  .job h4{margin:7px 0 6px;font-size:18px}
+  .job .meta p{margin:0;color:var(--muted);font-size:14px}
+  .job .loc{margin-top:8px;font-size:12.5px;color:var(--teal);font-weight:700}
+  @media(max-width:820px){.cphero{grid-template-columns:1fr}.cphero .photo{max-width:330px;order:-1}}
+
   /* login */
-  .login{background:linear-gradient(180deg,#0b1424,#070d1a);color:#fff;text-align:center;padding:66px 0}
+  .login{background:linear-gradient(180deg,rgba(11,20,36,.45),rgba(7,13,26,.62));color:#fff;text-align:center;padding:66px 0}
   .login h2{font-size:30px;margin:0 0 8px}
   .login p{color:#c9d6e6;margin:0 0 24px}
   .loginbox{max-width:400px;margin:0 auto;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:26px;text-align:left}
@@ -130,15 +154,47 @@
   .loginbox input::placeholder{color:#8fa2b8}
   .loginbox .btn.primary{width:100%}
   .loginbox .note{font-size:12px;color:#8fa2b8;margin:14px 0 0;text-align:center}
+  .lgtabs{display:flex;gap:6px;max-width:400px;margin:0 auto 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:5px}
+  .lgtab{flex:1;padding:9px 6px;border:none;background:transparent;color:#c9d6e6;font-size:13px;font-weight:700;border-radius:8px;cursor:pointer}
+  .lgtab.on{background:var(--teal);color:#04211d}
+  .lgpanel{display:none}
+  .lgpanel.on{display:block}
+  .agree{display:flex;gap:9px;align-items:flex-start;margin:0 0 14px;font-size:12.5px;color:#dbe6f2}
+  .agree input{width:auto;margin:2px 0 0;flex:0 0 auto}
+  .agree a{color:var(--teal);text-decoration:underline}
+  .loginbox .link{background:transparent;border:none;color:var(--teal);font-size:12.5px;font-weight:700;cursor:pointer;padding:0}
+  .loginbox .link:hover{text-decoration:underline}
+  .loginbox .between{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
 
-  footer{background:#070d1a;color:#8fa2b8;padding:34px 0;font-size:13px}
-  footer .row{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
-  footer a{color:#c7d2e0}
+  footer{background:#070d1a;color:#8fa2b8;padding:44px 0 30px;font-size:13px}
+  footer .fcols{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:26px;padding-bottom:26px;border-bottom:1px solid rgba(255,255,255,.08)}
+  footer h5{color:#fff;font-size:13px;margin:0 0 12px;letter-spacing:.02em}
+  footer .fcol a{display:block;color:#c7d2e0;margin:0 0 9px;font-size:13px}
+  footer .fcol a:hover{color:#fff}
+  footer .fbrand{color:#fff;font-weight:800;font-size:16px;margin-bottom:8px}
+  footer .fmuted{color:#8fa2b8;max-width:270px;line-height:1.5}
+  footer .frow{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:22px}
+  footer .frow a{color:#c7d2e0}
+  @media(max-width:760px){footer .fcols{grid-template-columns:1fr 1fr}}
+
+  /* QR */
+  .qrbtn{display:inline-flex;align-items:center;gap:7px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:9px 13px;font-size:14px;font-weight:700;cursor:pointer}
+  .qrbtn:hover{border-color:#fff}
+  .qrbtn svg{width:16px;height:16px}
+  .qrpanel{position:fixed;top:78px;right:20px;z-index:40;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:18px 16px 14px;width:212px;text-align:center;box-shadow:0 18px 44px rgba(4,9,18,.5);display:none}
+  .qrpanel.open{display:block}
+  .qrpanel h3{margin:0 0 12px;font-size:13.5px}
+  .qrpanel #qrcode{display:flex;justify-content:center;padding:8px;background:#fff;border-radius:10px}
+  .qrpanel #qrcode img,.qrpanel #qrcode canvas{display:block}
+  .qrpanel p{margin:11px 0 0;font-size:11px;color:var(--muted);line-height:1.45}
+  .qrclose{position:absolute;top:5px;right:9px;background:transparent;border:none;font-size:21px;line-height:1;color:var(--muted);cursor:pointer}
+  .qrclose:hover{color:var(--text)}
+  @media(max-width:760px){.qrpanel{top:auto;bottom:16px;right:16px}}
 </style>
 </head>
 <body>
 
-<div id="stars"></div>
+<canvas id="stars"></canvas>
 
 <div class="layer">
 <!-- NAV -->
@@ -155,6 +211,10 @@
     </div>
     <div class="cta">
       <button class="themebtn" id="themeToggle" title="Toggle dark / light" aria-label="Toggle theme">🌙</button>
+      <button class="qrbtn" id="qrBtn" title="Scan to open on your phone" aria-label="Show QR code">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h2v2h-2v-2zm4 0h4v2h-2v2h-2v-4zm-4 4h2v4h-2v-4zm2 2h2v2h-2v-2zm2 0h4v2h-4v-2z"/></svg>
+        QR
+      </button>
       <a href="#login" class="btn primary">Sign in</a>
     </div>
   </div>
@@ -165,8 +225,8 @@
   <div class="wrap grid">
     <div>
       <span class="eyebrow">AI Platform Studio</span>
-      <h1>Build the <span class="accent">safe frontier</span> of learning and speech.</h1>
-      <p class="lead">Scout Quest Inc is an AI-native studio building education, tutoring, and clinical-speech products where safety comes first — for every age — and the ambition reaches all the way to frontier intelligence.</p>
+      <h1>Build the <span class="accent">safe frontier</span>.</h1>
+      <p class="lead">Scout Quest Inc is an AI-native studio building education, tutoring, clinical and AI products where safety comes first — for every age — and the ambition reaches all the way to frontier intelligence.</p>
       <div class="btns">
         <a href="#careers" class="btn primary">See open roles</a>
         <a href="#platform" class="btn ghost">Explore the platform</a>
@@ -185,7 +245,11 @@
 
 <!-- NEURAL-NET / SCIENCE / CLASSROOM BAND -->
 <div class="band nnband">
-  <svg id="nnsvg" preserveAspectRatio="none"></svg>
+  <div class="bandtrack">
+    <div class="bandslide nnone"><svg class="nn-svg" preserveAspectRatio="none"></svg></div>
+    <div class="bandslide nntwo"><svg class="nn-svg2" preserveAspectRatio="none"></svg></div>
+    <div class="bandslide nnone"><svg class="nn-svg" preserveAspectRatio="none"></svg></div>
+  </div>
   <div class="caption">
     <div class="k">Intelligence · Science · Education</div>
     <h2>Where neural networks meet the classroom</h2>
@@ -199,19 +263,11 @@
     <div class="kicker">The Platform</div>
     <h2 class="sec">One studio, a portfolio of products</h2>
     <p class="sub">Every product runs on the same governed company OS — shared agents, roles and access, change logs, and work orders.</p>
-    <div class="cards">
-      <div class="card"><div class="ic">🎓</div><h3>Scout Quest Education</h3><p>District and classroom learning built on quests, mastery, and real learning science.</p></div>
-      <div class="card"><div class="ic">🎮</div><h3>Scout Quest Game</h3><p>Play-first learning that keeps kids engaged while staying safe and age-appropriate.</p></div>
-      <div class="card"><div class="ic">🧭</div><h3>Scout Quest Tutor</h3><p>A B2C tutor with a parent control panel and a kid-safe quest experience.</p></div>
-      <div class="card"><div class="ic">🗣️</div><h3>Soundwiserx</h3><p>Clinical speech evaluation with strict, governed data boundaries.</p></div>
-      <div class="card"><div class="ic">🔖</div><h3>AI Bookmark</h3><p>Save, organize, and resurface what matters — powered by helpful agents.</p></div>
-      <div class="card"><div class="ic">⚙️</div><h3>The Company OS</h3><p>IT, HR, Finance, Products — modular, role-gated, and audited end to end.</p></div>
-    </div>
   </div>
 </section>
 
 <!-- VALUES -->
-<section class="pad" id="values" style="background:var(--bg2)">
+<section class="pad" id="values" style="background:transparent">
   <div class="wrap">
     <div class="kicker">What we value</div>
     <h2 class="sec">Principles we build by</h2>
@@ -228,19 +284,24 @@
 <!-- CAREERS -->
 <section class="pad careers" id="careers">
   <div class="wrap">
-    <div class="kicker">Careers</div>
-    <h2 class="sec">Join a company ready to scale</h2>
-    <p class="sub">We're a small, senior team building carefully. If you want to ship frontier products with safety at the core, we'd love to meet you.</p>
+    <div class="kicker">Volunteer</div>
+    <h2 class="sec">Volunteer with Scout Quest</h2>
+    <p class="sub">We're building safety-first AI for learning and speech, and we're growing our early team through volunteers. Lend your skills to something that matters — paid roles will open as we scale.</p>
     <div class="roles">
-      <div class="role"><div class="tag">Engineering</div><h4>Full-stack / AI Engineer</h4><p>Build the company OS and product surfaces on Next.js, Supabase, and governed agents.</p><a href="#login" class="btn gold">Apply</a></div>
-      <div class="role"><div class="tag">Product</div><h4>Product Designer</h4><p>Design kid-safe, all-ages experiences with parent controls and clarity.</p><a href="#login" class="btn gold">Apply</a></div>
-      <div class="role"><div class="tag">Clinical</div><h4>Speech / Clinical Lead</h4><p>Shape Soundwiserx evaluation with clinical rigor and strict data governance.</p><a href="#login" class="btn gold">Apply</a></div>
+      <div class="role"><div class="tag">Volunteer · Engineering</div><h4>Full-stack / AI Engineer</h4><p>Build the company OS and product surfaces on Next.js, Supabase, and governed agents.</p><button class="btn gold" data-careers>Volunteer</button></div>
+      <div class="role"><div class="tag">Volunteer · Product</div><h4>Product Designer</h4><p>Design kid-safe, all-ages experiences with parent controls and clarity.</p><button class="btn gold" data-careers>Volunteer</button></div>
+      <div class="role"><div class="tag">Volunteer · Clinical</div><h4>Speech / Clinical Lead</h4><p>Shape Soundwiserx evaluation with clinical rigor and strict data governance.</p><button class="btn gold" data-careers>Volunteer</button></div>
     </div>
   </div>
 </section>
 
 <!-- PEOPLE-AROUND-A-TABLE BAND -->
 <div class="band teamband">
+  <div class="bandtrack">
+    <div class="bandslide tmone"></div>
+    <div class="bandslide tmtwo"></div>
+    <div class="bandslide tmone"></div>
+  </div>
   <div class="caption">
     <div class="k">Our team</div>
     <h2>Small team, big table</h2>
@@ -251,30 +312,164 @@
 <!-- LOGIN -->
 <section class="login" id="login">
   <div class="wrap">
-    <h2>Sign in to Scout Quest Inc</h2>
-    <p>Access is invite-only. Team members sign in below.</p>
-    <form class="loginbox" onsubmit="return false">
+    <h2>Scout Quest Inc</h2>
+    <p>Access is reviewed and approved by the owner. Sign in, request an account, or reset your password.</p>
+    <form class="loginbox lgpanel on" id="lg-signin" onsubmit="return false">
       <label for="em">Email</label>
       <input id="em" type="email" placeholder="you@scoutquest.inc" autocomplete="email">
       <label for="pw">Password</label>
       <input id="pw" type="password" placeholder="••••••••" autocomplete="current-password">
       <button type="submit" class="btn primary">Sign in</button>
-      <p class="note">Need access? Ask your Scout Quest Inc owner for an invite.</p>
+      <div class="between">
+        <button type="button" class="link" data-goto="reset">Forgot password?</button>
+        <button type="button" class="link" data-goto="create">Create an account</button>
+      </div>
+    </form>
+
+    <form class="loginbox lgpanel" id="lg-create" onsubmit="return false">
+      <label for="cname">Full name</label>
+      <input id="cname" type="text" placeholder="Your name" autocomplete="name">
+      <label for="cemail">Work email</label>
+      <input id="cemail" type="email" placeholder="you@scoutquest.inc" autocomplete="email">
+      <label for="cpw">Choose a password</label>
+      <input id="cpw" type="password" placeholder="••••••••" autocomplete="new-password">
+      <label class="agree"><input type="checkbox" id="cnda"><span>I have read and agree to the <a href="#" target="_blank" rel="noopener">Non-Disclosure Agreement (NDA)</a>.</span></label>
+      <label class="agree"><input type="checkbox" id="cpriv"><span>I have read and agree to the <a href="#" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+      <button type="submit" class="btn primary">Request account</button>
+      <p class="note">Accounts are reviewed and approved by the Scout Quest Inc owner before access is granted.</p>
+      <button type="button" class="link" data-goto="signin" style="display:block;margin:12px auto 0">&larr; Back to sign in</button>
+    </form>
+
+    <form class="loginbox lgpanel" id="lg-reset" onsubmit="return false">
+      <label for="remail">Email</label>
+      <input id="remail" type="email" placeholder="you@scoutquest.inc" autocomplete="email">
+      <button type="submit" class="btn primary">Send reset link</button>
+      <p class="note">If an approved account exists for this email, we'll send a password-reset link.</p>
+      <button type="button" class="link" data-goto="signin" style="display:block;margin:12px auto 0">&larr; Back to sign in</button>
     </form>
   </div>
 </section>
 
 <footer>
-  <div class="wrap row">
-    <div>© <span id="yr"></span> Scout Quest Inc — an AI Platform Studio.</div>
-    <div><a href="#platform">Platform</a> · <a href="#careers">Careers</a> · <a href="#login">Sign in</a></div>
+  <div class="wrap">
+    <div class="fcols">
+      <div class="fcol">
+        <div class="fbrand">Scout Quest Inc</div>
+        <div class="fmuted">An AI Platform Studio — building the safe frontier of learning and speech.</div>
+      </div>
+      <div class="fcol">
+        <h5>Company</h5>
+        <a href="#values">Mission</a>
+        <a href="#careers">Meet the Team</a>
+        <a href="#careers">Careers</a>
+      </div>
+      <div class="fcol">
+        <h5>Platform</h5>
+        <a href="#platform">Products</a>
+        <a href="#values">Values</a>
+        <a href="#login">Sign in</a>
+      </div>
+      <div class="fcol">
+        <h5>Connect</h5>
+        <a href="mailto:info@scoutquest.education">Contact Us</a>
+        <a href="https://www.linkedin.com/company/scout-quest-education/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+    <div class="frow">
+      <div>© <span id="yr"></span> Scout Quest Inc — an AI Platform Studio.</div>
+      <div><a href="#login">Sign in</a> · <a href="#login">Create account</a></div>
+    </div>
   </div>
 </footer>
 </div>
 
+<div class="careerspage" id="careersPage" aria-hidden="true">
+  <div class="cpbar">
+    <div class="wrap row">
+      <button class="cpback" id="cpBack">&larr; Back</button>
+      <div class="cptitle">Scout Quest Inc — Volunteer Opportunities</div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="cphero">
+      <div>
+        <span class="eyebrow">Volunteer with us</span>
+        <h2>Volunteer to build something safe, smart, and worth being proud of.</h2>
+        <p>We're a small, senior team building AI products for learning and speech — safety first, for every age. Right now we're growing through volunteers who want to make an early impact. These are volunteer roles for now; paid positions will open as we grow. Flexible time commitment, remote-friendly, and mission-driven.</p>
+      </div>
+      <div class="photo" style="background-image:url('https://images.unsplash.com/photo-1758691737605-69a0e78bd193?fm=jpg&q=75&w=1200&auto=format&fit=crop')" role="img" aria-label="A friendly new team member, smiling and ready to get to work"></div>
+    </div>
+    <div class="joblist">
+      <div class="job"><div class="meta"><div class="tag">Volunteer · Engineering</div><h4>Full-stack / AI Engineer</h4><p>Build the company OS and product surfaces on Next.js, Supabase, and governed agents.</p><div class="loc">Volunteer · Remote-friendly · Flexible hours</div></div><a class="btn gold" href="mailto:info@scoutquest.education?subject=Volunteer%20application%20%E2%80%94%20Full-stack%20%2F%20AI%20Engineer">Volunteer</a></div>
+      <div class="job"><div class="meta"><div class="tag">Volunteer · Product</div><h4>Product Designer</h4><p>Design kid-safe, all-ages experiences with parent controls, clarity, and delight.</p><div class="loc">Volunteer · Remote-friendly · Flexible hours</div></div><a class="btn gold" href="mailto:info@scoutquest.education?subject=Volunteer%20application%20%E2%80%94%20Product%20Designer">Volunteer</a></div>
+      <div class="job"><div class="meta"><div class="tag">Volunteer · Clinical</div><h4>Speech / Clinical Lead</h4><p>Shape Soundwiserx evaluation with clinical rigor and strict data governance.</p><div class="loc">Volunteer · Remote · US-based</div></div><a class="btn gold" href="mailto:info@scoutquest.education?subject=Volunteer%20application%20%E2%80%94%20Speech%20%2F%20Clinical%20Lead">Volunteer</a></div>
+      <div class="job"><div class="meta"><div class="tag">Volunteer · Research</div><h4>Learning Scientist</h4><p>Ground our quests and tutoring in real learning science and measurable outcomes.</p><div class="loc">Volunteer · Remote · US-based</div></div><a class="btn gold" href="mailto:info@scoutquest.education?subject=Volunteer%20application%20%E2%80%94%20Learning%20Scientist">Volunteer</a></div>
+      <div class="job"><div class="meta"><div class="tag">Volunteer · Security</div><h4>Safety &amp; Trust Engineer</h4><p>Own RLS, audit trails, and the guardrails that keep every product safe by design.</p><div class="loc">Volunteer · Remote · US-based</div></div><a class="btn gold" href="mailto:info@scoutquest.education?subject=Volunteer%20application%20%E2%80%94%20Safety%20%26%20Trust%20Engineer">Volunteer</a></div>
+      <div class="job"><div class="meta"><div class="tag">Volunteer · Growth</div><h4>Community &amp; Growth Lead</h4><p>Bring Scout Quest to parents, teachers, and districts — starting local, scaling out.</p><div class="loc">Volunteer · Remote-friendly · Flexible hours</div></div><a class="btn gold" href="mailto:info@scoutquest.education?subject=Volunteer%20application%20%E2%80%94%20Community%20%26%20Growth%20Lead">Volunteer</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="qrpanel" id="qrModal" aria-hidden="true">
+  <button class="qrclose" id="qrClose" aria-label="Close">&times;</button>
+  <h3>Scan to open on your phone</h3>
+  <div id="qrcode"></div>
+  <p>Point your phone camera here to open Scout Quest Inc.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
   // year
   document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // QR code — floating, non-blocking panel (page stays scrollable while it's open)
+  (function(){
+    var qrBtn=document.getElementById('qrBtn'), qrPanel=document.getElementById('qrModal'),
+        qrClose=document.getElementById('qrClose'), qrHolder=document.getElementById('qrcode'), built=false;
+    function build(){
+      if(!built && window.QRCode){
+        qrHolder.innerHTML='';
+        new QRCode(qrHolder,{text:window.location.href,width:150,height:150,colorDark:'#0b1424',colorLight:'#ffffff'});
+        built=true;
+      }
+    }
+    qrBtn.addEventListener('click',function(){ build(); qrPanel.classList.toggle('open'); });
+    qrClose.addEventListener('click',function(){ qrPanel.classList.remove('open'); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') qrPanel.classList.remove('open'); });
+  })();
+
+  // Careers page (opens when an Apply button is clicked)
+  (function(){
+    var page=document.getElementById('careersPage'), back=document.getElementById('cpBack');
+    function open(){ page.classList.add('open'); page.scrollTop=0; document.body.style.overflow='hidden'; }
+    function close(){ page.classList.remove('open'); document.body.style.overflow=''; }
+    document.querySelectorAll('[data-careers]').forEach(function(b){ b.addEventListener('click',open); });
+    back.addEventListener('click',close);
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape' && page.classList.contains('open')) close(); });
+  })();
+
+  // login tabs (sign in / create account / reset)
+  (function(){
+    var tabs=document.querySelectorAll('.lgtab'), panels=document.querySelectorAll('.lgpanel');
+    function show(key){
+      tabs.forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-lg')===key); });
+      panels.forEach(function(p){ p.classList.toggle('on', p.id==='lg-'+key); });
+    }
+    tabs.forEach(function(t){ t.addEventListener('click',function(){ show(t.getAttribute('data-lg')); }); });
+    document.querySelectorAll('[data-goto]').forEach(function(b){
+      b.addEventListener('click',function(){ show(b.getAttribute('data-goto')); });
+    });
+    // require NDA + Privacy sign-off before an account can be requested
+    var nda=document.getElementById('cnda'), priv=document.getElementById('cpriv'),
+        reqBtn=document.querySelector('#lg-create button[type=submit]');
+    function sync(){
+      var ok=nda.checked && priv.checked;
+      reqBtn.disabled=!ok;
+      reqBtn.style.opacity=ok?'1':'.5';
+      reqBtn.style.cursor=ok?'pointer':'not-allowed';
+    }
+    nda.addEventListener('change',sync); priv.addEventListener('change',sync); sync();
+  })();
 
   // theme toggle (default dark)
   var root = document.documentElement, tb = document.getElementById('themeToggle');
@@ -283,57 +478,99 @@
     setTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   });
 
-  // starfield
+  // starfield — small lavender stars shooting toward the viewer, spread across the whole screen
   (function(){
-    var host = document.getElementById('stars');
-    var N = 70;
-    for(var i=0;i<N;i++){
-      var s = document.createElement('div');
-      s.className = 'star';
-      var size = 1 + Math.random()*2.6;
-      s.style.width = size+'px'; s.style.height = size+'px';
-      s.style.left = (Math.random()*100)+'%';
-      s.style.top = (Math.random()*100)+'%';
-      s.style.animationDuration = (2.4 + Math.random()*2.8)+'s';
-      s.style.animationDelay = (-Math.random()*5)+'s';
-      s.style.opacity = (0.4 + Math.random()*0.5).toFixed(2);
-      host.appendChild(s);
+    var cv=document.getElementById('stars');
+    if(!cv || !cv.getContext) return;
+    var ctx=cv.getContext('2d'), dpr=Math.min(window.devicePixelRatio||1,2);
+    var W=0,H=0,cx=0,cy=0,focal=1,ps=[],MAXZ=4,SPEED=0.011;
+    function mk(z){ return {x:Math.random()*2-1, y:Math.random()*2-1, z:z}; }
+    function seed(){
+      W=window.innerWidth; H=window.innerHeight;
+      cv.style.width=W+'px'; cv.style.height=H+'px';
+      cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+      cx=W/2; cy=H/2; focal=Math.max(W,H)*0.72;
+      var count=Math.max(160,Math.min(340,Math.round(W*H/5000)));
+      ps=[]; for(var i=0;i<count;i++) ps.push(mk(Math.random()*MAXZ+0.05));
     }
+    function frame(){
+      ctx.clearRect(0,0,W,H);
+      for(var i=0;i<ps.length;i++){
+        var p=ps[i]; p.z-=SPEED;
+        if(p.z<=0.05){ ps[i]=mk(MAXZ); continue; }
+        var k=focal/p.z, sx=cx+p.x*k, sy=cy+p.y*k;
+        if(sx<-12||sx>W+12||sy<-12||sy>H+12){ ps[i]=mk(MAXZ); continue; }
+        var f=1-p.z/MAXZ, r=f*1.3+0.2, a=f*0.8+0.12;
+        ctx.beginPath(); ctx.arc(sx,sy,r,0,6.2832);
+        ctx.fillStyle='rgba(186,178,255,'+a.toFixed(3)+')';
+        ctx.fill();
+      }
+      requestAnimationFrame(frame);
+    }
+    var rt; window.addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(seed,150); });
+    window.addEventListener('load',seed);
+    seed(); frame();
   })();
 
-  // neural-network band
+  // neural-network bands — two similar-but-different variants that slide
   (function(){
-    var svg = document.getElementById('nnsvg');
-    if(!svg) return;
     var W = 1200, H = 280;
-    svg.setAttribute('viewBox','0 0 '+W+' '+H);
-    var cols = [120, 360, 600, 840, 1080];
-    var counts = [4, 6, 6, 6, 4];
-    var nodes = [];
-    cols.forEach(function(x, ci){
-      var c = counts[ci], layer = [];
-      for(var i=0;i<c;i++){
-        var y = (H/(c+1))*(i+1) + (i%2? -8:8);
-        layer.push({x:x, y:y});
+    function build(cols, counts, cA, cB){
+      var nodes = [];
+      cols.forEach(function(x, ci){
+        var c = counts[ci], layer = [];
+        for(var i=0;i<c;i++){ var y = (H/(c+1))*(i+1) + (i%2? -8:8); layer.push({x:x, y:y}); }
+        nodes.push(layer);
+      });
+      var frag = '';
+      for(var l=0;l<nodes.length-1;l++){
+        nodes[l].forEach(function(a){
+          nodes[l+1].forEach(function(b){
+            frag += '<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="rgba(22,184,166,0.16)" stroke-width="1"/>';
+          });
+        });
       }
-      nodes.push(layer);
-    });
-    var frag = '';
-    for(var l=0;l<nodes.length-1;l++){
-      nodes[l].forEach(function(a){
-        nodes[l+1].forEach(function(b){
-          frag += '<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="rgba(22,184,166,0.18)" stroke-width="1"/>';
+      nodes.forEach(function(layer, li){
+        layer.forEach(function(n){
+          var fill = li%2 ? cB : cA;
+          frag += '<circle cx="'+n.x+'" cy="'+n.y+'" r="6" fill="'+fill+'" opacity="0.9"/>';
+          frag += '<circle cx="'+n.x+'" cy="'+n.y+'" r="12" fill="'+fill+'" opacity="0.14"/>';
         });
       });
+      return frag;
     }
-    nodes.forEach(function(layer, li){
-      layer.forEach(function(n){
-        var fill = li%2 ? '#fbbf24' : '#16b8a6';
-        frag += '<circle cx="'+n.x+'" cy="'+n.y+'" r="6" fill="'+fill+'" opacity="0.9"/>';
-        frag += '<circle cx="'+n.x+'" cy="'+n.y+'" r="12" fill="'+fill+'" opacity="0.14"/>';
+    function render(sel, frag){
+      document.querySelectorAll(sel).forEach(function(s){ s.setAttribute('viewBox','0 0 '+W+' '+H); s.innerHTML = frag; });
+    }
+    render('.nn-svg', build([120,360,600,840,1080],[4,6,6,6,4],'#16b8a6','#fbbf24'));
+
+    // second slide: flowing signal / sound waves (self-drawn, cool cyan-violet palette)
+    function buildWaves(){
+      var frag='';
+      // top band (cy ~50) and bottom band (cy ~230) — middle stays clear for the caption
+      var waves=[
+        {cy:50, amp:20, freq:2.2, ph:0.0, col:'#38bdf8', w:2,   op:0.70},
+        {cy:58, amp:26, freq:1.6, ph:2.5, col:'#22d3ee', w:1.5, op:0.42},
+        {cy:42, amp:13, freq:3.1, ph:1.3, col:'#a78bfa', w:2,   op:0.60},
+        {cy:230,amp:20, freq:2.0, ph:0.8, col:'#38bdf8', w:2,   op:0.68},
+        {cy:222,amp:26, freq:1.6, ph:2.0, col:'#22d3ee', w:1.5, op:0.42},
+        {cy:238,amp:13, freq:3.3, ph:0.4, col:'#c4b5fd', w:1.5, op:0.45}
+      ];
+      waves.forEach(function(wv){
+        var d='M 0 '+(wv.cy+Math.sin(wv.ph)*wv.amp).toFixed(1);
+        for(var x=16;x<=W;x+=16){
+          var y=wv.cy+Math.sin((x/W)*Math.PI*2*wv.freq+wv.ph)*wv.amp;
+          d+=' L '+x+' '+y.toFixed(1);
+        }
+        frag+='<path d="'+d+'" fill="none" stroke="'+wv.col+'" stroke-width="'+wv.w+'" opacity="'+wv.op+'"/>';
+        for(var x2=0;x2<=W;x2+=100){
+          var y2=wv.cy+Math.sin((x2/W)*Math.PI*2*wv.freq+wv.ph)*wv.amp;
+          frag+='<circle cx="'+x2+'" cy="'+y2.toFixed(1)+'" r="2.4" fill="'+wv.col+'" opacity="'+Math.min(1,wv.op+0.2)+'"/>';
+        }
       });
-    });
-    svg.innerHTML = frag;
+      return frag;
+    }
+    render('.nn-svg2', buildWaves());
   })();
 
 </script>
