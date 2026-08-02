@@ -2,6 +2,13 @@
    Kept separate from the generated os.css so a regeneration never
    clobbers them. */
 
+/* The design uses `.grow` twice: a Gantt row (display:flex) and a module
+   card tone (border colour). Using both on one page restyles the cards, so
+   the tone gets its own name here. */
+.os .modcard.portfolio {
+  border-top-color: var(--g);
+}
+
 /* Zero-Day: report list with the reviewer's guide alongside. */
 .os .zd-grid {
   display: grid;

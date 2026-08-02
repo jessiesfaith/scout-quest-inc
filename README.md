@@ -38,12 +38,15 @@ never redesign the screens from scratch.
    key is browser-safe; `SUPABASE_SECRET_KEY` is server-only, never
    `NEXT_PUBLIC_`, never committed. Nothing uses it yet.
 3. Run the migrations **in order** — paste each into Supabase → SQL Editor →
-   Run: `0001` → `0002` → `0003` → `0004` → `0005` → `0006` (see
+   Run every file in `0001` … `0010` order (see
    [supabase/migrations/](supabase/migrations/)). Re-running an older file
    loosens what a later one tightened, so always re-run the later ones after
    it. Migrate before deploying app code that expects the schema.
    `0006` creates the private `contracts` storage bucket (and forces it
    private if it already exists), so no dashboard step is needed.
+   If Supabase warns about row-level security, choose **"Run without RLS"** —
+   the migrations enable it themselves, and Supabase's auto-added statement
+   is malformed for this schema.
 4. Supabase → Authentication → Sign In / Providers → Email: **Confirm email
    OFF** for the private beta (accounts are created by the owner, so there is
    no self-signup to confirm; password reset has its own flow at

@@ -31,10 +31,10 @@ const MODULES = [
     parts: ["Change Management", "Change Log"],
   },
   {
-    href: null,
-    tone: "soon",
+    href: "/products",
+    tone: "live",
     title: "Products",
-    badge: { label: "Next", cls: "b-ready" },
+    badge: { label: "Live", cls: "b-live" },
     body: "Each product with its own plan board, build board, agents, website, and change log.",
     parts: ["Education", "Game", "Tutor", "Soundwiserx", "AI Bookmark"],
   },
