@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scout Quest Inc — Company OS (v0 preview)</title>
+<style>
+  :root{
+    --ink:#1b2430;--muted:#5b6675;--line:#e2e7ee;--bg:#f4f6f9;--card:#ffffff;
+    --a:#0f766e;--a-soft:#e3f1ef;--b:#2563eb;--b-soft:#e7effe;--g:#7c3aed;--g-soft:#f1eafd;
+    --warn:#b45309;--warn-soft:#fdf3e6;--ok:#15803d;--ok-soft:#e7f5ec;--core:#101826;--danger:#b42318;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .top{background:var(--core);color:#eef2f7;padding:16px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .top h1{font-size:17px;margin:0;font-weight:700;letter-spacing:.01em}
+  .top .dot{width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.2)}
+  .pill{font-size:11px;font-weight:700;border-radius:20px;padding:3px 10px;background:#1d2937;color:#9fe6da}
+  .top .who{margin-left:auto;font-size:12px;color:#9fb0c2}
+  .navlink{cursor:pointer;color:#9fe6da;font-size:12px;font-weight:700}
+  .navlink:hover{color:#fff}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 18px 60px}
+  .crumbs{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:2px 0 14px;flex-wrap:wrap}
+  .crumb{color:var(--a);font-weight:600;cursor:pointer}
+  .crumb.cur{color:var(--muted);cursor:default;font-weight:700}
+  .crumbs .sep{color:var(--muted)}
+  .screen{display:none} .screen.on{display:block}
+  .ptab{display:none} .ptab.on{display:block}
+  h2.sec{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:22px 0 10px;font-weight:700}
+  h2.sec:first-of-type{margin-top:4px}
+  .lead{font-size:13px;color:var(--muted);margin:0 0 14px;max-width:730px}
+  .pnav{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;flex-wrap:wrap}
+  .pnav button{border:none;background:none;padding:11px 15px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent}
+  .pnav button.on{color:var(--a);border-bottom-color:var(--a)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tile .n{font-size:23px;font-weight:800;letter-spacing:-.02em}
+  .tile .l{font-size:12px;color:var(--muted);margin-top:2px}
+  .tile .s{font-size:11px;margin-top:6px}
+  .grn{color:var(--ok)} .tealtx{color:var(--a)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;margin-bottom:14px}
+  .card .hd{padding:15px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .card .hd .id{font-size:15.5px;font-weight:700}
+  .card .hd .role{font-size:12.5px;color:var(--muted)}
+  .badge{font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 9px;text-transform:uppercase;letter-spacing:.03em}
+  .b-live{background:var(--ok-soft);color:var(--ok)} .b-ready{background:var(--b-soft);color:var(--b)}
+  .b-reg{background:#eef2f7;color:var(--muted)} .b-plan{background:var(--g-soft);color:var(--g)}
+  .b-gov{background:var(--a-soft);color:var(--a)}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0;padding:6px 0}
+  .kv div{padding:9px 18px}
+  .kv .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+  .kv .v{font-size:13.5px;margin-top:2px}
+  .no-d3{color:var(--danger);font-weight:700}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfe}
+  td{padding:11px 14px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  code{background:#eef2f7;border-radius:5px;padding:1px 6px;font-size:12px}
+  .tag{font-size:10.5px;font-weight:700;border-radius:6px;padding:2px 7px}
+  .t-hi{background:var(--ok-soft);color:var(--ok)} .t-med{background:var(--warn-soft);color:var(--warn)} .t-lo{background:var(--danger);color:#fff}
+  .finding{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--a);border-radius:10px;padding:13px 16px;margin-bottom:11px}
+  .finding h3{margin:0 0 4px;font-size:14.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .finding p{margin:0;font-size:13px;color:var(--muted)}
+  .finding.warnbar{border-left-color:var(--warn)}
+  .subnav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+  .woistab{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:9px 13px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .woistab.on{border-color:var(--a);color:var(--a);background:var(--a-soft)}
+  .woplaceholder{border:1px dashed var(--line);border-radius:9px;padding:9px 13px;font-size:12px;color:var(--muted);align-self:center}
+  .wopanel{display:none} .wopanel.on{display:block}
+  .wohead{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:12px}
+  .wohead .wt{font-size:16px;font-weight:700}
+  .wohead .wm{font-size:12px;color:var(--muted)}
+  .modgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:13px}
+  .modcard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 16px;border-top:4px solid var(--line);position:relative}
+  .modcard.live{border-top-color:var(--ok)} .modcard.soon{border-top-color:var(--b)} .modcard.grow{border-top-color:var(--g)}
+  .modcard.clickable{cursor:pointer;transition:transform .08s ease, box-shadow .08s ease}
+  .modcard.clickable:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(16,24,38,.09)}
+  .modcard h3{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .modcard p{margin:0;font-size:12.5px;color:var(--muted)}
+  .modcard .parts{margin-top:10px}
+  .modcard .parts span{display:inline-block;font-size:12px;background:#eef2f7;border-radius:6px;padding:2px 8px;margin:0 5px 5px 0}
+  .modcard .open{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--a)}
+  .c2nav,.g2nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+  .c2tab,.g2tab{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:9px 13px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .c2tab.on,.g2tab.on{border-color:var(--a);color:var(--a);background:var(--a-soft)}
+  .cpanel{display:none} .cpanel.on{display:block}
+  .gpanel{display:none} .gpanel.on{display:block}
+  .phasebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--a-soft);color:#0b544e;border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:12.5px;font-weight:700}
+  .phasebar .ph{background:#fff;border-radius:7px;padding:4px 10px}
+  .phasebar .phsep{color:var(--a)}
+  .gscale{display:flex;margin:0 0 8px 200px}
+  .gscale span{flex:1 1 0;text-align:center;font-size:10.5px;color:var(--muted);font-weight:700;border-left:1px solid var(--line)}
+  .grow{display:flex;align-items:center;margin-bottom:7px}
+  .glabel{width:190px;flex:0 0 190px;font-size:12.5px;padding-right:10px}
+  .gtrack{position:relative;flex:1 1 auto;height:22px;background:#eef2f7;border-radius:6px;overflow:hidden}
+  .gbar{position:absolute;top:3px;height:16px;border-radius:5px;font-size:9.5px;color:#fff;display:flex;align-items:center;padding:0 6px;white-space:nowrap;overflow:hidden}
+  .gbar.bl{background:var(--ok)} .gbar.bb{background:var(--b)} .gbar.bp{background:var(--g)}
+  .glegend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin:10px 0 0}
+  .glegend span{display:inline-flex;align-items:center;gap:5px}
+  .glegend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .addmember{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
+  .addmember input,.addmember select{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fff}
+  .addmember input[type=text],.addmember input:not([type]){flex:1 1 160px}
+  .addbtn{background:var(--a);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  .addbtn:hover{background:#0b5c55}
+  .addbtn2{background:#eef2f7;color:var(--ink);border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;margin-left:6px}
+  .i2nav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px}
+  .i2tab{border:none;background:#eef2f7;border-radius:20px;padding:7px 15px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .i2tab.on{background:var(--a);color:#fff}
+  .ipanel{display:none} .ipanel.on{display:block}
+  .rolebuilder{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+  .rolebuilder>input{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:13.5px;font-family:inherit;width:100%;max-width:340px}
+  .permmod{border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin:8px 0}
+  .permmod .pm-items{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px}
+  .permmod label{font-size:12.5px;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+  #perm-tree{margin-top:12px}
+  .minibtn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px}
+  .minibtn.del{color:var(--danger);border-color:#f3c9c4}
+  .constext{padding:18px 20px;font-size:13.5px;line-height:1.6}
+  .constext h3{font-size:15.5px;margin:18px 0 6px} .constext h3:first-child{margin-top:0}
+  .constext h4{font-size:13.5px;margin:13px 0 3px;color:var(--ink)}
+  .constext p{margin:7px 0;color:var(--ink)}
+  .constext ol,.constext ul{margin:6px 0 6px 22px}
+  .constext li{margin:3px 0}
+  .constext table{margin:9px 0}
+  .constext td,.constext th{font-size:12.5px;vertical-align:top}
+  .constext .chr{border-top:1px solid var(--line);margin:16px 0}
+  .constext .meta td:first-child{font-weight:700;white-space:nowrap;width:150px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:680px){.two{grid-template-columns:1fr}}
+  .setcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .setcard.inc{border-top:4px solid var(--b)} .setcard.port{border-top:4px solid var(--g)}
+  .setcard h3{margin:0 0 3px;font-size:15px}
+  .setcard .sub{font-size:12px;color:var(--muted);margin:0 0 11px}
+  .chip{display:inline-block;font-size:12px;background:#eef2f7;border-radius:7px;padding:5px 9px;margin:0 5px 6px 0}
+  .chip.b{background:var(--b-soft);color:#1e40af} .chip.g{background:var(--g-soft);color:#5b2b9e}
+  .flow{background:var(--a-soft);color:#0b544e;border-radius:10px;padding:11px 14px;font-size:12.5px;font-weight:600;margin:12px 0}
+  .note{font-size:12px;color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:10px;padding:12px 15px;margin-top:16px}
+  .legend{font-size:11.5px;color:var(--muted);margin:10px 0 0;display:flex;gap:12px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="dot"></span>
+  <h1>Scout Quest Inc</h1>
+  <span class="pill">v0 preview</span>
+  <span class="navlink" data-go="home">Modules</span>
+  <span class="who">Owner: Jessica · governed rails: ASL · Runner · Evaluator</span>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ HOME · MODULES ============ -->
+  <div class="screen on" id="home">
+    <div class="crumbs"><span class="crumb cur">Modules</span></div>
+    <h2 class="sec">Scout Quest Inc — a company built from modules</h2>
+    <p class="lead">Each company function is a module on one governed platform — shared sign-in, roles &amp; access, audit trail, and spend caps — so modules share a spine instead of becoming silos (reuse-first, Constitution §3.1). Open a module to go in.</p>
+    <div class="modgrid">
+      <div class="modcard live clickable" data-go="it"><h3>IT <span class="badge b-live">Live</span></h3><p>The systems that run the company — including the Agent Platform.</p><div class="parts"><span>Agent Platform</span><span>Infrastructure</span><span>Identity &amp; access</span><span>Security tooling</span></div><div class="open">Open →</div></div>
+      <div class="modcard live clickable" data-go="products"><h3>Products <span class="badge b-live">Live</span></h3><p>The company's products and their admin consoles.</p><div class="parts"><span>Scout Quest Education</span><span>Scout Quest Game</span><span>Scout Quest Tutor</span><span>Soundwiserx</span><span>AI Bookmark</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon"><h3>Finance <span class="badge b-ready">Planned</span></h3><p>Money in and out — on the same spend spine the agents already meter.</p><div class="parts"><span>AR — receivable</span><span>AP — payable</span><span>Budgets</span><span>Spend caps</span></div></div>
+      <div class="modcard soon"><h3>Contracts <span class="badge b-ready">Planned</span></h3><p>Every agreement in one place, tied to compliance obligations.</p><div class="parts"><span>NDAs</span><span>DPAs / BAAs</span><span>District agreements</span><span>Vendors</span></div></div>
+      <div class="modcard soon"><h3>Projects <span class="badge b-ready">Planned</span></h3><p>What's being built, by whom, by when.</p><div class="parts"><span>Milestones</span><span>Build tracker</span><span>Gantt</span><span>Work breakdown</span></div></div>
+      <div class="modcard soon clickable" data-go="hr"><h3>HR <span class="badge b-ready">In build</span></h3><p>People and teams — and, soon, user accounts and access by user type.</p><div class="parts"><span>Team</span><span>Accounts</span><span>Access</span></div><div class="open">Open →</div></div>
+      <div class="modcard grow"><h3>Departments <span class="badge b-plan">Expanding</span></h3><p>Each department becomes a module with its own roles, teams, and agents.</p><div class="parts"><span>Product &amp; Design</span><span>Engineering</span><span>Security &amp; Compliance</span><span>…</span></div></div>
+    </div>
+    <p class="note"><b>Why modules, not separate apps.</b> They all run on the platform you've already built — one sign-in, one set of roles and access rules, one audit ledger, one spend-cap system. Finance's budgets and the agents' spend caps are the <em>same capability</em> surfaced in two modules. That's reuse-first: build a capability once, show it in every module that needs it.</p>
+  </div>
+
+  <!-- ============ HR MODULE ============ -->
+  <div class="screen" id="hr">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb cur">HR</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="hr-team">Team</button>
+      <button class="g2tab" data-g="hr-contracts">HR Contracts</button>
+      <button class="g2tab" data-g="hr-mission">Mission &amp; Values</button>
+      <button class="g2tab" data-g="hr-constitution">Scout Quest AI Constitution</button>
+    </div>
+
+    <div class="gpanel" id="hr-constitution">
+      <div class="card">
+        <div class="hd"><span class="id">Scout Quest AI Constitution</span><span class="badge b-live" style="margin-left:auto">v1.3 · Approved</span></div>
+        <div class="kv">
+          <div><div class="k">Version</div><div class="v"><b>v1.3</b> — effective 2026-08-01</div></div>
+          <div><div class="k">Document</div><div class="v">GOV-CONST-001 (Document A)</div></div>
+          <div><div class="k">Owner</div><div class="v">Jessica (Chief Executive)</div></div>
+          <div><div class="k">Review cadence</div><div class="v">quarterly, or after any Class 3 change</div></div>
+          <div><div class="k">Changing it</div><div class="v">Class 3 — executive approval</div></div>
+          <div><div class="k">Companion</div><div class="v">GOV-CANON-001 (vocabulary &amp; precedence)</div></div>
+        </div>
+      </div>
+      <h2 class="sec">Version history</h2>
+      <div class="card"><table>
+        <thead><tr><th>Version</th><th>What changed</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><b>v1.3</b></td><td>§3.5 gains a v0-scope clause — independent evaluation is register-pinned; general author-wired evaluation deferred (Class 3, #32)</td><td><span class="badge b-live">Current</span></td></tr>
+          <tr><td>v1.2</td><td>§3.2 cost ladder reordered; §3.6 adopts five operating modes (adds Restricted)</td><td><span class="badge b-reg">Superseded</span></td></tr>
+          <tr><td>v1.1</td><td>Glossary, decision rights, risk guardrails, measurable standards; split Current State into Document B</td><td><span class="badge b-reg">Superseded</span></td></tr>
+          <tr><td>v1.0</td><td>Initial constitution</td><td><span class="badge b-reg">Archived</span></td></tr>
+        </tbody>
+      </table></div>
+      <h2 class="sec">Full text — Scout Quest AI Constitution (v1.3)</h2>
+      <div class="card constext">
+        <h3>Scout Quest Enterprise — Enterprise Constitution</h3>
+        <p><b>Version 1.3 (Approved)</b></p>
+        <table class="meta">
+          <tbody>
+            <tr><td>Document type</td><td>Enterprise governance (Document A — Constitution)</td></tr>
+            <tr><td>document_id</td><td>GOV-CONST-001</td></tr>
+            <tr><td>Owner</td><td>Jessica (Chief Executive)</td></tr>
+            <tr><td>Status</td><td><b>Approved — effective 2026-07-27</b></td></tr>
+            <tr><td>Review cadence</td><td>Quarterly, or after any Class 3 change</td></tr>
+            <tr><td>Companion documents</td><td><code>Enterprise Current State</code> (Document B) · <code>GOV-CANON-001</code> (vocabulary &amp; precedence)</td></tr>
+            <tr><td>Changelog</td><td>v1.3 (2026-08-01): §3.5 gains a v0-scope clause — independent evaluation ships only for workflows registered and digest-pinned in <code>config/approved_workflows.yaml</code>; general author-wired evaluation and producer/evaluator model diversity are deferred as Class 3 "not yet" (asl-gateway #32). Records that agent-evaluator v0 merged to <code>main</code> @ <code>b6f6044</code>. v1.2 (2026-07-27): §3.2 ladder reordered — existing approved content is rung 1; human gate may be required at any rung; §3.6 adopts five operating modes (adds Restricted). v1.1: glossary, decision rights, risk guardrails, measurable standards; split Current State into Document B. v1.0: archived, superseded</td></tr>
+          </tbody>
+        </table>
+        <p>This is the durable governance constitution for Scout Quest Enterprise. It is not a coding prompt. All recommendations, architecture changes, folder structures, agents, workflows, and implementations produced by any AI assistant (Claude Code, ChatGPT, or others) must remain aligned with this document. The rules are assistant-agnostic. Vocabulary and document precedence are governed by GOV-CANON-001. Deviations require approval per Section 4.</p>
+        <div class="chr"></div>
+
+        <h3>1. Mission and Operating Model</h3>
+        <p>Scout Quest Enterprise is an AI-native enterprise, not a traditional software company. AI agents perform most operational work; human leaders provide governance, strategy, oversight, ethics, approvals, and executive decisions.</p>
+        <p>The enterprise must support rapid scaling while maintaining security, operability, maintainability, cost-efficient AI operations, modular architecture, enterprise governance, compliance, and investor readiness. Architecture must always favor long-term maintainability over short-term convenience — balanced by the counterweight principle in Section 3.8.</p>
+
+        <h3>2. Glossary</h3>
+        <p>These terms are used precisely throughout all enterprise documents (full term map: GOV-CANON-001 §2). Do not use them interchangeably.</p>
+        <table>
+          <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td><b>Capability</b></td><td>A named, reusable business or technical function with an owner, an interface contract, and at least one consuming product.</td></tr>
+            <tr><td><b>Platform</b></td><td>A group of related capabilities delivered as a shared enterprise service.</td></tr>
+            <tr><td><b>Service</b></td><td>A running technical implementation that exposes one or more capabilities.</td></tr>
+            <tr><td><b>Agent</b></td><td>A logical AI role defined by a specification (role, responsibilities, inputs, outputs, tools, permissions, evaluation, manager, escalation, documentation). An agent is NOT a permanently running process; it executes only when assigned work.</td></tr>
+            <tr><td><b>Workflow</b></td><td>A defined, versioned pipeline of steps, executed by agents, humans, or automation, that produces a business outcome.</td></tr>
+            <tr><td><b>Work Order</b></td><td>One execution instance of a workflow (<code>WO-&lt;PRODUCT&gt;-&lt;NNNN&gt;</code>).</td></tr>
+            <tr><td><b>Context Manifest</b></td><td>The minimum approved, version-pinned context for one work order.</td></tr>
+            <tr><td><b>Framework</b></td><td>A documented standard plus templates that govern how a class of work is done.</td></tr>
+            <tr><td><b>Regulated data (D3)</b></td><td>Any data subject to COPPA, FERPA, or HIPAA, including student PII and PHI.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>3. Core Principles</h3>
+        <h4>3.1 Reuse-first hierarchy</h4>
+        <p>Shared capabilities → shared enterprise services → reusable agents → reusable workflows → multiple products. Every product consumes enterprise capabilities; products own as little duplicated functionality as possible. Before proposing any new folder, department, workflow, platform, capability, or agent, ask: <b>"Can this become a shared enterprise capability instead?"</b></p>
+        <h4>3.2 Cost execution ladder <i>(amended v1.2)</i></h4>
+        <p>Token efficiency is a first-class architectural requirement. For any task, use the cheapest sufficient rung, in this order:</p>
+        <ol>
+          <li>Existing approved content</li><li>Manual</li><li>Rules</li><li>Workflow automation</li><li>Database lookup</li><li>Retrieval</li><li>Cached output</li><li>Small local model</li><li>Larger local model</li><li>Cloud model</li><li>Human decision</li>
+        </ol>
+        <p>AI is used only when it provides measurable value. <b>Human approval may be mandatory at any rung</b> based on Risk Tier, Change Class, policy, or law — rung 11 is where work falls to a human specialist, not the only place human authority appears.</p>
+        <h4>3.3 Cost budgets (measurable rule)</h4>
+        <p>Every workflow must declare an expected monthly token/API budget before activation. Exceeding budget by more than 20% in a month triggers automatic manager review; exceeding by more than 50% triggers automatic suspension pending approval. Per-agent hard spend caps are defined in the Risk Guardrails (Section 5).</p>
+        <h4>3.4 Provider independence</h4>
+        <p>No application may depend directly on a specific LLM provider. All model access flows through the AI Service Layer; providers must be replaceable. Scout Quest Education will ultimately support district-hosted AI through a District AI Service Layer.</p>
+        <h4>3.5 Independent evaluation <i>(amended v1.3)</i></h4>
+        <p>An "important workflow" is any workflow that (a) produces customer-facing output, (b) mutates persistent data, (c) spends above its declared budget threshold, or (d) touches regulated data. Every important workflow requires evaluation by an evaluator that is independent of the producing agent — a different agent specification, model, or human. Evaluators must not simply agree with producers. Standard pattern: Agent → Evaluator → Manager → Approval. Two-way evaluation (the producer also reviews evaluator feedback and must explicitly accept or contest it before closure) is the standard for Class 2+ changes. Evaluation intensity scales with Risk Tier (GOV-CANON-001 §2).</p>
+        <p><b>v0 implementation scope (2026-08-01).</b> In v0, independent evaluation is available only to workflows registered and digest-pinned in <code>config/approved_workflows.yaml</code>; each such workflow is human-reviewed and fingerprinted. Evaluation triggered by any unregistered or modified workflow is refused — fail-closed and non-overridable (<code>WORKFLOW_NOT_APPROVED</code>); a missing register also refuses. The independence guarantees — structural independence, verdict validated-not-trusted (a defect list, not a score), verdict recorded on the append-only ledger before any gate, fail-closed throughout — hold <b>within this boundary</b>. A general mechanism permitting arbitrary author-wired workflows to invoke independent evaluation, and model diversity between producer and evaluator, are deferred as Class 3 ("not yet"), tracked in asl-gateway #32. This clause exists so the Constitution matches what shipped on <code>main</code>; the general §3.5 principle above remains the target state.</p>
+        <h4>3.6 Degraded operation <i>(amended v1.2)</i></h4>
+        <p>Products must continue operating during AI, speech, provider, network, local-model, or cloud outages. Every capability must define five operating modes plus recovery discipline: <b>Normal</b> (all services within thresholds), <b>Degraded</b> (impaired dependencies; core operations continue via fallback), <b>Restricted</b> (essential approved functions only; high-risk or AI-dependent functions disabled — including when a required security control is impaired, model behavior is anomalous, or compliance evidence is incomplete; when a required security control fails, affected functions enter Restricted or Offline rather than continue insecurely), <b>Offline</b> (no external services; approved local functions continue), and <b>Recovery</b> (gradual restoration with validation and reconciliation), plus <b>Hypercare criteria</b> for elevated monitoring after changes and recoveries.</p>
+        <h4>3.7 Definition of done for capabilities</h4>
+        <p>A capability exists only when it has: (1) an Overview.md, (2) a named owner, (3) an interface contract, and (4) at least one consuming product. Anything short of this is "planned," and agents must not assume it is available.</p>
+        <h4>3.8 Counterweight principle</h4>
+        <p>Never optimize only for today's prototype — but equally, <b>never build enterprise machinery that has no consumer today</b>. Do not create a folder, service, agent, standard, platform, or workflow until it has a current consumer, owner, or approved near-term implementation need; record future needs in the capability map or roadmap instead of creating empty structures. Shared platforms are extracted when a second product needs the same function. If a recommendation creates technical debt, explain the tradeoff before implementing.</p>
+
+        <h3>4. Decision Rights and Change Classification</h3>
+        <p>All changes are classified before execution. When in doubt, classify upward.</p>
+        <table>
+          <thead><tr><th>Class</th><th>Definition</th><th>Examples</th><th>Authority</th></tr></thead>
+          <tbody>
+            <tr><td><b>Class 1</b></td><td>Reversible, low-cost, no regulated data, within budget</td><td>Doc edits, refactors within a module, new cached content, bug fixes</td><td>Agent may proceed; logged and evaluated per §3.5</td></tr>
+            <tr><td><b>Class 2</b></td><td>Cross-module impact, new dependencies, moderate cost, or new workflow</td><td>New agent spec, new workflow, schema change, new third-party library</td><td>Department Manager approval</td></tr>
+            <tr><td><b>Class 3</b></td><td>Architecture, security, compliance, spend structure, or org design</td><td>New platform, provider change, data-flow change involving regulated data, department creation, this document</td><td>Jessica (executive approval)</td></tr>
+            <tr><td><b>Class 3+</b></td><td>Regulated-data flows to external parties, legal exposure</td><td>New cloud LLM receiving student PII/PHI, new BAA, new district data agreement</td><td>Jessica + external counsel / compliance review</td></tr>
+          </tbody>
+        </table>
+        <p><b>Conflict-resolution priority order.</b> When principles collide, apply this order: (1) Compliance and safety of regulated data, (2) Security, (3) Operability, (4) Evidence-based correctness, (5) Cost minimization, (6) Reuse and modularity, (7) Speed of delivery.</p>
+        <p><b>Executive override.</b> Jessica holds a documented override authority per the Owner Override &amp; Break-Glass Protocol: safe-direction actions (halt, freeze, tighten, revoke) are instant and unilateral; risk-increasing overrides are password-gated, logged, time-boxed, and reviewed. No override is silent.</p>
+        <p><b>Human staffing trigger.</b> Human staffing in a department expands when its approval queue exceeds 20 pending items or 5 business days median wait for two consecutive weeks, or when a Class 3 risk requires dedicated human ownership.</p>
+
+        <h3>5. AI Risk Guardrails</h3>
+        <p>These guardrails bind every agent, workflow, and assistant. No workflow bypasses them.</p>
+        <h4>5.1 Data boundaries</h4>
+        <p>Regulated data (student PII, PHI, COPPA-covered child data) must never be sent to any cloud LLM provider without a signed BAA (HIPAA) or an executed district data agreement (FERPA/COPPA), and never without Class 3+ approval of the specific data flow recorded in the approved-flow register. Default handling of regulated data uses local models or de-identified data. Agents operate under least-privilege data access: each agent specification declares the data classes it may read and write, and access outside that declaration is denied and logged. <b>Prototype-phase standing rule (2026): D3 remains on local infrastructure only; cloud tiers (Supabase/Vercel basic) carry synthetic <code>_TEST_</code> data exclusively.</b></p>
+        <h4>5.2 Spend limits</h4>
+        <p>Every agent has a hard per-run and per-month API spend cap with automatic cutoff. Every workflow has a declared monthly budget (§3.3). No agent may raise its own cap; cap changes are Class 2 (within department budget) or Class 3 (budget structure). Thresholds: 80% warn and notify manager · 100% hard cutoff · &gt;120% workflow review · &gt;150% suspension.</p>
+        <h4>5.3 Action boundaries</h4>
+        <p>No agent may, without explicit human approval: (a) deploy to production, (b) modify permissions or identity records, (c) delete or bulk-modify persistent data, (d) communicate with external parties, (e) execute financial transactions, or (f) modify this constitution or any security/compliance control. Enforcement is structural: agents hold scoped credentials that lack these permissions, and each agent spec carries a tool allowlist.</p>
+        <h4>5.4 Audit trail</h4>
+        <p>Every agent action is logged with: timestamp, agent identity and version, workflow, input/output summaries, model and provider used, token count and cost, data classes touched, change class, and approver (if any). Audit logs are immutable (append-only, tamper-evident) and retained per compliance requirements (HIPAA: 6 years).</p>
+        <h4>5.5 Incident response</h4>
+        <p>Any agent that detects a possible compliance breach, data leak, or guardrail violation must immediately halt the affected workflow, log the event, and escalate to its manager and the Security capability owner. Never attempt silent remediation. Suspected regulated-data exposure is always Class 3+ (SEV-1): same-day notification to Jessica and compliance counsel.</p>
+
+        <h3>6. Compliance Obligations</h3>
+        <p>Current: COPPA, FERPA, HIPAA (Soundwiserx), privacy, accessibility. Future: SOC 2, ISO 27001, NIST, additional regulations as markets require. Compliance controls must be built as reusable enterprise capabilities, not per-product patches. Each product's compliance class is recorded in the Current State document.</p>
+
+        <h3>7. Organizational Model</h3>
+        <p>Departments consist of a Department Manager overseeing logical AI agents that consume shared enterprise services, with evaluation and reporting flowing upward. Roles are enduring and fillable by humans or agents; agent specs live in the shared enterprise agent library and carry a registry class (internal | product) per GOV-CANON-001 §8. Current first departments: Product &amp; Design, Engineering, Security &amp; Compliance (Learning Sciences reserved as a separate future department). Engineering spans platform, infrastructure, software, AI, security, data, speech, DevOps, SRE, QA, automation, architecture, and research disciplines. Every major product decision is supported by evidence, drawing on user research, learning science, reading science, phonics, speech, learning disabilities, accessibility, AI literacy, and educational-effectiveness research.</p>
+
+        <h3>8. Documentation and Assistant Conduct</h3>
+        <p>Documentation is Markdown-first, Obsidian-first, Git-first. Documents are enterprise knowledge: avoid duplication and reference existing documents whenever possible. New and generated documents land in the zone's <code>99 Inbox</code> before deliberate filing. AI coding assistants must reuse, reference, link, organize, and refactor rather than duplicate; preserve history; recommend improvements; and never reorganize major architecture without Class 3 approval. Code is edited only in <code>C:\Dev</code> Git clones — never in the vault.</p>
+
+        <h3>9. Standing Rules for All Recommendations</h3>
+        <ol>
+          <li>Prefer enterprise reuse over product duplication.</li>
+          <li>Prefer modularity over convenience.</li>
+          <li>Operate within declared cost budgets (§3.3) and the execution ladder (§3.2).</li>
+          <li>Preserve future scalability; assume growth from prototype to enterprise — subject to the counterweight principle (§3.8).</li>
+          <li>Classify every change (§4) before acting; when in doubt, classify upward.</li>
+          <li>Apply the conflict-resolution priority order when principles collide.</li>
+          <li>If a recommendation creates technical debt, state the tradeoff before implementing.</li>
+          <li>Before proposing anything new, ask: "Can this become a shared enterprise capability instead?"</li>
+        </ol>
+        <p style="color:var(--muted)">— End of Constitution v1.3 —</p>
+      </div>
+      <p class="note">Company-wide governance charter (Document A), mirrored from the vault: <code>00 Enterprise / 00 Constitution / Enterprise Constitution v1.3.md</code>. Change tracking lives in IT › Security tooling.</p>
+    </div>
+
+    <div class="gpanel" id="hr-mission">
+      <h2 class="sec">Purpose</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:15px;font-weight:600">To make world-class, individualized learning and care available to everyone — safely.</p></div>
+      <h2 class="sec">Mission</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:14px">Scout Quest Inc is a safety-first AI platform studio. We build governed, frontier-grade AI products for education and healthcare, on rails that keep the people who depend on them safe and their data private by design.</p></div>
+      <h2 class="sec">Values</h2>
+      <div class="card"><table>
+        <thead><tr><th>Value</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><b>Safety first, always</b></td><td>Safety is the architecture, not a feature. The person on the other side — a learner or a patient, at any age — is never what breaks.</td></tr>
+          <tr><td><b>Governed, not reckless</b></td><td>The hardest capability, shipped safely — independently evaluated, audited, fail-closed.</td></tr>
+          <tr><td><b>Evidence over vibes</b></td><td>Reading science, learning science, and clinical research back every product decision.</td></tr>
+          <tr><td><b>Build real things</b></td><td>Products learners, patients, teachers, parents, and clinicians actually use — not demos.</td></tr>
+          <tr><td><b>Reuse-first, scale-ready</b></td><td>Build a capability once and well; scale it across every product.</td></tr>
+          <tr><td><b>Own the hard part</b></td><td>Take the frontier problem in your field — and the accountability with it.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Company-wide draft — safety-first across all ages. Each product has its own Mission &amp; Values tab underneath this one. Edit freely; pairs with the marketing tagline "Safe intelligence, built to scale."</p>
+    </div>
+
+    <div class="gpanel on" id="hr-team">
+      <h2 class="sec">Team</h2>
+      <p class="lead">Who's on the team and what they work on. Each person is a user account; their user type sets access (IT › Identity &amp; Access). NDA and Contract status update automatically from HR Contracts. Add teammates below.</p>
+      <div class="addmember">
+        <input id="m-name" placeholder="Name">
+        <select id="m-type">
+          <option>Owner / CEO</option>
+          <option>Product &amp; Design</option>
+          <option>Engineering</option>
+          <option>Security &amp; Compliance</option>
+          <option>Finance</option>
+          <option>Viewer</option>
+        </select>
+        <input id="m-work" placeholder="Working on (products / projects / dept / finance)">
+        <button id="m-add" class="addbtn">Add member</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Name</th><th>User type</th><th>Working on</th><th>NDA</th><th>Contract</th></tr></thead>
+        <tbody id="team-tbody">
+          <tr><td>Jessica</td><td>Owner / CEO</td><td>All products · all modules</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Adds are in-session for this preview. In the live app these become real user accounts, and NDA/Contract status is driven by HR Contracts.</p>
+    </div>
+
+    <div class="gpanel" id="hr-contracts">
+      <h2 class="sec">HR Contracts</h2>
+      <p class="lead">Upload and track NDAs, independent contractor, volunteer, and other agreements. Marking one Complete updates that person's status on the Team tab automatically — NDA type fills the NDA column, other types fill the Contract column.</p>
+      <div class="addmember">
+        <input id="c-name" placeholder="Team member name">
+        <select id="c-type">
+          <option>NDA</option>
+          <option>Independent Contractor</option>
+          <option>Volunteer</option>
+          <option>Employment</option>
+          <option>Other</option>
+        </select>
+        <select id="c-status">
+          <option>Pending</option>
+          <option>Complete</option>
+        </select>
+        <input type="file" id="c-file">
+        <button id="c-add" class="addbtn">Add contract</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Team member</th><th>Contract type</th><th>Status</th><th>File</th></tr></thead>
+        <tbody id="contracts-tbody">
+        </tbody>
+      </table></div>
+      <p class="note">File upload is illustrative in this preview (no storage). In the live app the file is stored and the status syncs to the Team tab.</p>
+    </div>
+  </div>
+
+  <!-- ============ IT MODULE ============ -->
+  <div class="screen" id="it">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb cur">IT</span></div>
+    <p class="lead">The technology backbone. The Agent Platform lives here, alongside the shared infrastructure every other module reuses.</p>
+    <div class="modgrid">
+      <div class="modcard live clickable" data-go="ap"><h3>▨ Agent Platform <span class="badge b-live">Live</span></h3><p>Roles, teams, and governed AI agents. Where work orders run and results land.</p><div class="parts"><span>Console</span><span>Agent WOs</span><span>The Vision</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon"><h3>Infrastructure <span class="badge b-ready">Planned</span></h3><p>Hosting, databases, deploys — the ASL / Runner rails and where they run.</p><div class="parts"><span>Vercel</span><span>Supabase</span><span>Local model host</span></div></div>
+      <div class="modcard soon clickable" data-go="idaccess"><h3>Identity &amp; access <span class="badge b-ready">Live</span></h3><p>Sign-in and the role / access rules every module shares.</p><div class="parts"><span>Roles</span><span>Assign Roles</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon clickable" data-go="sectool"><h3>Security tooling <span class="badge b-ready">Live</span></h3><p>Audit ledger, secrets, keys, monitoring — and change tracking.</p><div class="parts"><span>Change Management</span><span>Change Log</span><span>Audit ledger</span><span>Secrets</span></div><div class="open">Open →</div></div>
+    </div>
+  </div>
+
+  <!-- ============ IDENTITY & ACCESS ============ -->
+  <div class="screen" id="idaccess">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="it">IT</span><span class="sep">›</span><span class="crumb cur">Identity &amp; Access</span></div>
+    <p class="lead">Create roles as sets of permissions (checkboxes over modules &amp; tabs), then assign roles to team members. A member can hold more than one role. Becomes real sign-in in the live app (Stage 2).</p>
+    <div class="i2nav">
+      <button class="i2tab on" data-i="ia-roles">Roles</button>
+      <button class="i2tab" data-i="ia-assign">Assign Roles</button>
+    </div>
+
+    <div class="ipanel on" id="ia-roles">
+      <h2 class="sec">Create a role</h2>
+      <div class="rolebuilder">
+        <input id="role-name" placeholder="Role name (e.g. Content Lead)">
+        <div id="perm-tree"></div>
+        <div style="margin-top:12px">
+          <button id="role-save" class="addbtn">Save role</button>
+          <button id="role-clear" class="addbtn2">Clear</button>
+        </div>
+      </div>
+      <h2 class="sec">Roles</h2>
+      <div class="card"><table>
+        <thead><tr><th>Role</th><th>Access (modules · tabs)</th><th></th></tr></thead>
+        <tbody id="roles-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <div class="ipanel" id="ia-assign">
+      <h2 class="sec">Assign a role</h2>
+      <div class="addmember">
+        <select id="assign-member"><option>— team member —</option></select>
+        <select id="assign-role"><option>— role —</option></select>
+        <button id="assign-add" class="addbtn">Assign</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Team member</th><th>Role</th><th></th></tr></thead>
+        <tbody id="assign-tbody"></tbody>
+      </table></div>
+      <p class="note">Add a member more than once to give them multiple roles. Team members come from HR › Team; roles come from the Roles tab.</p>
+    </div>
+  </div>
+
+  <!-- ============ PRODUCTS MODULE ============ -->
+  <div class="screen" id="products">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb cur">Products</span></div>
+    <h2 class="sec">Products</h2>
+    <p class="lead">Each product is a sub-module with its own surfaces. Scout Quest Education is live today.</p>
+    <div class="modgrid">
+      <div class="modcard live clickable" data-go="sqgame"><h3>Scout Quest Education <span class="badge b-live">Live</span></h3><p>The K-12 classroom learning product — surfaces, admin console, and the build tracker.</p><div class="parts"><span>Build Board</span><span>Admin Console</span><span>Student · Parent</span><span>Teacher · District</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon clickable" data-go="sqgame2"><h3>Scout Quest Game <span class="badge b-ready">In design</span></h3><p>The standalone game experience.</p><div class="parts"><span>Quests</span><span>Labs</span><span>Rewards</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon clickable" data-go="sqtutor"><h3>Scout Quest Tutor <span class="badge b-ready">In design</span></h3><p>Direct-to-parent adaptive tutor — the YC wedge (parent + kid control panels).</p><div class="parts"><span>Parent panel</span><span>Kid panel</span><span>agent-tutor</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon clickable" data-go="sqsound"><h3>Soundwiserx <span class="badge b-ready">Planned</span></h3><p>Clinical speech product — PHI, local model only.</p><div class="parts"><span>agent-speech-eval</span><span>Clinician review</span></div><div class="open">Open →</div></div>
+      <div class="modcard soon clickable" data-go="sqbookmark"><h3>AI Bookmark <span class="badge b-ready">Planned</span></h3><p>Bookmark intelligence — D2, consumer.</p><div class="parts"><span>agent-bookmark</span></div><div class="open">Open →</div></div>
+      <div class="modcard grow clickable" data-go="other"><h3>Other <span class="badge b-plan">Portfolio</span></h3><p>Other builds in the portfolio.</p><div class="parts"><span>Align (Fascia)</span><span>Copilot pipeline</span></div><div class="open">Open →</div></div>
+    </div>
+    <h2 class="sec">Consolidated Gantt — all products</h2>
+    <div class="gscale"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+    <div class="grow"><div class="glabel">Scout Quest Education</div><div class="gtrack"><div class="gbar bl" style="left:0%;width:100%">live · ongoing</div></div></div>
+    <div class="grow"><div class="glabel">Scout Quest Game</div><div class="gtrack"><div class="gbar bp" style="left:20%;width:80%">in design</div></div></div>
+    <div class="grow"><div class="glabel">Scout Quest Tutor</div><div class="gtrack"><div class="gbar bb" style="left:0%;width:100%">designing</div></div></div>
+    <div class="grow"><div class="glabel">Soundwiserx</div><div class="gtrack"><div class="gbar bb" style="left:0%;width:100%">building infra</div></div></div>
+    <div class="grow"><div class="glabel">AI Bookmark</div><div class="gtrack"><div class="gbar bp" style="left:20%;width:60%">planned</div></div></div>
+    <div class="glegend"><span><i style="background:var(--ok)"></i>Live</span><span><i style="background:var(--b)"></i>Building</span><span><i style="background:var(--g)"></i>Planned</span></div>
+    <p class="note">Remaining portfolio items (Fast Insights, Portfolio &amp; Filings Watchlist, Ancora Wine Map, Lemma, Levi Grant, InboxEA) join here as they move into Scout Quest Inc.</p>
+  </div>
+
+  <!-- ============ SCOUT QUEST GAME ============ -->
+  <div class="screen" id="sqgame">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="products">Products</span><span class="sep">›</span><span class="crumb cur">Scout Quest Education</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="sqg-surfaces">Plan Board</button>
+      <button class="g2tab" data-g="sqg-build">Build Board</button>
+      <button class="g2tab" data-g="sqg-agents">Agents</button>
+      <button class="g2tab" data-g="sqg-website">Website</button>
+      <button class="g2tab" data-g="sqg-changelog">Change Log</button>
+      <button class="g2tab" data-g="sqg-mission">Mission &amp; Values</button>
+    </div>
+
+    <div class="gpanel" id="sqg-mission">
+      <h2 class="sec">Mission</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:14.5px;font-weight:600">Give every student a patient, adaptive guide — and every teacher a trustworthy one.</p></div>
+      <h2 class="sec">Values &amp; focus</h2>
+      <div class="card"><table>
+        <thead><tr><th>Value</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><b>Teacher in control</b></td><td>The teacher stays the authority; the AI assists and never overrides.</td></tr>
+          <tr><td><b>Evidence-based pedagogy</b></td><td>Reading and learning science drive every exercise.</td></tr>
+          <tr><td><b>Accessible by default</b></td><td>WCAG-AA, dyslexia-friendly, multilingual — no student left out.</td></tr>
+          <tr><td><b>Student privacy (FERPA)</b></td><td>Records stay protected; regulated data stays local.</td></tr>
+          <tr><td><b>Safety-first</b></td><td>Every exercise is independently evaluated before it reaches a student.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Draft — product-specific, nested under the company Mission &amp; Values (HR). Edit freely.</p>
+    </div>
+
+    <div class="gpanel" id="sqg-website">
+      <h2 class="sec">Website &amp; links</h2>
+      <div class="addmember">
+        <input class="ws-label" placeholder="Label (e.g. Admin Console)">
+        <input class="ws-url" placeholder="https://...">
+        <button class="addbtn ws-add">Add link</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+        <tbody class="ws-tbody">
+          <tr><td>Main site</td><td><a href="https://www.scoutquest.education" target="_blank" rel="noopener">scoutquest.education ↗</a></td><td></td></tr>
+          <tr><td>Admin Console</td><td><a href="https://www.scoutquest.education/admin.html" target="_blank" rel="noopener">/admin.html ↗</a></td><td></td></tr>
+          <tr><td>Student</td><td><a href="https://www.scoutquest.education/student.html" target="_blank" rel="noopener">/student.html ↗</a></td><td></td></tr>
+          <tr><td>Parent</td><td><a href="https://www.scoutquest.education/parent.html" target="_blank" rel="noopener">/parent.html ↗</a></td><td></td></tr>
+          <tr><td>Teacher</td><td><a href="https://www.scoutquest.education/teacher.html" target="_blank" rel="noopener">/teacher.html ↗</a></td><td></td></tr>
+          <tr><td>District</td><td><a href="https://www.scoutquest.education/district.html" target="_blank" rel="noopener">/district.html ↗</a></td><td></td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Add more links above; they open in a new tab.</p>
+    </div>
+
+    <div class="gpanel on" id="sqg-surfaces">
+      <p class="lead">Plan — the schedule for Scout Quest Education. Live surfaces: <a href="https://www.scoutquest.education/admin.html" target="_blank" rel="noopener">Admin Console ↗</a> · Student · Parent · Teacher · District.</p>
+      <div class="gscale"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+      <div class="grow"><div class="glabel">Governed backend</div><div class="gtrack"><div class="gbar bl" style="left:0%;width:20%">done</div></div></div>
+      <div class="grow"><div class="glabel">Live surfaces (student/parent/teacher/district)</div><div class="gtrack"><div class="gbar bl" style="left:0%;width:40%">live</div></div></div>
+      <div class="grow"><div class="glabel">Admin Console</div><div class="gtrack"><div class="gbar bl" style="left:0%;width:40%">live</div></div></div>
+      <div class="grow"><div class="glabel">Agents (exgen · tutor · summarize)</div><div class="gtrack"><div class="gbar bb" style="left:0%;width:60%">building</div></div></div>
+      <div class="grow"><div class="glabel">Parent control panel (WO-002)</div><div class="gtrack"><div class="gbar bp" style="left:20%;width:40%">planned</div></div></div>
+      <div class="grow"><div class="glabel">Content safety / upload pipeline</div><div class="gtrack"><div class="gbar bp" style="left:40%;width:40%">planned</div></div></div>
+      <div class="grow"><div class="glabel">District rostering</div><div class="gtrack"><div class="gbar bp" style="left:60%;width:40%">planned</div></div></div>
+      <div class="glegend"><span><i style="background:var(--ok)"></i>Live / done</span><span><i style="background:var(--b)"></i>Building</span><span><i style="background:var(--g)"></i>Planned</span></div>
+    </div>
+
+    <div class="gpanel" id="sqg-build">
+      <h2 class="sec">Build Board — progress by area</h2>
+      <p class="lead">Where the Scout Quest Education build stands, area by area. Phases: Planned → Building → Live.</p>
+      <div class="tiles">
+        <div class="tile"><div class="n grn">6</div><div class="l">Live</div></div>
+        <div class="tile"><div class="n" style="color:var(--b)">3</div><div class="l">Building</div></div>
+        <div class="tile"><div class="n" style="color:var(--g)">3</div><div class="l">Planned</div></div>
+      </div>
+      <div class="card" style="margin-top:14px"><table>
+        <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Student app — Today's Quest / My Quest / cards</td><td><span class="badge b-live">Live</span></td><td>core learner surface</td></tr>
+          <tr><td>Exercises &amp; labs (atom-builder, cell-explorer, math-lab…)</td><td><span class="badge b-ready">Building</span></td><td>library growing</td></tr>
+          <tr><td>Parent — Family View</td><td><span class="badge b-live">Live</span></td><td>progress, comms, docs</td></tr>
+          <tr><td>Parent control panel (time / goals / safety)</td><td><span class="badge b-plan">Planned</span></td><td>WO-002 (UX Designer)</td></tr>
+          <tr><td>Teacher surface</td><td><span class="badge b-live">Live</span></td><td>—</td></tr>
+          <tr><td>District surface</td><td><span class="badge b-live">Live</span></td><td>—</td></tr>
+          <tr><td>Admin Console (billing / AR / AP / contracts / audit)</td><td><span class="badge b-live">Live</span></td><td>scoutquest.education/admin.html</td></tr>
+          <tr><td>Governed backend (ASL · Runner · Evaluator)</td><td><span class="badge b-live">Live</span></td><td>on main</td></tr>
+          <tr><td>Agents (exgen live; tutor / summarize / … queued)</td><td><span class="badge b-ready">Building</span></td><td>specs done, pipelines next</td></tr>
+          <tr><td>Content safety / teacher upload pipeline</td><td><span class="badge b-plan">Planned</span></td><td>scan + sandbox</td></tr>
+          <tr><td>Identity &amp; rostering (district integration)</td><td><span class="badge b-plan">Planned</span></td><td>Clever / ClassLink / LTI</td></tr>
+          <tr><td>Data residency / global hosting</td><td><span class="badge b-ready">Building</span></td><td>local-first design</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">This is the build-by-area view. It maps to your existing Build Tracker / Gantt — say the word and I'll sync the exact areas and dates from those.</p>
+    </div>
+
+    <div class="gpanel" id="sqg-agents">
+      <h2 class="sec">Agents</h2>
+      <p class="lead">These agents run on the shared rails and serve this product. Same library, product-scoped.</p>
+      <div class="card"><table>
+        <thead><tr><th>Agent</th><th>Role</th><th>Shared</th><th>From</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>agent-exgen</code></td><td>Exercise generation</td><td style="color:var(--muted)">Native</td><td>—</td><td><span class="badge b-live">Live</span></td></tr>
+          <tr><td><code>agent-summarize</code></td><td>Progress summaries (D3, local)</td><td style="color:var(--muted)">Native</td><td>—</td><td><span class="badge b-reg">Queued</span></td></tr>
+          <tr><td><code>agent-tutor</code></td><td>Tutoring</td><td style="color:var(--muted)">Native</td><td>—</td><td><span class="badge b-reg">Queued</span></td></tr>
+          <tr><td><code>agent-evaluator</code></td><td>Independent evaluation</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (library)</td><td><span class="badge b-live">Live</span></td></tr>
+          <tr><td><code>agent-ux-researcher</code></td><td>UX research</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (Product &amp; Design)</td><td><span class="badge b-ready">Ready</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="gpanel" id="sqg-changelog">
+      <h2 class="sec">Change log — Scout Quest Education</h2>
+      <p class="lead">Changes to this product, newest first — for team transparency.</p>
+      <div class="card"><table>
+        <thead><tr><th>Tab</th><th>New / Update</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Plan Board is now a Gantt chart</td></tr>
+          <tr><td>Plan Board / Build Board</td><td><span class="badge b-plan">Update</span></td><td>Renamed Surfaces → Plan Board, Build Tracker → Build Board</td></tr>
+          <tr><td>Plan Board</td><td><span class="badge b-plan">Update</span></td><td>Split Teacher and District into separate cards</td></tr>
+          <tr><td>—</td><td><span class="badge b-plan">Update</span></td><td>Renamed "Scout Quest Game" → "Scout Quest Education"</td></tr>
+          <tr><td>Build Board</td><td><span class="badge b-ready">New</span></td><td>Added build-by-area tracker</td></tr>
+          <tr><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Linked Admin Console (scoutquest.education/admin.html)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ============ SCOUT QUEST GAME ============ -->
+  <div class="screen" id="sqgame2">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="products">Products</span><span class="sep">›</span><span class="crumb cur">Scout Quest Game</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="sqgame2-surfaces">Plan Board</button>
+      <button class="g2tab" data-g="sqgame2-build">Build Board</button>
+      <button class="g2tab" data-g="sqgame2-agents">Agents</button>
+      <button class="g2tab" data-g="sqgame2-website">Website</button>
+      <button class="g2tab" data-g="sqgame2-changelog">Change Log</button>
+      <button class="g2tab" data-g="sqgame2-mission">Mission &amp; Values</button>
+    </div>
+    <div class="gpanel" id="sqgame2-mission">
+      <h2 class="sec">Mission</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:14.5px;font-weight:600">Make deep learning something students want to do — play that is still real learning.</p></div>
+      <h2 class="sec">Values &amp; focus</h2>
+      <div class="card"><table>
+        <thead><tr><th>Value</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><b>Engagement without manipulation</b></td><td>Forgiving streaks; lean on autonomy and belonging, not point-chasing.</td></tr>
+          <tr><td><b>Age-appropriate</b></td><td>Designed for the actual age band — never "for babies," never over their head.</td></tr>
+          <tr><td><b>Learning-science-backed</b></td><td>The fun serves the learning, not the other way around.</td></tr>
+          <tr><td><b>Safety-first</b></td><td>Runs on the same governed pipeline and content checks as Education.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Draft — product-specific, nested under the company Mission &amp; Values (HR). Edit freely.</p>
+    </div>
+    <div class="gpanel" id="sqgame2-website">
+      <h2 class="sec">Website &amp; links</h2>
+      <div class="addmember">
+        <input class="ws-label" placeholder="Label">
+        <input class="ws-url" placeholder="https://...">
+        <button class="addbtn ws-add">Add link</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+        <tbody class="ws-tbody"></tbody>
+      </table></div>
+      <p class="note">No URL yet — add the product's website links above, or send them to me.</p>
+    </div>
+    <div class="gpanel on" id="sqgame2-surfaces">
+      <p class="lead">Plan — the schedule for Scout Quest Game (send me its scope and I'll refine these).</p>
+      <div class="gscale"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+      <div class="grow"><div class="glabel">Define scope</div><div class="gtrack"><div class="gbar bp" style="left:20%;width:20%">planned</div></div></div>
+      <div class="grow"><div class="glabel">Reuse agents (exgen · tutor)</div><div class="gtrack"><div class="gbar bb" style="left:20%;width:40%">building</div></div></div>
+      <div class="grow"><div class="glabel">Game experience / quests</div><div class="gtrack"><div class="gbar bp" style="left:40%;width:40%">planned</div></div></div>
+      <div class="grow"><div class="glabel">Rewards / progression</div><div class="gtrack"><div class="gbar bp" style="left:60%;width:20%">planned</div></div></div>
+      <div class="grow"><div class="glabel">Packaging</div><div class="gtrack"><div class="gbar bp" style="left:80%;width:20%">planned</div></div></div>
+      <div class="glegend"><span><i style="background:var(--ok)"></i>Live / done</span><span><i style="background:var(--b)"></i>Building</span><span><i style="background:var(--g)"></i>Planned</span></div>
+    </div>
+    <div class="gpanel" id="sqgame2-build">
+      <h2 class="sec">Build board</h2>
+      <a class="modcard live clickable" href="https://claude.ai/code/artifact/8a0f6874-7fc7-4db7-819f-820f1bc43042" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block;margin-bottom:16px"><h3>▨ Scout Quest Game — Build Board <span class="badge b-live">Live ↗</span></h3><p>Your build board, tracking the build changes by area. Opens in a new tab.</p><div class="open">Open ↗ build board</div></a>
+      <h2 class="sec">Progress by area — quick view</h2>
+      <div class="card"><table>
+        <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Game experience (quests)</td><td><span class="badge b-plan">Planned</span></td><td>define scope</td></tr>
+          <tr><td>Science labs (atom-builder, cell-explorer…)</td><td><span class="badge b-ready">Building</span></td><td>shared with Education</td></tr>
+          <tr><td>Rewards / progression</td><td><span class="badge b-plan">Planned</span></td><td>—</td></tr>
+          <tr><td>Shared agents (exgen, tutor)</td><td><span class="badge b-ready">Reused</span></td><td>same rails</td></tr>
+          <tr><td>Packaging (standalone vs in Education)</td><td><span class="badge b-plan">Planned</span></td><td>decision pending</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="gpanel" id="sqgame2-agents">
+      <h2 class="sec">Agents</h2>
+      <p class="lead">Reuses Education's agents on the same rails.</p>
+      <div class="card"><table>
+        <thead><tr><th>Agent</th><th>Role</th><th>Shared</th><th>From</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>agent-exgen</code></td><td>Exercise generation</td><td><span class="badge b-plan">Shared</span></td><td>Scout Quest Education</td><td><span class="badge b-live">Live</span></td></tr>
+          <tr><td><code>agent-tutor</code></td><td>Tutoring</td><td><span class="badge b-plan">Shared</span></td><td>Scout Quest Education</td><td><span class="badge b-reg">Queued</span></td></tr>
+          <tr><td><code>agent-evaluator</code></td><td>Independent evaluation</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (library)</td><td><span class="badge b-live">Live</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="gpanel" id="sqgame2-changelog">
+      <h2 class="sec">Change log — Scout Quest Game</h2>
+      <p class="lead">Changes to this product, newest first — for team transparency.</p>
+      <div class="card"><table>
+        <thead><tr><th>Tab</th><th>New / Update</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Plan Board is now a Gantt chart</td></tr>
+          <tr><td>Build Board</td><td><span class="badge b-ready">New</span></td><td>Added the Build Board link as the tracker</td></tr>
+          <tr><td>—</td><td><span class="badge b-ready">New</span></td><td>Added Scout Quest Game as its own product</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ============ SCOUT QUEST TUTOR ============ -->
+  <div class="screen" id="sqtutor">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="products">Products</span><span class="sep">›</span><span class="crumb cur">Scout Quest Tutor</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="sqtutor-surfaces">Plan Board</button>
+      <button class="g2tab" data-g="sqtutor-build">Build Board</button>
+      <button class="g2tab" data-g="sqtutor-agents">Agents</button>
+      <button class="g2tab" data-g="sqtutor-website">Website</button>
+      <button class="g2tab" data-g="sqtutor-changelog">Change Log</button>
+      <button class="g2tab" data-g="sqtutor-mission">Mission &amp; Values</button>
+    </div>
+    <div class="gpanel" id="sqtutor-mission">
+      <h2 class="sec">Mission</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:14.5px;font-weight:600">Private-tutor quality for every family, at the price of an app.</p></div>
+      <h2 class="sec">Values &amp; focus</h2>
+      <div class="card"><table>
+        <thead><tr><th>Value</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><b>Parent trust &amp; control</b></td><td>Parents see real progress and hold the time, goal, and safety controls.</td></tr>
+          <tr><td><b>Child safety (COPPA)</b></td><td>Verifiable parental consent; a bounded, age-right experience for the child.</td></tr>
+          <tr><td><b>Access &amp; affordability</b></td><td>Local-model economics keep tutor-grade help within reach of every family.</td></tr>
+          <tr><td><b>Adaptive &amp; evidence-based</b></td><td>Meets each child where they are and moves at their pace.</td></tr>
+          <tr><td><b>Safety-first</b></td><td>Governed, independently evaluated, and private by design.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Draft — product-specific, nested under the company Mission &amp; Values (HR). Edit freely.</p>
+    </div>
+    <div class="gpanel" id="sqtutor-website">
+      <h2 class="sec">Website &amp; links</h2>
+      <div class="addmember">
+        <input class="ws-label" placeholder="Label">
+        <input class="ws-url" placeholder="https://...">
+        <button class="addbtn ws-add">Add link</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+        <tbody class="ws-tbody"></tbody>
+      </table></div>
+      <p class="note">No URL yet — add the product's website links above, or send them to me.</p>
+    </div>
+    <div class="gpanel on" id="sqtutor-surfaces">
+      <p class="lead">Plan — the schedule for Scout Quest Tutor (B2C), the YC "Primer" wedge.</p>
+      <div class="gscale"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+      <div class="grow"><div class="glabel">Positioning &amp; market (WO-001)</div><div class="gtrack"><div class="gbar bl" style="left:0%;width:20%">done</div></div></div>
+      <div class="grow"><div class="glabel">Parent control panel (WO-002)</div><div class="gtrack"><div class="gbar bb" style="left:20%;width:40%">in design</div></div></div>
+      <div class="grow"><div class="glabel">Kid panel (WO-002)</div><div class="gtrack"><div class="gbar bb" style="left:20%;width:40%">in design</div></div></div>
+      <div class="grow"><div class="glabel">agent-tutor pipeline</div><div class="gtrack"><div class="gbar bp" style="left:40%;width:40%">queued</div></div></div>
+      <div class="grow"><div class="glabel">Sign-up + billing (COPPA)</div><div class="gtrack"><div class="gbar bp" style="left:60%;width:40%">planned</div></div></div>
+      <div class="glegend"><span><i style="background:var(--ok)"></i>Live / done</span><span><i style="background:var(--b)"></i>Building</span><span><i style="background:var(--g)"></i>Planned</span></div>
+    </div>
+    <div class="gpanel" id="sqtutor-build">
+      <h2 class="sec">Build Board — progress by area</h2>
+      <div class="card"><table>
+        <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Positioning &amp; market</td><td><span class="badge b-live">Done</span></td><td>WO-UXR-001</td></tr>
+          <tr><td>Parent control panel</td><td><span class="badge b-ready">In design</span></td><td>WO-002</td></tr>
+          <tr><td>Kid panel</td><td><span class="badge b-ready">In design</span></td><td>WO-002</td></tr>
+          <tr><td>agent-tutor pipeline</td><td><span class="badge b-reg">Queued</span></td><td>first to build</td></tr>
+          <tr><td>Sign-up + billing (COPPA)</td><td><span class="badge b-plan">Planned</span></td><td>consumer subscription</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="gpanel" id="sqtutor-agents">
+      <h2 class="sec">Agents</h2>
+      <div class="card"><table>
+        <thead><tr><th>Agent</th><th>Role</th><th>Shared</th><th>From</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>agent-tutor</code></td><td>Tutoring (primary)</td><td><span class="badge b-plan">Shared</span></td><td>Scout Quest Education</td><td><span class="badge b-reg">Queued</span></td></tr>
+          <tr><td><code>agent-evaluator</code></td><td>Independent evaluation</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (library)</td><td><span class="badge b-live">Live</span></td></tr>
+          <tr><td><code>agent-ux-researcher</code></td><td>UX research (did WO-001)</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (Product &amp; Design)</td><td><span class="badge b-ready">Ready</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="gpanel" id="sqtutor-changelog">
+      <h2 class="sec">Change log — Scout Quest Tutor</h2>
+      <p class="lead">Changes to this product, newest first — for team transparency.</p>
+      <div class="card"><table>
+        <thead><tr><th>Tab</th><th>New / Update</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Plan Board is now a Gantt chart</td></tr>
+          <tr><td>—</td><td><span class="badge b-ready">New</span></td><td>Added Scout Quest Tutor as a product (B2C wedge)</td></tr>
+          <tr><td>Plan/Build/Agents</td><td><span class="badge b-ready">New</span></td><td>Added Plan Board, Build Board, and Agents tabs</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ============ AI BOOKMARK ============ -->
+  <div class="screen" id="sqbookmark">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="products">Products</span><span class="sep">›</span><span class="crumb cur">AI Bookmark</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="sqbookmark-surfaces">Plan Board</button>
+      <button class="g2tab" data-g="sqbookmark-build">Build Board</button>
+      <button class="g2tab" data-g="sqbookmark-agents">Agents</button>
+      <button class="g2tab" data-g="sqbookmark-website">Website</button>
+      <button class="g2tab" data-g="sqbookmark-changelog">Change Log</button>
+      <button class="g2tab" data-g="sqbookmark-mission">Mission &amp; Values</button>
+    </div>
+    <div class="gpanel" id="sqbookmark-mission">
+      <h2 class="sec">Mission</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:14.5px;font-weight:600">Turn saved chaos into an organized, useful memory.</p></div>
+      <h2 class="sec">Values &amp; focus</h2>
+      <div class="card"><table>
+        <thead><tr><th>Value</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><b>Privacy &amp; control</b></td><td>Your data is yours — nothing sold, nothing leaked.</td></tr>
+          <tr><td><b>Genuinely useful</b></td><td>Signal over noise; it saves you time, it doesn't add clutter.</td></tr>
+          <tr><td><b>Simple</b></td><td>Organizes itself without a manual.</td></tr>
+          <tr><td><b>Safety-first</b></td><td>Governed, sampled evaluation, no regulated data (D2 max).</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Draft — product-specific, nested under the company Mission &amp; Values (HR). Edit freely.</p>
+    </div>
+    <div class="gpanel" id="sqbookmark-website">
+      <h2 class="sec">Website &amp; links</h2>
+      <div class="addmember">
+        <input class="ws-label" placeholder="Label">
+        <input class="ws-url" placeholder="https://...">
+        <button class="addbtn ws-add">Add link</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+        <tbody class="ws-tbody"></tbody>
+      </table></div>
+      <p class="note">No URL yet — add the product's website links above, or send them to me.</p>
+    </div>
+    <div class="gpanel on" id="sqbookmark-surfaces">
+      <p class="lead">Plan — the schedule for AI Bookmark (consumer, D2, cloud model OK).</p>
+      <div class="gscale"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+      <div class="grow"><div class="glabel">agent-bookmark pipeline</div><div class="gtrack"><div class="gbar bp" style="left:20%;width:40%">queued</div></div></div>
+      <div class="grow"><div class="glabel">Consumer app</div><div class="gtrack"><div class="gbar bp" style="left:40%;width:40%">planned</div></div></div>
+      <div class="grow"><div class="glabel">Sign-in</div><div class="gtrack"><div class="gbar bp" style="left:60%;width:20%">planned</div></div></div>
+      <div class="glegend"><span><i style="background:var(--ok)"></i>Live / done</span><span><i style="background:var(--b)"></i>Building</span><span><i style="background:var(--g)"></i>Planned</span></div>
+    </div>
+    <div class="gpanel" id="sqbookmark-build">
+      <h2 class="sec">Build Board — progress by area</h2>
+      <div class="card"><table>
+        <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>agent-bookmark pipeline</td><td><span class="badge b-reg">Queued</span></td><td>spec done</td></tr>
+          <tr><td>Consumer app</td><td><span class="badge b-plan">Planned</span></td><td>sign-in, save, organize</td></tr>
+          <tr><td>Sign-in</td><td><span class="badge b-plan">Planned</span></td><td>—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="gpanel" id="sqbookmark-agents">
+      <h2 class="sec">Agents</h2>
+      <div class="card"><table>
+        <thead><tr><th>Agent</th><th>Role</th><th>Shared</th><th>From</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>agent-bookmark</code></td><td>Bookmark intelligence</td><td style="color:var(--muted)">Native</td><td>—</td><td><span class="badge b-reg">Queued</span></td></tr>
+          <tr><td><code>agent-evaluator</code></td><td>Independent evaluation (sampled)</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (library)</td><td><span class="badge b-live">Live</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="gpanel" id="sqbookmark-changelog">
+      <h2 class="sec">Change log — AI Bookmark</h2>
+      <p class="lead">Changes to this product, newest first — for team transparency.</p>
+      <div class="card"><table>
+        <thead><tr><th>Tab</th><th>New / Update</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Plan Board is now a Gantt chart</td></tr>
+          <tr><td>—</td><td><span class="badge b-ready">New</span></td><td>Added AI Bookmark product screen</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ============ SOUNDWISERX ============ -->
+  <div class="screen" id="sqsound">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="products">Products</span><span class="sep">›</span><span class="crumb cur">Soundwiserx</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="sqsound-surfaces">Plan Board</button>
+      <button class="g2tab" data-g="sqsound-build">Build Board</button>
+      <button class="g2tab" data-g="sqsound-agents">Agents</button>
+      <button class="g2tab" data-g="sqsound-website">Website</button>
+      <button class="g2tab" data-g="sqsound-changelog">Change Log</button>
+      <button class="g2tab" data-g="sqsound-mission">Mission &amp; Values</button>
+    </div>
+    <div class="gpanel" id="sqsound-mission">
+      <h2 class="sec">Mission</h2>
+      <div class="card" style="padding:16px 18px;margin-bottom:14px"><p style="margin:0;font-size:14.5px;font-weight:600">Extend expert speech care to more people, safely — with clinicians in command.</p></div>
+      <h2 class="sec">Values &amp; focus</h2>
+      <div class="card"><table>
+        <thead><tr><th>Value</th><th>What it means</th></tr></thead>
+        <tbody>
+          <tr><td><b>Clinician in command</b></td><td>Every evaluation is reviewed by a clinician; the AI never diagnoses on its own authority.</td></tr>
+          <tr><td><b>PHI safety (HIPAA)</b></td><td>Protected health data stays local; nothing leaves without a signed BAA.</td></tr>
+          <tr><td><b>Evidence-based practice</b></td><td>Grounded in speech and clinical science.</td></tr>
+          <tr><td><b>Dignity at any age</b></td><td>Patients of every age are treated with care and respect.</td></tr>
+          <tr><td><b>Safety-first</b></td><td>Governed, local model only, fail-closed.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Draft — product-specific, nested under the company Mission &amp; Values (HR). Edit freely.</p>
+    </div>
+    <div class="gpanel" id="sqsound-website">
+      <h2 class="sec">Website &amp; links</h2>
+      <div class="addmember">
+        <input class="ws-label" placeholder="Label">
+        <input class="ws-url" placeholder="https://...">
+        <button class="addbtn ws-add">Add link</button>
+      </div>
+      <div class="card"><table>
+        <thead><tr><th>Label</th><th>URL</th><th></th></tr></thead>
+        <tbody class="ws-tbody"></tbody>
+      </table></div>
+      <p class="note">No URL yet — add the product's website links above, or send them to me.</p>
+    </div>
+    <div class="gpanel on" id="sqsound-surfaces">
+      <p class="lead">Plan — the schedule for Soundwiserx (clinical speech; PHI, local model only).</p>
+      <div class="gscale"><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+      <div class="grow"><div class="glabel">PHI / local-only infra</div><div class="gtrack"><div class="gbar bb" style="left:0%;width:40%">building</div></div></div>
+      <div class="grow"><div class="glabel">agent-speech-eval pipeline</div><div class="gtrack"><div class="gbar bp" style="left:20%;width:40%">queued</div></div></div>
+      <div class="grow"><div class="glabel">Clinician review flow</div><div class="gtrack"><div class="gbar bp" style="left:40%;width:40%">planned</div></div></div>
+      <div class="grow"><div class="glabel">BAA / HIPAA compliance</div><div class="gtrack"><div class="gbar bp" style="left:60%;width:40%">planned</div></div></div>
+      <div class="grow"><div class="glabel">Clinical product surface</div><div class="gtrack"><div class="gbar bp" style="left:80%;width:20%">planned</div></div></div>
+      <div class="glegend"><span><i style="background:var(--ok)"></i>Live / done</span><span><i style="background:var(--b)"></i>Building</span><span><i style="background:var(--g)"></i>Planned</span></div>
+    </div>
+    <div class="gpanel" id="sqsound-build">
+      <h2 class="sec">Build Board — progress by area</h2>
+      <div class="card"><table>
+        <thead><tr><th>Area</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>agent-speech-eval pipeline</td><td><span class="badge b-reg">Queued</span></td><td>spec done</td></tr>
+          <tr><td>PHI / local-only infra</td><td><span class="badge b-ready">Building</span></td><td>governed</td></tr>
+          <tr><td>Clinician review flow</td><td><span class="badge b-plan">Planned</span></td><td>every eval</td></tr>
+          <tr><td>BAA / HIPAA compliance</td><td><span class="badge b-plan">Planned</span></td><td>before real PHI</td></tr>
+          <tr><td>Clinical product surface</td><td><span class="badge b-plan">Planned</span></td><td>—</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+    <div class="gpanel" id="sqsound-agents">
+      <h2 class="sec">Agents</h2>
+      <div class="card"><table>
+        <thead><tr><th>Agent</th><th>Role</th><th>Shared</th><th>From</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><code>agent-speech-eval</code></td><td>Speech evaluation (PHI, local)</td><td style="color:var(--muted)">Native</td><td>—</td><td><span class="badge b-reg">Queued</span></td></tr>
+          <tr><td><code>agent-evaluator</code></td><td>Independent evaluation</td><td><span class="badge b-plan">Shared</span></td><td>Agent Platform (library)</td><td><span class="badge b-live">Live</span></td></tr>
+        </tbody>
+      </table></div>
+    </div>
+
+    <div class="gpanel" id="sqsound-changelog">
+      <h2 class="sec">Change log — Soundwiserx</h2>
+      <p class="lead">Changes to this product, newest first — for team transparency.</p>
+      <div class="card"><table>
+        <thead><tr><th>Tab</th><th>New / Update</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Plan Board is now a Gantt chart</td></tr>
+          <tr><td>—</td><td><span class="badge b-ready">New</span></td><td>Made Soundwiserx a clickable product (Plan/Build/Agents)</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ============ OTHER ============ -->
+  <div class="screen" id="other">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="products">Products</span><span class="sep">›</span><span class="crumb cur">Other</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="oth-align">Align (Fascia)</button>
+      <button class="g2tab" data-g="oth-copilot">Copilot pipeline</button>
+    </div>
+    <div class="gpanel on" id="oth-align">
+      <h2 class="sec">Align — Fascia website</h2>
+      <p class="lead">The Fascia website you built, brought into the portfolio here.</p>
+      <div class="modgrid">
+        <div class="modcard live"><h3>Align (Fascia) <span class="badge b-live">Built</span></h3><p>Website you built.</p><div class="open">Give me the URL and I'll wire it as a live ↗ link</div></div>
+      </div>
+      <p class="note">Send me the Align / Fascia URL and I'll link it here exactly like the Scout Quest admin console.</p>
+    </div>
+    <div class="gpanel" id="oth-copilot">
+      <h2 class="sec">Copilot pipeline</h2>
+      <p class="lead">The copilot pipeline build.</p>
+      <div class="modgrid">
+        <div class="modcard soon"><h3>Copilot pipeline <span class="badge b-plan">Planned</span></h3><p>Tell me what it does and I'll scope it as a work order / agent on the rails.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SECURITY TOOLING ============ -->
+  <div class="screen" id="sectool">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="it">IT</span><span class="sep">›</span><span class="crumb cur">Security tooling</span></div>
+    <div class="g2nav">
+      <button class="g2tab on" data-g="st-changemgmt">Change Management</button>
+      <button class="g2tab" data-g="st-changelog">Change Log</button>
+    </div>
+    <div class="gpanel on" id="st-changemgmt">
+      <h2 class="sec">How a change moves — phases</h2>
+      <div class="phasebar"><span class="ph">Proposed</span><span class="phsep">›</span><span class="ph">Classified</span><span class="phsep">›</span><span class="ph">Reviewed</span><span class="phsep">›</span><span class="ph">Approved</span><span class="phsep">›</span><span class="ph">Applied</span><span class="phsep">›</span><span class="ph">Logged</span></div>
+      <p class="lead">The governed view of change. Every change is classified before it runs (Constitution §4). Class sets who must approve: <b>Class 1</b> agent may proceed · <b>Class 2</b> dept manager · <b>Class 3</b> Jessica · <b>Class 3+</b> Jessica + counsel.</p>
+      <h2 class="sec">Change register</h2>
+      <div class="card"><table>
+        <thead><tr><th>Change</th><th>Class</th><th>Phase</th><th>Recorded</th></tr></thead>
+        <tbody>
+          <tr><td>§3.5 v0-scope amendment → Constitution v1.3</td><td>Class 3</td><td><span class="badge b-live">Logged</span></td><td>Decision Log 2026-08-01</td></tr>
+          <tr><td>agent-evaluator v0 (independent evaluation)</td><td>Class 2/3</td><td><span class="badge b-live">Applied</span></td><td>PR #35 · on main</td></tr>
+          <tr><td>Register-pin boundary (approved_workflows)</td><td>Class 3</td><td><span class="badge b-live">Logged</span></td><td>#32 · v0 scope</td></tr>
+          <tr><td>agent-ux-researcher (spec + wiring)</td><td>Class 2</td><td><span class="badge b-ready">Approved</span></td><td>wiring queued</td></tr>
+          <tr><td>Production agent specs (5)</td><td>Class 2</td><td><span class="badge b-plan">Proposed</span></td><td>specs drafted</td></tr>
+          <tr><td>Governance sync → both repos + read-once / LF rules</td><td>Class 2</td><td><span class="badge b-live">Applied</span></td><td>sync-governance.ps1</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Mirrors your vault Decision Log (<code>02 Governance Operations / Decision Log</code>). The Change Log tab is every change; this tab is the governed subset with its class and phase.</p>
+    </div>
+    <div class="gpanel" id="st-changelog">
+      <h2 class="sec">Change Log — every change to the app</h2>
+      <p class="lead">Newest first. Product · Module · Tab · whether it's new or an update · what changed. When the live app is built, this fills in automatically from the repo and the audit ledger.</p>
+      <div class="card"><table>
+        <thead><tr><th>Product</th><th>Module</th><th>Tab</th><th>New / Update</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><td>Company</td><td>IT</td><td>Security tooling</td><td><span class="badge b-plan">Update</span></td><td>Moved Change Management &amp; Change Log into the Security tooling module</td></tr>
+          <tr><td>Company</td><td>IT</td><td>Identity &amp; Access</td><td><span class="badge b-ready">New</span></td><td>Added a role builder (create/edit/delete roles) + role assignment</td></tr>
+          <tr><td>Company</td><td>Agent Platform</td><td>Constitution</td><td><span class="badge b-plan">Update</span></td><td>Renamed "Constitution v1.3" tab to "Constitution"</td></tr>
+          <tr><td>Company</td><td>HR</td><td>HR Contracts / Team</td><td><span class="badge b-ready">New</span></td><td>Added HR Contracts (upload NDA/contractor/volunteer) + NDA &amp; Contract status on Team, connected and editable</td></tr>
+          <tr><td>Company</td><td>IT</td><td>Identity &amp; Access</td><td><span class="badge b-plan">Update</span></td><td>Moved Accounts &amp; Access from HR to IT</td></tr>
+          <tr><td>Company</td><td>HR</td><td>Team</td><td><span class="badge b-ready">New</span></td><td>Added HR module with an add-able Team list</td></tr>
+          <tr><td>All products</td><td>Products</td><td>Change Log</td><td><span class="badge b-ready">New</span></td><td>Added a per-product Change Log tab for team transparency</td></tr>
+          <tr><td>All products</td><td>Products</td><td>Plan Board</td><td><span class="badge b-ready">New</span></td><td>Plan Board is now a Gantt chart on every product</td></tr>
+          <tr><td>Company</td><td>Products</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Added a consolidated Gantt across all products</td></tr>
+          <tr><td>All products</td><td>Products</td><td>Plan Board / Build Board</td><td><span class="badge b-plan">Update</span></td><td>Renamed Surfaces → Plan Board and Build Tracker → Build Board</td></tr>
+          <tr><td>All products</td><td>Products</td><td>Agents</td><td><span class="badge b-plan">Update</span></td><td>Renamed "Shared Agents" → "Agents"; added Shared + From columns</td></tr>
+          <tr><td>All products</td><td>Products</td><td>Agents</td><td><span class="badge b-ready">New</span></td><td>Added an Agents tab to every product</td></tr>
+          <tr><td>All products</td><td>Products</td><td>Build Board</td><td><span class="badge b-ready">New</span></td><td>Added a Build Board to every product</td></tr>
+          <tr><td>Scout Quest Game</td><td>Products</td><td>Build Board</td><td><span class="badge b-ready">New</span></td><td>Added the Build Board link as the tracker</td></tr>
+          <tr><td>Soundwiserx</td><td>Products</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Made Soundwiserx a clickable product</td></tr>
+          <tr><td>Scout Quest Education</td><td>Products</td><td>Plan Board</td><td><span class="badge b-plan">Update</span></td><td>Split Teacher and District into separate cards</td></tr>
+          <tr><td>Scout Quest Game</td><td>Products</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Added Scout Quest Game as its own product</td></tr>
+          <tr><td>Scout Quest Education</td><td>Products</td><td>—</td><td><span class="badge b-plan">Update</span></td><td>Renamed "Scout Quest Game" → "Scout Quest Education"</td></tr>
+          <tr><td>Other</td><td>Products</td><td>Align / Copilot</td><td><span class="badge b-ready">New</span></td><td>Added Other module (Align/Fascia, Copilot pipeline)</td></tr>
+          <tr><td>AI Bookmark</td><td>Products</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Added AI Bookmark product screen</td></tr>
+          <tr><td>Company</td><td>Products</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Added the Products module</td></tr>
+          <tr><td>Company</td><td>Agent Platform</td><td>WO Results</td><td><span class="badge b-ready">New</span></td><td>Added one work order per agent (7)</td></tr>
+          <tr><td>Company</td><td>IT</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Added IT module; nested Agent Platform inside it</td></tr>
+          <tr><td>Company</td><td>Modules</td><td>—</td><td><span class="badge b-ready">New</span></td><td>Reframed as Scout Quest Inc company OS; Modules is the landing page</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Manual for now — I add a row per change. In the live app this is generated from git commits and the audit ledger, so it logs itself.</p>
+    </div>
+  </div>
+
+  <!-- ============ AGENT PLATFORM ============ -->
+  <div class="screen" id="ap">
+    <div class="crumbs"><span class="crumb" data-go="home">Modules</span><span class="sep">›</span><span class="crumb" data-go="it">IT</span><span class="sep">›</span><span class="crumb cur">Agent Platform</span></div>
+    <div class="pnav">
+      <button class="on" data-p="console">Console</button>
+      <button data-p="results">Agent WOs</button>
+      <button data-p="vision">The Vision</button>
+    </div>
+
+    <!-- CONSOLE -->
+    <div class="ptab on" id="console">
+      <h2 class="sec">At a glance</h2>
+      <div class="tiles">
+        <div class="tile"><div class="n grn">Live</div><div class="l">Governed foundation</div><div class="s tealtx">ASL · Runner · Evaluator on main</div></div>
+        <div class="tile"><div class="n">7</div><div class="l">Agents registered</div><div class="s">1 live · 1 ready · 5 registered</div></div>
+        <div class="tile"><div class="n">7</div><div class="l">Work orders</div><div class="s">1 complete · 2 live · 4 queued</div></div>
+        <div class="tile"><div class="n grn">$0.00</div><div class="l">Spend this month</div><div class="s">local model · cap $20 / agent</div></div>
+      </div>
+      <div class="legend">
+        <span><span class="badge b-live">Live</span> running on the rails</span>
+        <span><span class="badge b-ready">Ready</span> spec done, wiring queued</span>
+        <span><span class="badge b-reg">Registered</span> caps enforced, no pipeline yet</span>
+        <span><span class="badge b-gov">Governed</span> §3.5 evaluated</span>
+      </div>
+
+      <h2 class="sec">Agent spotlight — the one you just built</h2>
+      <div class="card">
+        <div class="hd">
+          <span class="id">agent-ux-researcher</span>
+          <span class="role">UX Researcher · Product &amp; Design</span>
+          <span class="badge b-ready" style="margin-left:auto">Ready — wiring queued</span>
+          <span class="badge b-gov">Governed</span>
+        </div>
+        <div class="kv">
+          <div><div class="k">Purpose</div><div class="v">Evidence for product decisions (Constitution §7)</div></div>
+          <div><div class="k">Owner</div><div class="v">Jessica</div></div>
+          <div><div class="k">Spend caps</div><div class="v"><b>$0.50</b>/run · <b>$20</b>/mo · auto-cutoff</div></div>
+          <div><div class="k">Models</div><div class="v">local-llama · gpt-4o-mini</div></div>
+          <div><div class="k">Data access</div><div class="v">D0 · D1 · D2 &nbsp;<span class="no-d3">never D3</span></div></div>
+          <div><div class="k">Never</div><div class="v">contacts real users · touches prod</div></div>
+          <div><div class="k">Independent review</div><div class="v">agent-evaluator · <code>ux_research</code> rubric</div></div>
+          <div><div class="k">Evaluator checks</div><div class="v">every citation is real &amp; not overstated</div></div>
+        </div>
+      </div>
+
+      <h2 class="sec">Agent registry</h2>
+      <div class="card">
+        <table>
+          <thead><tr><th>Agent</th><th>Role</th><th>Data</th><th>Independent review</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><code>agent-evaluator</code></td><td>Independent evaluation</td><td>output+rubric only</td><td>—</td><td><span class="badge b-live">Live</span></td></tr>
+            <tr><td><code>agent-exgen</code></td><td>Exercise generation</td><td>D0/D1</td><td>evaluator</td><td><span class="badge b-live">Live · flagship</span></td></tr>
+            <tr><td><code>agent-ux-researcher</code></td><td>UX Researcher</td><td>D0–D2 <span class="no-d3">no D3</span></td><td>evaluator</td><td><span class="badge b-ready">Ready</span></td></tr>
+            <tr><td><code>agent-tutor</code></td><td>Tutoring (child-facing)</td><td>D0/D1</td><td>sampled + filters</td><td><span class="badge b-reg">Registered</span></td></tr>
+            <tr><td><code>agent-summarize</code></td><td>Progress summaries</td><td>D3 · local-only</td><td>evaluator + teacher</td><td><span class="badge b-reg">Registered</span></td></tr>
+            <tr><td><code>agent-speech-eval</code></td><td>Speech eval (Soundwiserx)</td><td>D3/PHI · local-only</td><td>clinician review</td><td><span class="badge b-reg">Registered</span></td></tr>
+            <tr><td><code>agent-bookmark</code></td><td>Bookmark intelligence</td><td>D2</td><td>sampled</td><td><span class="badge b-reg">Registered</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="sec">Work orders</h2>
+      <div class="card">
+        <table>
+          <thead><tr><th>ID</th><th>Title</th><th>Agent</th><th>Confidence</th><th>Review</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><code>WO-UXR-001</code></td><td>YC + market + design positioning</td><td>ux-researcher</td><td><span class="tag t-hi">High</span></td><td>citations checked</td><td><span class="badge b-live">Complete</span></td></tr>
+            <tr><td><code>WO-EXG-001</code></td><td>Reading exercise generation (flagship)</td><td>exgen</td><td>—</td><td>evaluator</td><td><span class="badge b-live">Live</span></td></tr>
+            <tr><td><code>WO-EVL-001</code></td><td>Independent evaluation of exercises</td><td>evaluator</td><td>—</td><td>ledger verdict</td><td><span class="badge b-live">Live</span></td></tr>
+            <tr><td><code>WO-TUT-001</code></td><td>Adaptive tutoring session</td><td>tutor</td><td>—</td><td>sampled + filters</td><td><span class="badge b-reg">Queued</span></td></tr>
+            <tr><td><code>WO-SUM-001</code></td><td>Student progress summary</td><td>summarize</td><td>—</td><td>evaluator + teacher</td><td><span class="badge b-reg">Queued</span></td></tr>
+            <tr><td><code>WO-SPE-001</code></td><td>Speech evaluation (Soundwiserx)</td><td>speech-eval</td><td>—</td><td>clinician review</td><td><span class="badge b-reg">Queued</span></td></tr>
+            <tr><td><code>WO-BMK-001</code></td><td>Bookmark intelligence</td><td>bookmark</td><td>—</td><td>sampled</td><td><span class="badge b-reg">Queued</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note"><b>Honest status.</b> The foundation is live. <code>WO-UXR-001</code> was produced this session and its citations were checked by the research discipline; the queued step is re-running it through the governed pipeline (the delivered Claude Code kickoff) so the verdict lands on the ledger automatically. Numbers here reflect that real state, not a mock.</p>
+    </div>
+
+    <!-- WO RESULTS -->
+    <div class="ptab" id="results">
+      <h2 class="sec">Work orders — as they're generated they appear here</h2>
+      <p class="lead">One work order per agent — your standing place to review what each agent has done, or will do. Real output where it exists; a scoped plan where the pipeline isn't built yet.</p>
+      <div class="subnav">
+        <button class="woistab on" data-w="wo001">WO-UXR-001 · UX Researcher</button>
+        <button class="woistab" data-w="woexg">WO-EXG-001 · Exercise gen</button>
+        <button class="woistab" data-w="woevl">WO-EVL-001 · Evaluator</button>
+        <button class="woistab" data-w="wotut">WO-TUT-001 · Tutor</button>
+        <button class="woistab" data-w="wosum">WO-SUM-001 · Summaries</button>
+        <button class="woistab" data-w="wospe">WO-SPE-001 · Speech eval</button>
+        <button class="woistab" data-w="wobmk">WO-BMK-001 · Bookmark</button>
+      </div>
+
+      <div class="wopanel on" id="wo001">
+        <div class="wohead">
+          <span class="wt">WO-UXR-001 — YC + market + design positioning</span>
+          <span class="badge b-live">Complete</span>
+          <span class="wm">agent-ux-researcher · 2026-08-02 · citations checked</span>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin:0 0 14px;max-width:680px">How Scout Quest should position for Y Combinator and for the market, mapped onto your parent + kid structure. Each finding carries a confidence level.</p>
+
+        <div class="finding">
+          <h3>YC's "The Primer" RFS is almost your exact product <span class="tag t-hi">High</span></h3>
+          <p>YC's Fall 2026 Requests for Startups asks for an AI product that adaptively teaches young children to read, write and do arithmetic "at consumer scale… a supplement" to teachers. That is Scout Quest's shape. Lead the application by naming it.</p>
+        </div>
+        <div class="finding">
+          <h3>Competitive or complementary? Both — lead B2C parent-pay <span class="tag t-hi">High</span></h3>
+          <p>YC frames the wedge as "something a parent buys," so go direct-to-parent as the pitch, complementary in language (supplement, not replacement) and roadmap (district plug-in = your Model 2 expansion). You're choosing which model leads, not choosing between them.</p>
+        </div>
+        <div class="finding">
+          <h3>Santa Clara County is a strong — if crowded — beachhead <span class="tag t-hi">High</span></h3>
+          <p>~$168k median income, ~57% bachelor's+, ~56% multilingual homes, intense test-prep culture. Kumon/Sylvan/Mathnasium are dense and Khanmigo is HQ'd in-county — your clearest foil and your early-adopter ground at once.</p>
+        </div>
+        <div class="finding">
+          <h3>Your differentiator: the parent-control-panel gap <span class="tag t-hi">High</span></h3>
+          <p>Competitors ship progress <em>dashboards</em> but push real controls (time, safety, goals) out to OS tools like Google Family Link. Build the paired model — parent panel = progress + controls; bounded kid panel = avatar, pick today's quest, read-aloud — onto your existing Today's Quest / Family View.</p>
+        </div>
+        <div class="finding">
+          <h3>Design specifics, evidence-backed <span class="tag t-hi">High</span></h3>
+          <p>Forgiving streaks (child-anxiety research), gamification that leans on autonomy + belonging over point-chasing (2023 meta-analysis), WCAG-AA + dyslexia-friendly type + read-aloud as core, and design for narrow age bands (K-2 / 6-8 / 9-12). Multilingual is a real local advantage.</p>
+        </div>
+        <div class="finding">
+          <h3>Market size — national &amp; global <span class="tag t-med">Directional</span></h3>
+          <p>AI-in-education ~$8–11B (2025-26) → ~$40–57B early-2030s (~26% CAGR); private tutoring ~$90B+ globally. Demand centers abroad: Korea (hagwon), China (post-regulation), India. Estimates vary widely by source — treat as directional.</p>
+        </div>
+        <div class="finding warnbar">
+          <h3>⚠ Verify the YC deadline yourself, today <span class="tag t-lo">Unverified</span></h3>
+          <p>One secondary source cited a July 27, 2026 deadline — before today. Could mean the batch closed, late applications are still taken, or a new batch is open. Confirm at apply.ycombinator.com before planning around any date.</p>
+        </div>
+        <p class="note">Full brief with all sources: <code>UX_RESEARCHER_WO-001_YC_Market_Design_Brief.md</code> (delivered in chat). This panel is the platform view of the same work.</p>
+      </div>
+
+      <div class="wopanel" id="woexg">
+        <div class="wohead"><span class="wt">WO-EXG-001 — Reading exercise generation (flagship)</span><span class="badge b-live">Live</span><span class="wm">agent-exgen · digest-pinned pipeline</span></div>
+        <p class="lead">The flagship governed pipeline: generate a reading / phonics exercise → independent evaluation → producer contest → named human approval → publish. It's the workflow pinned in <code>approved_workflows.yaml</code>, so an edited workflow stops until it's re-approved.</p>
+        <div class="card"><div class="kv">
+          <div><div class="k">Produces</div><div class="v">a child-appropriate reading exercise</div></div>
+          <div><div class="k">Data</div><div class="v">D0 / D1</div></div>
+          <div><div class="k">Review</div><div class="v">agent-evaluator before delivery</div></div>
+          <div><div class="k">Status</div><div class="v">Live · risk_tier high · on main</div></div>
+        </div></div>
+      </div>
+
+      <div class="wopanel" id="woevl">
+        <div class="wohead"><span class="wt">WO-EVL-001 — Independent evaluation of exercises</span><span class="badge b-live">Live</span><span class="wm">agent-evaluator · reviews WO-EXG-001</span></div>
+        <p class="lead">The evaluator's standing work order: review each generated exercise against a published rubric. The verdict is a defect list (not a score), validated then written to the append-only ledger before any human sees it. A FAIL pauses for the human — it publishes nothing and approves nothing.</p>
+        <div class="card"><div class="kv">
+          <div><div class="k">Sees</div><div class="v">output + rubric only (never the producer's reasoning)</div></div>
+          <div><div class="k">Verdict</div><div class="v">defect list, on the ledger, before the gate</div></div>
+          <div><div class="k">Boundary</div><div class="v">register-pinned workflows only (§3.5 v0)</div></div>
+          <div><div class="k">Status</div><div class="v">Live · on main</div></div>
+        </div></div>
+      </div>
+
+      <div class="wopanel" id="wotut">
+        <div class="wohead"><span class="wt">WO-TUT-001 — Adaptive tutoring session</span><span class="badge b-reg">Queued</span><span class="wm">agent-tutor · registered, pipeline not built</span></div>
+        <p class="lead">What this work order will do: run a real-time, child-facing tutoring session that adapts to the learner, with content filters and sampled independent evaluation.</p>
+        <div class="card"><div class="kv">
+          <div><div class="k">Data</div><div class="v">D0 / D1</div></div>
+          <div><div class="k">Review</div><div class="v">sampled evaluation + content filters</div></div>
+          <div><div class="k">Audience</div><div class="v">child-facing, real-time</div></div>
+          <div><div class="k">Status</div><div class="v">registered (caps enforced) — not yet built</div></div>
+        </div></div>
+      </div>
+
+      <div class="wopanel" id="wosum">
+        <div class="wohead"><span class="wt">WO-SUM-001 — Student progress summary</span><span class="badge b-reg">Queued</span><span class="wm">agent-summarize · registered, pipeline not built</span></div>
+        <p class="lead">What this work order will do: turn a student's performance into a plain-language progress summary for teachers and parents. It handles D3 data, so it runs on the local model only.</p>
+        <div class="card"><div class="kv">
+          <div><div class="k">Data</div><div class="v"><span class="no-d3">D3</span> · local model only</div></div>
+          <div><div class="k">Review</div><div class="v">evaluator + teacher review</div></div>
+          <div><div class="k">Audience</div><div class="v">teacher / parent facing</div></div>
+          <div><div class="k">Status</div><div class="v">registered — not yet built</div></div>
+        </div></div>
+      </div>
+
+      <div class="wopanel" id="wospe">
+        <div class="wohead"><span class="wt">WO-SPE-001 — Speech evaluation (Soundwiserx)</span><span class="badge b-reg">Queued</span><span class="wm">agent-speech-eval · registered, pipeline not built</span></div>
+        <p class="lead">What this work order will do: evaluate a child's speech for the Soundwiserx clinical product. It handles PHI, so it runs on the local model only, with clinician review of every evaluation.</p>
+        <div class="card"><div class="kv">
+          <div><div class="k">Data</div><div class="v"><span class="no-d3">D3 / PHI</span> · local model only</div></div>
+          <div><div class="k">Review</div><div class="v">clinician review of every evaluation</div></div>
+          <div><div class="k">Product</div><div class="v">Soundwiserx</div></div>
+          <div><div class="k">Status</div><div class="v">registered — not yet built</div></div>
+        </div></div>
+      </div>
+
+      <div class="wopanel" id="wobmk">
+        <div class="wohead"><span class="wt">WO-BMK-001 — Bookmark intelligence</span><span class="badge b-reg">Queued</span><span class="wm">agent-bookmark · registered, pipeline not built</span></div>
+        <p class="lead">What this work order will do: organize and enrich saved bookmarks for the AI Bookmark product, with sampled independent evaluation.</p>
+        <div class="card"><div class="kv">
+          <div><div class="k">Data</div><div class="v">D2</div></div>
+          <div><div class="k">Review</div><div class="v">sampled evaluation</div></div>
+          <div><div class="k">Product</div><div class="v">AI Bookmark</div></div>
+          <div><div class="k">Status</div><div class="v">registered — not yet built</div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- THE VISION -->
+    <div class="ptab" id="vision">
+      <h2 class="sec">Where this goes — one shared agent library, cloned into sets</h2>
+      <p class="lead">You build each agent once, governed. Then you <b>clone the set</b> into separate workspaces — one for running Scout Quest Inc, one per product portfolio — each with its own roles, teams, and access, all on the same rails.</p>
+      <div class="flow">Shared agent library (built &amp; governed once) &nbsp;→&nbsp; cloned into &nbsp;→&nbsp; ① Scout Quest Inc set &nbsp;·&nbsp; ② Product Portfolio sets</div>
+
+      <div class="two">
+        <div class="setcard inc">
+          <h3>① Scout Quest Inc</h3>
+          <p class="sub">Running the company — departments, roles, teams.</p>
+          <span class="chip b">Product &amp; Design</span><span class="chip b">Engineering</span><span class="chip b">Security &amp; Compliance</span>
+          <span class="chip">UX Researcher</span><span class="chip">UX Designer</span><span class="chip">Evaluator</span><span class="chip">Governance-auditor</span><span class="chip">QA</span>
+          <p style="font-size:12px;color:var(--muted);margin:10px 0 0">Enterprise work orders: research, design, governance, ops.</p>
+        </div>
+        <div class="setcard port">
+          <h3>② Product Portfolios</h3>
+          <p class="sub">A cloned set per product — same agents, product-scoped data &amp; access.</p>
+          <span class="chip g">Scout Quest Education</span><span class="chip g">Soundwiserx</span><span class="chip g">Tutor (B2C)</span><span class="chip g">AI Bookmark</span>
+          <span class="chip">exgen</span><span class="chip">tutor</span><span class="chip">summarize</span><span class="chip">speech-eval</span>
+          <p style="font-size:12px;color:var(--muted);margin:10px 0 0">Product work orders: build, evaluate, ship — data scoped to that product only.</p>
+        </div>
+      </div>
+
+      <h2 class="sec">Roles &amp; access (what each role may see and do)</h2>
+      <div class="card">
+        <table>
+          <thead><tr><th>Role</th><th>See results</th><th>Run agents</th><th>Approve / merge</th><th>Change config</th><th>D3 data</th></tr></thead>
+          <tbody>
+            <tr><td><b>Owner</b> (Jessica)</td><td>✓ all</td><td>✓</td><td>✓</td><td>✓ (Class 3)</td><td>✓ break-glass, logged</td></tr>
+            <tr><td>Product &amp; Design</td><td>✓ their set</td><td>✓ research/design</td><td>—</td><td>—</td><td>—</td></tr>
+            <tr><td>Engineering</td><td>✓ their set</td><td>✓ build agents</td><td>dept manager</td><td>Class 2</td><td>local-only</td></tr>
+            <tr><td>Security &amp; Compliance</td><td>✓ audit view</td><td>✓ auditor</td><td>gate</td><td>controls</td><td>oversight</td></tr>
+            <tr><td>Evaluator <span class="badge b-gov">system</span></td><td>output+rubric only</td><td>auto</td><td>records verdict</td><td>—</td><td>—</td></tr>
+            <tr><td>Viewer (investor/teammate)</td><td>✓ shared views</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note"><b>From this view to the live platform.</b> Today this is a read view populated with your real agent and work order. The build path: (1) wire agents to run through the ASL/Runner so runs are live, (2) add sign-in + these role/access rules (the IT module's Identity &amp; access), (3) make the console read live run + spend + verdict data instead of a snapshot. Same rails you already govern — this is the front door on top of them.</p>
+    </div>
+
+
+  </div>
+
+</div>
+
+<script>
+  function showScreen(id){
+    var screens = document.querySelectorAll('.screen');
+    screens.forEach(function(s){ s.classList.remove('on'); });
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('on'); }
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click', function(){ showScreen(b.getAttribute('data-go')); });
+  });
+
+  var pbtns = document.querySelectorAll('.pnav button');
+  var ptabs = document.querySelectorAll('.ptab');
+  pbtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      pbtns.forEach(function(x){ x.classList.remove('on'); });
+      ptabs.forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var el = document.getElementById(b.getAttribute('data-p'));
+      if(el){ el.classList.add('on'); }
+    });
+  });
+
+  var wobtns = document.querySelectorAll('.woistab');
+  var wopanels = document.querySelectorAll('.wopanel');
+  wobtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      wobtns.forEach(function(x){ x.classList.remove('on'); });
+      wopanels.forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var el = document.getElementById(b.getAttribute('data-w'));
+      if(el){ el.classList.add('on'); }
+    });
+  });
+
+  var c2btns = document.querySelectorAll('.c2tab');
+  var cpanels = document.querySelectorAll('.cpanel');
+  c2btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      c2btns.forEach(function(x){ x.classList.remove('on'); });
+      cpanels.forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var el = document.getElementById(b.getAttribute('data-c'));
+      if(el){ el.classList.add('on'); }
+    });
+  });
+
+  // Product sub-tabs (Build Tracker, Other) — scoped to their own screen so groups don't cross-toggle.
+  document.querySelectorAll('.g2tab').forEach(function(b){
+    b.addEventListener('click', function(){
+      var nav = b.closest('.g2nav');
+      var screen = b.closest('.screen');
+      if(nav){ nav.querySelectorAll('.g2tab').forEach(function(x){ x.classList.remove('on'); }); }
+      if(screen){ screen.querySelectorAll('.gpanel').forEach(function(x){ x.classList.remove('on'); }); }
+      b.classList.add('on');
+      var el = document.getElementById(b.getAttribute('data-g'));
+      if(el){ el.classList.add('on'); }
+    });
+  });
+
+  // HR — add team members and contracts (in-session), with contract status syncing to Team.
+  function hrVal(id){ var e=document.getElementById(id); return e ? e.value.trim() : ''; }
+  function hrClear(id){ var e=document.getElementById(id); if(e){ e.value=''; } }
+  function hrTd(tr, text){ var td=document.createElement('td'); td.textContent=text; tr.appendChild(td); }
+  function hrBadge(status){ var s=document.createElement('span'); s.className='badge '+(status==='Complete'?'b-live':'b-plan'); s.textContent=status; return s; }
+  function hrBadgeTd(tr, status){ var td=document.createElement('td'); td.appendChild(hrBadge(status)); tr.appendChild(td); }
+
+  var mAdd = document.getElementById('m-add');
+  if(mAdd){
+    mAdd.addEventListener('click', function(){
+      var name = hrVal('m-name'); if(!name){ return; }
+      var type = document.getElementById('m-type').value;
+      var work = hrVal('m-work') || '—';
+      var tr = document.createElement('tr');
+      hrTd(tr, name); hrTd(tr, type); hrTd(tr, work);
+      hrBadgeTd(tr, 'Pending'); hrBadgeTd(tr, 'Pending');
+      document.getElementById('team-tbody').appendChild(tr);
+      hrClear('m-name'); hrClear('m-work');
+    });
+  }
+
+  var cAdd = document.getElementById('c-add');
+  if(cAdd){
+    cAdd.addEventListener('click', function(){
+      var name = hrVal('c-name'); if(!name){ return; }
+      var type = document.getElementById('c-type').value;
+      var status = document.getElementById('c-status').value;
+      var fi = document.getElementById('c-file');
+      var fname = (fi && fi.files && fi.files[0]) ? fi.files[0].name : '—';
+      var tr = document.createElement('tr');
+      hrTd(tr, name); hrTd(tr, type); hrBadgeTd(tr, status); hrTd(tr, fname);
+      document.getElementById('contracts-tbody').appendChild(tr);
+      // sync to Team: NDA → NDA column (index 3), others → Contract column (index 4)
+      var idx = (type === 'NDA') ? 3 : 4;
+      document.querySelectorAll('#team-tbody tr').forEach(function(r){
+        var c = r.children;
+        if(c[0] && c[0].textContent.trim().toLowerCase() === name.toLowerCase() && c[idx]){
+          c[idx].innerHTML = '';
+          c[idx].appendChild(hrBadge(status));
+        }
+      });
+      hrClear('c-name'); if(fi){ fi.value=''; }
+    });
+  }
+
+  // ===== IT · Identity & Access — role builder + assignment =====
+  var PERM_TREE = [
+    {m:'Agent Platform', items:['Console','Agent WOs','The Vision','Constitution']},
+    {m:'Security tooling', items:['Change Management','Change Log']},
+    {m:'Products', items:['Plan Board','Build Board','Agents','Change Log']},
+    {m:'IT', items:['Systems','Identity & Access']},
+    {m:'HR', items:['Team','HR Contracts']},
+    {m:'Finance', items:['AR','AP']},
+    {m:'Contracts', items:['All']},
+    {m:'Projects', items:['All']},
+    {m:'Departments', items:['All']}
+  ];
+  var roles = [
+    {name:'Owner', perms:['ALL']},
+    {name:'Product & Design', perms:['Products: Plan Board','Products: Build Board','Products: Agents','Products: Change Log','Agent Platform: Agent WOs']}
+  ];
+  var editingRole = -1;
+
+  function renderPermTree(){
+    var host=document.getElementById('perm-tree'); if(!host) return;
+    host.innerHTML='';
+    PERM_TREE.forEach(function(mod){
+      var wrap=document.createElement('div'); wrap.className='permmod';
+      var head=document.createElement('div'); head.className='pm-head';
+      var mlabel=document.createElement('label'); mlabel.style.fontWeight='700';
+      var mcb=document.createElement('input'); mcb.type='checkbox'; mcb.className='perm-mod';
+      mlabel.appendChild(mcb); mlabel.appendChild(document.createTextNode(' '+mod.m));
+      head.appendChild(mlabel); wrap.appendChild(head);
+      var items=document.createElement('div'); items.className='pm-items';
+      mod.items.forEach(function(it){
+        var lab=document.createElement('label');
+        var cb=document.createElement('input'); cb.type='checkbox'; cb.className='perm-cb';
+        cb.setAttribute('data-key', mod.m+': '+it);
+        lab.appendChild(cb); lab.appendChild(document.createTextNode(' '+it));
+        items.appendChild(lab);
+      });
+      wrap.appendChild(items); host.appendChild(wrap);
+      mcb.addEventListener('change', function(){ items.querySelectorAll('.perm-cb').forEach(function(c){ c.checked=mcb.checked; }); });
+    });
+  }
+  function getCheckedPerms(){ var o=[]; document.querySelectorAll('#perm-tree .perm-cb').forEach(function(c){ if(c.checked) o.push(c.getAttribute('data-key')); }); return o; }
+  function setCheckedPerms(p){ document.querySelectorAll('#perm-tree .perm-cb').forEach(function(c){ c.checked = p.indexOf(c.getAttribute('data-key'))>=0; }); }
+  function clearRoleForm(){
+    var n=document.getElementById('role-name'); if(n) n.value='';
+    setCheckedPerms([]);
+    document.querySelectorAll('#perm-tree .perm-mod').forEach(function(c){ c.checked=false; });
+    editingRole=-1; var sb=document.getElementById('role-save'); if(sb) sb.textContent='Save role';
+  }
+  function renderRoles(){
+    var tb=document.getElementById('roles-tbody'); if(!tb) return; tb.innerHTML='';
+    roles.forEach(function(r,i){
+      var tr=document.createElement('tr');
+      var td1=document.createElement('td'); td1.textContent=r.name; tr.appendChild(td1);
+      var td2=document.createElement('td'); td2.style.fontSize='12px'; td2.style.color='var(--muted)';
+      td2.textContent = (r.perms.indexOf('ALL')>=0)?'All modules · all tabs':(r.perms.length? r.perms.join(' · ') : '—');
+      tr.appendChild(td2);
+      var td3=document.createElement('td'); td3.style.whiteSpace='nowrap';
+      var e=document.createElement('button'); e.className='minibtn'; e.textContent='Edit'; e.addEventListener('click',function(){ loadRole(i); });
+      var d=document.createElement('button'); d.className='minibtn del'; d.textContent='Delete'; d.addEventListener('click',function(){ roles.splice(i,1); renderRoles(); refreshAssignDropdowns(); });
+      td3.appendChild(e); td3.appendChild(d); tr.appendChild(td3); tb.appendChild(tr);
+    });
+  }
+  function loadRole(i){
+    var r=roles[i]; var n=document.getElementById('role-name'); if(n) n.value=r.name;
+    setCheckedPerms(r.perms.indexOf('ALL')>=0? [] : r.perms);
+    editingRole=i; var sb=document.getElementById('role-save'); if(sb) sb.textContent='Update role';
+    var host=document.getElementById('ia-roles'); if(host) host.scrollIntoView({block:'start'});
+  }
+  function teamNames(){ var a=[]; document.querySelectorAll('#team-tbody tr').forEach(function(r){ if(r.children[0]) a.push(r.children[0].textContent.trim()); }); return a; }
+  function refreshAssignDropdowns(){
+    var ms=document.getElementById('assign-member');
+    if(ms){ ms.innerHTML='<option>— team member —</option>'; teamNames().forEach(function(n){ var o=document.createElement('option'); o.textContent=n; ms.appendChild(o); }); }
+    var rs=document.getElementById('assign-role');
+    if(rs){ rs.innerHTML='<option>— role —</option>'; roles.forEach(function(r){ var o=document.createElement('option'); o.textContent=r.name; rs.appendChild(o); }); }
+  }
+  var roleSave=document.getElementById('role-save');
+  if(roleSave){ roleSave.addEventListener('click',function(){
+    var n=document.getElementById('role-name'); var name=n?n.value.trim():''; if(!name) return;
+    var perms=getCheckedPerms();
+    if(editingRole>=0){ roles[editingRole]={name:name,perms:perms}; } else { roles.push({name:name,perms:perms}); }
+    renderRoles(); refreshAssignDropdowns(); clearRoleForm();
+  }); }
+  var roleClear=document.getElementById('role-clear');
+  if(roleClear){ roleClear.addEventListener('click', clearRoleForm); }
+  var assignAdd=document.getElementById('assign-add');
+  if(assignAdd){ assignAdd.addEventListener('click',function(){
+    var m=document.getElementById('assign-member').value, r=document.getElementById('assign-role').value;
+    if(m.charAt(0)==='—' || r.charAt(0)==='—') return;
+    var tb=document.getElementById('assign-tbody'); var tr=document.createElement('tr');
+    var td1=document.createElement('td'); td1.textContent=m; tr.appendChild(td1);
+    var td2=document.createElement('td'); td2.textContent=r; tr.appendChild(td2);
+    var td3=document.createElement('td'); var rm=document.createElement('button'); rm.className='minibtn del'; rm.textContent='Remove'; rm.addEventListener('click',function(){ tr.remove(); });
+    td3.appendChild(rm); tr.appendChild(td3); tb.appendChild(tr);
+  }); }
+
+  document.querySelectorAll('.i2tab').forEach(function(b){
+    b.addEventListener('click',function(){
+      var box=b.closest('.screen'); if(!box) return;
+      box.querySelectorAll('.i2tab').forEach(function(x){ x.classList.remove('on'); });
+      box.querySelectorAll('.ipanel').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+      var el=document.getElementById(b.getAttribute('data-i')); if(el) el.classList.add('on');
+      if(b.getAttribute('data-i')==='ia-assign'){ refreshAssignDropdowns(); }
+    });
+  });
+
+  renderPermTree(); renderRoles(); refreshAssignDropdowns();
+
+  // Product Website tabs — add links in-session.
+  document.querySelectorAll('.ws-add').forEach(function(b){
+    b.addEventListener('click', function(){
+      var panel = b.closest('.gpanel'); if(!panel) return;
+      var label = panel.querySelector('.ws-label').value.trim();
+      var url = panel.querySelector('.ws-url').value.trim();
+      if(!url) return;
+      var href = /^https?:\/\//i.test(url) ? url : ('https://' + url);
+      var tb = panel.querySelector('.ws-tbody');
+      var tr = document.createElement('tr');
+      var td1 = document.createElement('td'); td1.textContent = label || url; tr.appendChild(td1);
+      var td2 = document.createElement('td');
+      var a = document.createElement('a'); a.href = href; a.target = '_blank'; a.rel = 'noopener'; a.textContent = url + ' ↗';
+      td2.appendChild(a); tr.appendChild(td2);
+      var td3 = document.createElement('td');
+      var rm = document.createElement('button'); rm.className = 'minibtn del'; rm.textContent = 'Remove'; rm.addEventListener('click', function(){ tr.remove(); });
+      td3.appendChild(rm); tr.appendChild(td3);
+      tb.appendChild(tr);
+      panel.querySelector('.ws-label').value = ''; panel.querySelector('.ws-url').value = '';
+    });
+  });
+</script>
+</body>
+</html>

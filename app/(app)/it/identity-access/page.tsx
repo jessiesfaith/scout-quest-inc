@@ -1,21 +1,18 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import { checkPerm } from "@/lib/permissions";
+import { OsShell } from "../../shell";
 import { RolesPanel, type Role } from "./role-builder";
 import { TeamPanel, type Member, type ProfileOption } from "./team-panel";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "IT › Identity & Access — Scout Quest Inc",
-};
-
 type AssignmentRow = { id: string; team_member_id: string; role_id: string };
 
 export default async function IdentityAccessPage() {
+  const { supabase, email, isOwner } = await getViewer();
   if (!(await checkPerm("IT: Identity & Access"))) redirect("/dashboard");
 
-  const supabase = await createClient();
   const [
     { data: roles, error: rolesError },
     { data: members, error: membersError },
@@ -36,8 +33,6 @@ export default async function IdentityAccessPage() {
       .from("role_assignments")
       .select("id, team_member_id, role_id")
       .returns<AssignmentRow[]>(),
-    // Profiles list feeds the account-linking dropdown. RLS scopes this to
-    // what the caller may see (the owner sees all).
     supabase
       .from("profiles")
       .select("id, email, full_name")
@@ -58,44 +53,38 @@ export default async function IdentityAccessPage() {
   }));
 
   // Any failed query must surface — a partial view of the access system
-  // reads as false security state on the very screen used to audit it.
+  // reads as false security state on the screen used to audit it.
   const loadError =
     rolesError ?? membersError ?? assignmentsError ?? profilesError;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold">IT › Identity &amp; Access</h1>
-      <p className="mt-1 text-sm text-muted">
-        Roles are sets of &ldquo;Module: Tab&rdquo; permissions enforced by the
-        database. Assign them to team members below — a member&apos;s roles
-        only apply once their login account is linked.
-      </p>
-
+    <OsShell
+      email={email}
+      isOwner={isOwner}
+      crumbs={[
+        { label: "Modules", href: "/dashboard" },
+        { label: "IT", href: "/it/identity-access" },
+        { label: "Identity & Access" },
+      ]}
+      lead="Create roles as sets of permissions (checkboxes over modules and tabs), then assign roles to team members. A member can hold more than one role. Roles only take effect once the member's login account is linked."
+    >
       {loadError ? (
-        <p className="mt-8 text-sm text-danger">
+        <p className="note" style={{ color: "var(--danger)" }}>
           Could not load: {loadError.message}. Has migration 0003 been run?
         </p>
       ) : (
-        <div className="mt-8 space-y-10">
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
-              Roles
-            </h2>
-            <RolesPanel roles={roles ?? []} />
-          </section>
+        <>
+          <h2 className="sec">Roles</h2>
+          <RolesPanel roles={roles ?? []} />
 
-          <section>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
-              Team — assign roles &amp; link accounts
-            </h2>
-            <TeamPanel
-              members={memberRows}
-              roles={roles ?? []}
-              profiles={profiles ?? []}
-            />
-          </section>
-        </div>
+          <h2 className="sec">Assign roles &amp; link accounts</h2>
+          <TeamPanel
+            members={memberRows}
+            roles={roles ?? []}
+            profiles={profiles ?? []}
+          />
+        </>
       )}
-    </div>
+    </OsShell>
   );
 }

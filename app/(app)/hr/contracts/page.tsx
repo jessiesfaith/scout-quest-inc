@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import { checkPerm } from "@/lib/permissions";
+import { OsShell } from "../../shell";
 import {
   AddContractForm,
   StatusToggle,
@@ -10,10 +10,6 @@ import {
 } from "./forms";
 
 export const dynamic = "force-dynamic";
-
-export const metadata = {
-  title: "HR › Contracts — Scout Quest Inc",
-};
 
 type ContractRow = {
   id: string;
@@ -25,14 +21,14 @@ type ContractRow = {
 };
 
 export default async function ContractsPage() {
+  const { supabase, email, isOwner } = await getViewer();
+
   const canRead =
     (await checkPerm("HR: HR Contracts")) ||
     (await checkPerm("Security Tooling: Change Management"));
   if (!canRead) redirect("/dashboard");
-
   const canWrite = await checkPerm("HR: HR Contracts");
 
-  const supabase = await createClient();
   const [
     { data: contracts, error: contractsError },
     { data: members, error: membersError },
@@ -53,97 +49,101 @@ export default async function ContractsPage() {
   const memberName = new Map((members ?? []).map((m) => [m.id, m.name]));
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold">HR › Contracts</h1>
-      <p className="mt-1 text-sm text-muted">
-        NDAs and agreements per team member. Status here drives the contract
-        column on{" "}
-        <Link href="/hr/team" className="text-accent hover:underline">
-          HR › Team
-        </Link>
-        .
-      </p>
-
+    <OsShell
+      email={email}
+      isOwner={isOwner}
+      crumbs={[
+        { label: "Modules", href: "/dashboard" },
+        { label: "HR", href: "/hr/team" },
+        { label: "HR Contracts" },
+      ]}
+      lead="NDAs and agreements per team member. Status here drives the contract badges on HR › Team. Files live in a private bucket and open only through short-lived links."
+    >
       {loadError ? (
-        <p className="mt-8 text-sm text-danger">
+        <p className="note" style={{ color: "var(--danger)" }}>
           Could not load: {loadError.message}. Has migration 0006 been run?
         </p>
       ) : (
-        <div className="mt-8 space-y-6">
-          {canWrite && <AddContractForm members={members ?? []} />}
+        <>
+          {canWrite && (
+            <>
+              <h2 className="sec">Add a contract</h2>
+              <AddContractForm members={members ?? []} />
+            </>
+          )}
 
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-            {(contracts ?? []).length === 0 ? (
-              <p className="p-5 text-sm text-muted">No contracts yet.</p>
-            ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-xs uppercase tracking-wider text-muted">
-                    <th className="px-5 py-3 font-medium">Member</th>
-                    <th className="px-5 py-3 font-medium">Type</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                    <th className="px-5 py-3 font-medium">File</th>
-                    <th className="px-5 py-3 font-medium">Added</th>
-                    {canWrite && <th className="px-5 py-3 font-medium" />}
+          <h2 className="sec">HR Contracts</h2>
+          <div className="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>File</th>
+                  <th>Added</th>
+                  {canWrite && <th />}
+                </tr>
+              </thead>
+              <tbody>
+                {(contracts ?? []).length === 0 ? (
+                  <tr>
+                    <td colSpan={canWrite ? 6 : 5} style={{ color: "var(--muted)" }}>
+                      No contracts yet.
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {(contracts ?? []).map((c) => (
-                    <tr
-                      key={c.id}
-                      className="border-b border-border last:border-b-0"
-                    >
-                      <td className="px-5 py-3 font-medium">
-                        {c.team_member_id
-                          ? (memberName.get(c.team_member_id) ?? "—")
-                          : "—"}
+                ) : (
+                  (contracts ?? []).map((c) => (
+                    <tr key={c.id}>
+                      <td>
+                        <b>
+                          {c.team_member_id
+                            ? (memberName.get(c.team_member_id) ?? "—")
+                            : "—"}
+                        </b>
                       </td>
-                      <td className="px-5 py-3 text-muted">{c.type ?? "—"}</td>
-                      <td className="px-5 py-3">
+                      <td>{c.type ?? "—"}</td>
+                      <td>
                         {canWrite ? (
                           <StatusToggle contractId={c.id} status={c.status} />
                         ) : (
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                              c.status === "complete"
-                                ? "bg-success/10 text-success"
-                                : "bg-gold/15 text-gold"
-                            }`}
+                            className={`tag ${c.status === "complete" ? "t-hi" : "t-med"}`}
                           >
                             {c.status}
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td>
                         {c.file_path ? (
                           <a
                             href={`/hr/contracts/download/${c.id}`}
                             target="_blank"
                             rel="noopener"
-                            className="text-accent hover:underline"
+                            className="crumb"
                           >
                             Open
                           </a>
                         ) : (
-                          <span className="text-muted">—</span>
+                          "—"
                         )}
                       </td>
-                      <td className="px-5 py-3 text-xs text-muted">
-                        {new Date(c.created_at).toLocaleDateString()}
+                      <td style={{ fontSize: 12, color: "var(--muted)" }}>
+                        {new Date(c.created_at).toISOString().slice(0, 10)}
                       </td>
                       {canWrite && (
-                        <td className="px-5 py-3 text-right">
+                        <td style={{ whiteSpace: "nowrap" }}>
                           <DeleteContractButton contractId={c.id} />
                         </td>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </OsShell>
   );
 }

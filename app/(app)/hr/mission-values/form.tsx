@@ -28,112 +28,99 @@ export function MissionValuesForm({
   // row leaves React reusing the previous DOM nodes, so the wrong text
   // stays on screen and gets saved.
   const [rows, setRows] = useState<KeyedValue[]>(() =>
-    (values.length > 0 ? values : [{ title: "", body: "" }]).map(
-      (v, i) => ({ ...v, key: `v${i}` }),
-    ),
+    (values.length > 0 ? values : [{ title: "", body: "" }]).map((v, i) => ({
+      ...v,
+      key: `v${i}`,
+    })),
   );
   const nextKey = useRef(rows.length);
 
   function updateRow(key: string, patch: Partial<ValueItem>) {
-    setRows((prev) =>
-      prev.map((r) => (r.key === key ? { ...r, ...patch } : r)),
-    );
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
 
   return (
-    <form action={formAction} className="space-y-6">
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <label htmlFor="purpose" className="mb-1.5 block text-sm text-muted">
-          Purpose
-        </label>
-        <input
-          id="purpose"
-          name="purpose"
-          defaultValue={purpose}
-          placeholder="Why the company exists, in one line"
-          className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
-        />
-
-        <label
-          htmlFor="mission"
-          className="mb-1.5 mt-4 block text-sm text-muted"
-        >
-          Mission
-        </label>
-        <textarea
-          id="mission"
-          name="mission"
-          rows={3}
-          defaultValue={mission}
-          placeholder="What we are building and for whom"
-          className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
-        />
+    <form action={formAction}>
+      <h2 className="sec">Purpose</h2>
+      <div className="formcard">
+        <div className="field">
+          <label htmlFor="purpose">Why the company exists, in one line</label>
+          <input id="purpose" name="purpose" defaultValue={purpose} />
+        </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <h2 className="text-sm font-semibold">Values</h2>
-        <div className="mt-3 space-y-3">
-          {rows.map((row) => (
-            <div
-              key={row.key}
-              className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto]"
-            >
+      <h2 className="sec">Mission</h2>
+      <div className="formcard">
+        <div className="field">
+          <label htmlFor="mission">What we are building and for whom</label>
+          <textarea id="mission" name="mission" rows={3} defaultValue={mission} />
+        </div>
+      </div>
+
+      <h2 className="sec">Values</h2>
+      <div className="formcard">
+        {rows.map((row) => (
+          <div className="field-row" key={row.key}>
+            <div className="field">
+              <label>Value</label>
               <input
                 name="value_title"
                 value={row.title}
                 onChange={(e) => updateRow(row.key, { title: e.target.value })}
                 placeholder="Safety first"
-                className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
               />
+            </div>
+            <div className="field" style={{ gridColumn: "span 2" }}>
+              <label>What it means in practice</label>
               <input
                 name="value_body"
                 value={row.body}
                 onChange={(e) => updateRow(row.key, { body: e.target.value })}
-                placeholder="What it means in practice"
-                className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
               />
+            </div>
+            <div style={{ alignSelf: "end" }}>
               <button
                 type="button"
+                className="minibtn del"
                 onClick={() =>
                   setRows((prev) => prev.filter((r) => r.key !== row.key))
                 }
-                className="justify-self-start px-2 text-xs text-muted hover:text-danger sm:justify-self-center"
               >
                 Remove
               </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
         <button
           type="button"
+          className="minibtn"
           onClick={() =>
             setRows((prev) => [
               ...prev,
               { title: "", body: "", key: `n${nextKey.current++}` },
             ])
           }
-          className="mt-3 rounded-lg border border-border px-3 py-1.5 text-xs text-foreground transition hover:border-accent"
         >
           Add value
         </button>
-        <p className="mt-2 text-xs text-muted">
+        <p className="note" style={{ fontSize: 12 }}>
           Empty rows are dropped when you save.
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background transition hover:opacity-90 disabled:opacity-50"
-        >
-          {pending ? "Saving…" : "Save"}
-        </button>
-        {state.error && <span className="text-sm text-danger">{state.error}</span>}
-        {state.saved && !state.error && (
-          <span className="text-sm text-success">Saved.</span>
-        )}
-      </div>
+      <button type="submit" className="addbtn" disabled={pending}>
+        {pending ? "Saving…" : "Save"}
+      </button>
+      {state.error && (
+        <span className="err" style={{ marginLeft: 10 }}>
+          {state.error}
+        </span>
+      )}
+      {state.saved && !state.error && (
+        <span className="ok" style={{ marginLeft: 10 }}>
+          Saved.
+        </span>
+      )}
     </form>
   );
 }

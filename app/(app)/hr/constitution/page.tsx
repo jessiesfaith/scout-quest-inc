@@ -1,15 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
+import { OsShell } from "../../shell";
 
 export const dynamic = "force-dynamic";
-
-export const metadata = {
-  title: "HR › Scout Quest AI Constitution — Scout Quest Inc",
-};
 
 // The Constitution is governed outside this app — it lives in the repo as
 // markdown and renders read-only here. To publish a new version, replace
@@ -17,11 +13,7 @@ export const metadata = {
 const DOC = "docs/enterprise-constitution-v1.3.md";
 
 export default async function ConstitutionPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/");
+  const { email, isOwner } = await getViewer();
 
   let markdown: string | null = null;
   try {
@@ -31,25 +23,30 @@ export default async function ConstitutionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="text-2xl font-semibold">
-        HR › Scout Quest AI Constitution
-      </h1>
-      <p className="mt-1 text-sm text-muted">
-        Enterprise Constitution v1.3 — read-only. Governed outside this app;
-        the source of truth is <code>{DOC}</code> in the repo, and version
-        history lives in git.
-      </p>
-
+    <OsShell
+      email={email}
+      isOwner={isOwner}
+      crumbs={[
+        { label: "Modules", href: "/dashboard" },
+        { label: "HR", href: "/hr/team" },
+        { label: "Scout Quest AI Constitution" },
+      ]}
+      lead="Enterprise Constitution v1.3 — read-only. Governed outside this app; the source of truth is the markdown in the repo, and version history lives in git."
+    >
+      <h2 className="sec">Full text — Scout Quest AI Constitution (v1.3)</h2>
       {markdown === null ? (
-        <p className="mt-8 text-sm text-danger">
+        <p className="note" style={{ color: "var(--danger)" }}>
           Could not read {DOC}.
         </p>
       ) : (
-        <article className="prose-constitution mt-8 rounded-2xl border border-border bg-surface p-6">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-        </article>
+        <div className="card">
+          <div className="constext">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {markdown}
+            </ReactMarkdown>
+          </div>
+        </div>
       )}
-    </div>
+    </OsShell>
   );
 }

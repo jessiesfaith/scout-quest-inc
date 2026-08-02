@@ -10,10 +10,7 @@ export type Finding = {
   resolution?: string;
 };
 
-export type Coverage = {
-  checked?: string[];
-  not_checked?: string[];
-};
+export type Coverage = { checked?: string[]; not_checked?: string[] };
 
 export type Report = {
   id: string;
@@ -33,17 +30,17 @@ export type Report = {
   coverage: Coverage | null;
 };
 
-const SEVERITY_STYLE: Record<string, string> = {
-  high: "bg-danger/15 text-danger",
-  medium: "bg-gold/15 text-gold",
-  low: "bg-accent-soft text-accent",
+const SEV: Record<string, string> = {
+  high: "t-lo",
+  medium: "t-med",
+  low: "t-hi",
 };
 
-const OUTCOME_STYLE: Record<string, string> = {
-  fixed: "bg-success/10 text-success",
-  "needs-attention": "bg-danger/15 text-danger",
-  "accepted-risk": "bg-gold/15 text-gold",
-  reviewed: "bg-accent-soft text-accent",
+const OUTCOME: Record<string, string> = {
+  fixed: "b-live",
+  "needs-attention": "b-plan",
+  "accepted-risk": "b-ready",
+  reviewed: "b-reg",
 };
 
 function ReportCard({ report }: { report: Report }) {
@@ -55,89 +52,69 @@ function ReportCard({ report }: { report: Report }) {
   const notChecked = report.coverage?.not_checked ?? [];
 
   return (
-    <div className="rounded-2xl border border-border bg-surface">
+    <div className="rpt">
       <button
         type="button"
+        className="rpt-head"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-start justify-between gap-4 p-5 text-left"
+        aria-expanded={open}
       >
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold">{report.title}</span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                OUTCOME_STYLE[report.outcome] ?? "bg-accent-soft text-accent"
-              }`}
-            >
-              {report.outcome}
-            </span>
-          </div>
-          <div className="mt-1 text-xs text-muted">
+        <span>
+          <span style={{ fontWeight: 700, fontSize: 14.5 }}>
+            {report.title}
+          </span>{" "}
+          <span className={`badge ${OUTCOME[report.outcome] ?? "b-reg"}`}>
+            {report.outcome}
+          </span>
+          <span className="rpt-meta" style={{ display: "block" }}>
             {report.ran_at_label}
-            {report.scope && <> · {report.scope}</>}
-            {report.agent_count != null && <> · {report.agent_count} agents</>}
-            {" · "}
-            {confirmed.length} confirmed finding
-            {confirmed.length === 1 ? "" : "s"}
-          </div>
-        </div>
-        <span className="shrink-0 text-xs text-accent">
-          {open ? "Close" : "Open"}
+            {report.scope && ` · ${report.scope}`}
+            {report.agent_count != null && ` · ${report.agent_count} agents`}
+            {` · ${confirmed.length} confirmed finding${confirmed.length === 1 ? "" : "s"}`}
+          </span>
+        </span>
+        <span className="tealtx" style={{ fontSize: 12.5, fontWeight: 700 }}>
+          {open ? "Close" : "Open →"}
         </span>
       </button>
 
       {open && (
-        <div className="border-t border-border p-5">
+        <div className="rpt-body">
           {report.summary && (
-            <p className="text-sm text-muted">{report.summary}</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--muted)" }}>
+              {report.summary}
+            </p>
           )}
-          <p className="mt-2 text-xs text-muted">
-            {report.reviewer && <>Reviewed by {report.reviewer}. </>}
+          <p className="rpt-meta">
+            {report.reviewer && `Reviewed by ${report.reviewer}. `}
             Ran {report.ran_at_label}
-            {report.filed_at_label && (
-              <>
-                {" "}
-                · filed {report.filed_at_label} (database-stamped)
-              </>
-            )}
-            {report.created_by_email && <> by {report.created_by_email}</>}
-            {report.commit_sha && <> · commit {report.commit_sha}</>}
+            {report.filed_at_label &&
+              ` · filed ${report.filed_at_label} (database-stamped)`}
+            {report.created_by_email && ` by ${report.created_by_email}`}
+            {report.commit_sha && ` · commit ${report.commit_sha}`}
           </p>
 
           {findings.length > 0 && (
-            <div className="mt-5 space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Findings
-              </h3>
+            <div style={{ marginTop: 14 }}>
               {findings.map((f, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border border-border bg-surface-raised p-4"
+                  className={`finding${f.severity === "medium" ? " warnbar" : ""}`}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{f.title}</span>
+                  <h3>
+                    {f.title}
                     {f.severity && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          SEVERITY_STYLE[f.severity] ?? "bg-accent-soft text-accent"
-                        }`}
-                      >
+                      <span className={`tag ${SEV[f.severity] ?? "t-hi"}`}>
                         {f.severity}
                       </span>
                     )}
                     {f.status === "dismissed" && (
-                      <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted">
-                        dismissed on verification
-                      </span>
+                      <span className="tag t-hi">dismissed on verification</span>
                     )}
-                  </div>
-                  {f.detail && (
-                    <p className="mt-2 text-xs leading-relaxed text-muted">
-                      {f.detail}
-                    </p>
-                  )}
+                  </h3>
+                  {f.detail && <p>{f.detail}</p>}
                   {f.resolution && (
-                    <p className="mt-2 text-xs leading-relaxed text-success">
+                    <p style={{ color: "var(--ok)", marginTop: 5 }}>
                       Resolved: {f.resolution}
                     </p>
                   )}
@@ -146,44 +123,37 @@ function ReportCard({ report }: { report: Report }) {
             </div>
           )}
 
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="cov">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">
-                Checked in this review
-              </h3>
+              <h4>Checked in this review</h4>
               {checked.length === 0 ? (
-                <p className="mt-2 text-xs text-gold">
+                <p style={{ margin: 0, fontSize: 12, color: "var(--warn)" }}>
                   Not recorded — treat this review&apos;s scope as unknown.
                 </p>
               ) : (
-                <ul className="mt-2 space-y-1 pl-4">
+                <ul>
                   {checked.map((c) => (
-                    <li key={c} className="list-disc text-xs text-muted">
-                      {c}
-                    </li>
+                    <li key={c}>{c}</li>
                   ))}
                 </ul>
               )}
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-gold">
+              <h4 style={{ color: "var(--warn)" }}>
                 NOT checked — residual risk
-              </h3>
+              </h4>
               {notChecked.length === 0 ? (
-                <p className="mt-2 text-xs text-gold">
-                  Not recorded. This does not mean everything was covered —
-                  see the reviewer&apos;s guide for the standing limits.
+                <p style={{ margin: 0, fontSize: 12, color: "var(--warn)" }}>
+                  Not recorded. This does not mean everything was covered.
                 </p>
               ) : (
-                <ul className="mt-2 space-y-1 pl-4">
+                <ul>
                   {notChecked.map((c) => (
-                    <li key={c} className="list-disc text-xs text-muted">
-                      {c}
-                    </li>
+                    <li key={c}>{c}</li>
                   ))}
                 </ul>
               )}
-              <p className="mt-2 text-xs text-muted">
+              <p style={{ margin: "6px 0 0", fontSize: 11.5, color: "var(--muted)" }}>
                 Plus the standing limits in the reviewer&apos;s guide, which
                 apply to every review.
               </p>
@@ -196,35 +166,29 @@ function ReportCard({ report }: { report: Report }) {
 }
 
 export function ReportList({ reports }: { reports: Report[] }) {
-  const [kind, setKind] = useState<string>("all");
+  const [kind, setKind] = useState("all");
   const kinds = Array.from(new Set(reports.map((r) => r.kind)));
-  const shown =
-    kind === "all" ? reports : reports.filter((r) => r.kind === kind);
+  const shown = kind === "all" ? reports : reports.filter((r) => r.kind === kind);
 
   if (reports.length === 0) {
     return (
-      <p className="rounded-2xl border border-border bg-surface p-5 text-sm text-muted">
-        No reports archived yet. Reviews appear here automatically as they are
-        filed — if this stays empty while work is shipping, that itself is
-        worth asking about.
+      <p className="note">
+        No reports archived yet. If work is shipping and this stays empty,
+        that itself is worth asking about.
       </p>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <>
       {kinds.length > 1 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="chips">
           {["all", ...kinds].map((k) => (
             <button
               key={k}
               type="button"
+              className={`chip${kind === k ? " on" : ""}`}
               onClick={() => setKind(k)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                kind === k
-                  ? "bg-accent text-background"
-                  : "border border-border text-muted hover:text-foreground"
-              }`}
             >
               {k}
             </button>
@@ -234,6 +198,6 @@ export function ReportList({ reports }: { reports: Report[] }) {
       {shown.map((r) => (
         <ReportCard key={r.id} report={r} />
       ))}
-    </div>
+    </>
   );
 }

@@ -25,34 +25,33 @@ export type ProfileOption = {
   full_name: string | null;
 };
 
-function UnassignChip({
-  assignmentId,
-  label,
-}: {
-  assignmentId: string;
-  label: string;
-}) {
+function UnassignChip({ id, label }: { id: string; label: string }) {
   const [state, formAction, pending] = useActionState(
     unassignRole,
     initialState,
   );
 
   return (
-    <form action={formAction} className="inline-flex flex-col">
-      <input type="hidden" name="assignment_id" value={assignmentId} />
+    <form action={formAction} style={{ display: "inline" }}>
+      <input type="hidden" name="assignment_id" value={id} />
       <button
         type="submit"
         disabled={pending}
+        className="tag t-hi"
         title="Remove this role"
-        className="group inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-0.5 text-xs text-accent transition hover:bg-danger/15 hover:text-danger disabled:opacity-50"
+        style={{
+          border: "none",
+          cursor: "pointer",
+          fontFamily: "inherit",
+          marginRight: 5,
+        }}
       >
-        {label}
-        <span aria-hidden="true" className="font-bold">
-          ×
-        </span>
+        {label} ×
       </button>
       {state.error && (
-        <span className="mt-1 text-xs text-danger">{state.error}</span>
+        <span className="note" style={{ color: "var(--danger)" }}>
+          {state.error}
+        </span>
       )}
     </form>
   );
@@ -60,79 +59,73 @@ function UnassignChip({
 
 function AssignForm({
   memberId,
-  availableRoles,
+  available,
 }: {
   memberId: string;
-  availableRoles: Role[];
+  available: Role[];
 }) {
   const [state, formAction, pending] = useActionState(assignRole, initialState);
-
-  if (availableRoles.length === 0) return null;
+  if (available.length === 0) return null;
 
   return (
-    <form action={formAction} className="flex items-center gap-2">
+    <form action={formAction} className="addmember" style={{ margin: "8px 0 0" }}>
       <input type="hidden" name="team_member_id" value={memberId} />
-      <select
-        name="role_id"
-        defaultValue=""
-        required
-        className="rounded-lg border border-border bg-surface-raised px-2 py-1 text-xs outline-none focus:border-accent"
-      >
+      <select name="role_id" defaultValue="" required aria-label="Role">
         <option value="" disabled>
-          Add role…
+          — role —
         </option>
-        {availableRoles.map((r) => (
+        {available.map((r) => (
           <option key={r.id} value={r.id}>
             {r.name}
           </option>
         ))}
       </select>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg border border-border px-2.5 py-1 text-xs text-foreground transition hover:border-accent disabled:opacity-50"
-      >
+      <button type="submit" className="minibtn" disabled={pending}>
         {pending ? "…" : "Assign"}
       </button>
-      {state.error && <span className="text-xs text-danger">{state.error}</span>}
+      {state.error && (
+        <span className="note" style={{ color: "var(--danger)" }}>
+          {state.error}
+        </span>
+      )}
     </form>
   );
 }
 
 function LinkAccountForm({
   memberId,
-  currentProfileId,
+  current,
   profiles,
 }: {
   memberId: string;
-  currentProfileId: string | null;
+  current: string | null;
   profiles: ProfileOption[];
 }) {
   const [state, formAction, pending] = useActionState(linkAccount, initialState);
 
   return (
-    <form action={formAction} className="flex items-center gap-2">
+    <form action={formAction} className="addmember" style={{ margin: 0 }}>
       <input type="hidden" name="team_member_id" value={memberId} />
       <select
         name="profile_id"
-        defaultValue={currentProfileId ?? ""}
-        className="max-w-56 rounded-lg border border-border bg-surface-raised px-2 py-1 text-xs outline-none focus:border-accent"
+        defaultValue={current ?? ""}
+        aria-label="Linked account"
       >
-        <option value="">No linked account</option>
+        <option value="">— no linked account —</option>
         {profiles.map((p) => (
           <option key={p.id} value={p.id}>
             {p.email}
           </option>
         ))}
       </select>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-lg border border-border px-2.5 py-1 text-xs text-foreground transition hover:border-accent disabled:opacity-50"
-      >
+      <button type="submit" className="minibtn" disabled={pending}>
         {pending ? "…" : "Save"}
       </button>
-      {state.error && <span className="text-xs text-danger">{state.error}</span>}
+      {state.error && (
+        <span className="note" style={{ color: "var(--danger)" }}>
+          {state.error}
+        </span>
+      )}
     </form>
   );
 }
@@ -150,62 +143,66 @@ export function TeamPanel({
 
   if (members.length === 0) {
     return (
-      <p className="text-sm text-muted">
-        No team members yet — add them under HR › Team, then assign roles here.
+      <p className="note">
+        No team members yet — add them under HR › Team, then assign roles
+        here.
       </p>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-      <table className="w-full text-left text-sm">
+    <div className="card">
+      <table>
         <thead>
-          <tr className="border-b border-border text-xs uppercase tracking-wider text-muted">
-            <th className="px-5 py-3 font-medium">Member</th>
-            <th className="px-5 py-3 font-medium">Linked account</th>
-            <th className="px-5 py-3 font-medium">Roles</th>
+          <tr>
+            <th>Team member</th>
+            <th>Linked account</th>
+            <th>Roles</th>
           </tr>
         </thead>
         <tbody>
           {members.map((m) => {
             const held = new Set(m.assignments.map((a) => a.role_id));
-            const available = roles.filter((r) => !held.has(r.id));
             return (
-              <tr key={m.id} className="border-b border-border last:border-b-0 align-top">
-                <td className="px-5 py-3">
-                  <div className="font-medium">{m.name}</div>
+              <tr key={m.id}>
+                <td style={{ verticalAlign: "top" }}>
+                  <b>{m.name}</b>
                   {m.working_on && (
-                    <div className="text-xs text-muted">{m.working_on}</div>
+                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                      {m.working_on}
+                    </div>
                   )}
                 </td>
-                <td className="px-5 py-3">
+                <td style={{ verticalAlign: "top" }}>
                   <LinkAccountForm
                     memberId={m.id}
-                    currentProfileId={m.profile_id}
+                    current={m.profile_id}
                     profiles={profiles}
                   />
                   {!m.profile_id && (
-                    <p className="mt-1 text-xs text-muted">
+                    <div style={{ fontSize: 11.5, color: "var(--warn)" }}>
                       Roles only take effect once an account is linked.
-                    </p>
+                    </div>
                   )}
                 </td>
-                <td className="px-5 py-3">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {m.assignments.map((a) => (
+                <td style={{ verticalAlign: "top" }}>
+                  {m.assignments.length === 0 ? (
+                    <span style={{ color: "var(--muted)", fontSize: 12.5 }}>
+                      No roles
+                    </span>
+                  ) : (
+                    m.assignments.map((a) => (
                       <UnassignChip
                         key={a.id}
-                        assignmentId={a.id}
+                        id={a.id}
                         label={roleName.get(a.role_id) ?? "?"}
                       />
-                    ))}
-                    {m.assignments.length === 0 && (
-                      <span className="text-xs text-muted">No roles</span>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <AssignForm memberId={m.id} availableRoles={available} />
-                  </div>
+                    ))
+                  )}
+                  <AssignForm
+                    memberId={m.id}
+                    available={roles.filter((r) => !held.has(r.id))}
+                  />
                 </td>
               </tr>
             );

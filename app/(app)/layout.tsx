@@ -1,39 +1,14 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/profile";
-import { COMPANY_NAME, OWNER_EMAIL } from "@/lib/constants";
+import { OWNER_EMAIL } from "@/lib/constants";
 
 export const metadata = {
   title: "Scout Quest Inc — Company OS",
 };
 
-const NAV = [
-  { section: "Company", items: [{ label: "Dashboard", href: "/dashboard" }] },
-  {
-    section: "HR",
-    items: [
-      { label: "Team", href: "/hr/team" },
-      { label: "Contracts", href: "/hr/contracts" },
-      { label: "Mission & Values", href: "/hr/mission-values" },
-      { label: "Constitution", href: "/hr/constitution" },
-    ],
-  },
-];
-
-const IT_NAV = [
-  { label: "Identity & Access", href: "/it/identity-access" },
-  { label: "Zero-Day", href: "/it/zero-day" },
-];
-
-const SECURITY_NAV = [
-  { label: "Change Management", href: "/security/change-management" },
-  { label: "Change Log", href: "/security/change-log" },
-];
-
-// Stage 2 seam — listed so the shell shows the shape of the OS, not clickable yet.
-const UPCOMING = ["Agent Platform", "Products", "Finance", "Projects"];
-
+// Gate only. The visual shell lives in shell.tsx and is rendered per
+// screen, because the design gives every screen its own breadcrumb trail.
 export default async function AppLayout({
   children,
 }: {
@@ -51,7 +26,7 @@ export default async function AppLayout({
   // (e.g. a deploy that outruns its migration) — lockout-proof by design.
   const isOwner = (profile?.is_owner ?? false) || user.email === OWNER_EMAIL;
 
-  // The owner always gets in with just email + password.
+  // The owner always gets in with password only.
   // Everyone else: mandatory TOTP 2FA, then a role assigned by an admin.
   if (!isOwner) {
     const { data: aal } =
@@ -59,140 +34,22 @@ export default async function AppLayout({
     if (!aal || aal.nextLevel !== "aal2" || aal.currentLevel !== "aal2") {
       redirect("/mfa");
     }
-    if (!profile?.role_id) redirect("/pending");
+    // Access comes from either the legacy single role or a role
+    // assignment made in Identity & Access — same rule the database uses.
+    let hasRole = Boolean(profile?.role_id);
+    if (!hasRole) {
+      const { data: assigned } = await supabase
+        .from("team_members")
+        .select("id, role_assignments(id)")
+        .eq("profile_id", user.id)
+        .limit(1);
+      hasRole = (assigned ?? []).some(
+        (m: { role_assignments?: unknown[] }) =>
+          (m.role_assignments ?? []).length > 0,
+      );
+    }
+    if (!hasRole) redirect("/pending");
   }
 
-  return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-surface">
-        <Link
-          href="/"
-          title="View the public Scout Quest Inc site"
-          className="group flex items-center gap-3 px-5 py-5 transition hover:bg-surface-raised"
-        >
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-lg"
-            style={{
-              background: "linear-gradient(135deg, #16b8a6, #0f766e)",
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-              <path
-                d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2z"
-                fill="#fff"
-              />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-semibold leading-tight">
-              {COMPANY_NAME}
-            </div>
-            <div className="text-xs text-muted group-hover:text-accent">
-              View public site →
-            </div>
-          </div>
-        </Link>
-
-        <nav className="flex-1 space-y-6 px-3 py-4">
-          {NAV.map((group) => (
-            <div key={group.section}>
-              <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                {group.section}
-              </div>
-              {group.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          ))}
-
-          <div>
-            <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
-              Security Tooling
-            </div>
-            {SECURITY_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
-          {isOwner && (
-            <div>
-              <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                IT
-              </div>
-              {IT_NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <div>
-            <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
-              Coming in Stage 2
-            </div>
-            {UPCOMING.map((label) => (
-              <div
-                key={label}
-                className="cursor-not-allowed px-2 py-1.5 text-sm text-muted/60"
-              >
-                {label}
-              </div>
-            ))}
-          </div>
-        </nav>
-
-        <div className="border-t border-border px-5 py-4">
-          <div className="truncate text-xs text-muted" title={user.email ?? ""}>
-            {user.email}
-            {profile?.is_owner && (
-              <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent">
-                OWNER
-              </span>
-            )}
-          </div>
-          <form action="/auth/signout" method="post" className="mt-3">
-            <button
-              type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition hover:border-danger hover:bg-danger/10 hover:text-danger"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4"
-                aria-hidden="true"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      <main className="flex-1 overflow-x-hidden p-8">{children}</main>
-    </div>
-  );
+  return <>{children}</>;
 }

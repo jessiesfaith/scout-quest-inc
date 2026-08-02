@@ -9,44 +9,59 @@ export function ReviewGuide() {
   const [open, setOpen] = useState(true);
 
   return (
-    <aside className="lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
-      <div className="rounded-2xl border border-border bg-surface p-5">
-        <div className="flex items-start justify-between gap-3">
+    <aside className="zd-guide">
+      <div className="card" style={{ padding: "15px 17px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
           <div>
-            <h2 className="text-sm font-semibold">Reviewer&apos;s guide</h2>
-            <p className="mt-1 text-xs text-muted">
+            <b style={{ fontSize: 13.5 }}>Reviewer&apos;s guide</b>
+            <p className="note" style={{ margin: "3px 0 0", fontSize: 12 }}>
               How to read these reports, and what they do and don&apos;t
               cover.
             </p>
           </div>
           <button
             type="button"
+            className="minibtn zd-toggle"
             onClick={() => setOpen(!open)}
-            className="shrink-0 text-xs text-accent lg:hidden"
           >
             {open ? "Hide" : "Show"}
           </button>
         </div>
 
-        <div className={`${open ? "block" : "hidden"} lg:block`}>
+        <div className={open ? "zd-guide-body" : "zd-guide-body zd-hidden"}>
           {GUIDE_SECTIONS.map((section) => (
-            <section key={section.heading} className="mt-6">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-accent">
+            <section key={section.heading} style={{ marginTop: 18 }}>
+              <h3
+                style={{
+                  margin: "0 0 6px",
+                  fontSize: 11,
+                  textTransform: "uppercase",
+                  letterSpacing: ".05em",
+                  color: "var(--a)",
+                }}
+              >
                 {section.heading}
               </h3>
               {section.intro && (
-                <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--muted)" }}>
                   {section.intro}
                 </p>
               )}
               {section.items && (
-                <dl className="mt-3 space-y-3">
+                <dl style={{ margin: 0 }}>
                   {section.items.map((item) => (
-                    <div key={item.term}>
-                      <dt className="text-xs font-semibold text-foreground">
+                    <div key={item.term} style={{ marginBottom: 9 }}>
+                      <dt style={{ fontSize: 12, fontWeight: 700 }}>
                         {item.term}
                       </dt>
-                      <dd className="mt-0.5 text-xs leading-relaxed text-muted">
+                      <dd
+                        style={{
+                          margin: "2px 0 0",
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          lineHeight: 1.5,
+                        }}
+                      >
                         {item.text}
                       </dd>
                     </div>
@@ -54,11 +69,11 @@ export function ReviewGuide() {
                 </dl>
               )}
               {section.body && (
-                <ul className="mt-2 space-y-1.5 pl-4">
+                <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
                   {section.body.map((line, i) => (
                     <li
                       key={i}
-                      className="list-disc text-xs leading-relaxed text-muted"
+                      style={{ fontSize: 12, color: "var(--muted)", margin: "4px 0" }}
                     >
                       {line}
                     </li>

@@ -7,7 +7,7 @@
 **Reference docs (read first):**
 - `SCOUT_QUEST_INC_DEPLOYMENT_ARCHITECTURE.md` — schema, auth, RLS design (source of truth for data model).
 - `CLAUDE_CODE_KICKOFF_DEPLOY_STAGE1.md` — Stage 1 skeleton (profiles + team_members + auth). Build on it; don't re-scaffold.
-- Visual reference: the `agent-platform-dashboard` HTML artifact / `index.html` marketing page — match its layout, navigation model, and styling.
+- **Visual reference:** `SCOUT_QUEST_INC_COMPANY_OS.html` (in the repo root) — this is the **full company OS** design mockup, not just the Agent Platform. Despite any older filename, "Agent Platform" is only ONE sub-area inside the IT module; this file contains the entire module map below (IT, HR, all Products, Finance, Contracts, Projects, Departments). Match its layout, navigation model, and styling. Also `index.html` = the marketing/login page.
 
 **Concrete project facts (unchanged from Stage 1):**
 - Repo `scout-quest-inc` (private), Next.js (App Router) + `@supabase/supabase-js` + `@supabase/ssr`.

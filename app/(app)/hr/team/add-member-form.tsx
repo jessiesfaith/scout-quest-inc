@@ -17,73 +17,28 @@ export function AddMemberForm() {
   }, [state]);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="rounded-2xl border border-border bg-surface p-5"
-    >
-      <h2 className="text-sm font-semibold">Add member</h2>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <label htmlFor="name" className="mb-1.5 block text-xs text-muted">
-            Name *
-          </label>
-          <input
-            id="name"
-            name="name"
-            required
-            placeholder="Ada Lovelace"
-            className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
-          />
-        </div>
-        <div>
-          <label htmlFor="role" className="mb-1.5 block text-xs text-muted">
-            Role
-          </label>
-          <input
-            id="role"
-            name="role"
-            placeholder="Game designer"
-            className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="mb-1.5 block text-xs text-muted">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="ada@example.com"
-            className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="working_on"
-            className="mb-1.5 block text-xs text-muted"
-          >
-            Working on
-          </label>
-          <input
-            id="working_on"
-            name="working_on"
-            placeholder="Tutor onboarding flow"
-            className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
-          />
-        </div>
-      </div>
-
-      {state.error && <p className="mt-3 text-sm text-danger">{state.error}</p>}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="mt-4 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-background transition hover:opacity-90 disabled:opacity-50"
-      >
+    <form ref={formRef} action={formAction} className="addmember">
+      <input name="name" required placeholder="Name" aria-label="Name" />
+      <input name="role" placeholder="Role" aria-label="Role" />
+      <input
+        name="working_on"
+        placeholder="Working on"
+        aria-label="Working on"
+      />
+      <input
+        name="email"
+        type="email"
+        placeholder="Email"
+        aria-label="Email"
+      />
+      <button type="submit" className="addbtn" disabled={pending}>
         {pending ? "Adding…" : "Add member"}
       </button>
+      {state.error && (
+        <span className="note" style={{ color: "var(--danger)" }}>
+          {state.error}
+        </span>
+      )}
     </form>
   );
 }

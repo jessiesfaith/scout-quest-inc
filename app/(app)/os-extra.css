@@ -1,0 +1,153 @@
+/* Additions to the ported design — layout the mockup did not have.
+   Kept separate from the generated os.css so a regeneration never
+   clobbers them. */
+
+/* Zero-Day: report list with the reviewer's guide alongside. */
+.os .zd-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+@media (min-width: 1100px) {
+  .os .zd-grid {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    align-items: start;
+  }
+  .os .zd-guide {
+    position: sticky;
+    top: 18px;
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+  }
+  .os .zd-toggle {
+    display: none;
+  }
+}
+.os .zd-hidden {
+  display: none;
+}
+
+/* Expandable report card */
+.os .rpt {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 11px;
+  overflow: hidden;
+}
+.os .rpt-head {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+.os .rpt-head:hover {
+  background: #fbfcfe;
+}
+.os .rpt-body {
+  border-top: 1px solid var(--line);
+  padding: 14px 16px;
+}
+.os .rpt-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.os .cov {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.os .cov h4 {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.os .cov ul {
+  margin: 0;
+  padding-left: 17px;
+}
+.os .cov li {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 3px 0;
+}
+
+/* Filter chips */
+.os .chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.os .chip {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+}
+.os .chip.on {
+  background: var(--a);
+  border-color: var(--a);
+  color: #fff;
+}
+
+/* Forms that the mockup only sketched */
+.os .field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.os .field label {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.os .field input,
+.os .field select,
+.os .field textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+.os .formcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 15px 17px;
+  margin-bottom: 14px;
+}
+.os .err {
+  color: var(--danger);
+  font-size: 12.5px;
+}
+.os .ok {
+  color: var(--ok);
+  font-size: 12.5px;
+}

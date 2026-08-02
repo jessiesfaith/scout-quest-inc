@@ -1,22 +1,19 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import { checkPerm } from "@/lib/permissions";
+import { OsShell } from "../../shell";
 import { ReportList, type Report } from "./report-list";
 import { ReviewGuide } from "./guide";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "IT › Zero-Day — Scout Quest Inc",
-};
-
 export default async function ZeroDayPage() {
+  const { supabase, email, isOwner } = await getViewer();
   const canRead =
     (await checkPerm("IT: Agent Platform")) ||
     (await checkPerm("Security Tooling: Change Management"));
   if (!canRead) redirect("/dashboard");
 
-  const supabase = await createClient();
   const { data: reports, error } = await supabase
     .from("security_reports")
     .select(
@@ -25,8 +22,8 @@ export default async function ZeroDayPage() {
     .order("ran_at", { ascending: false })
     .returns<(Report & { filed_at: string | null })[]>();
 
-  // Format dates on the server: locale formatting inside a client
-  // component renders differently on server and client and warns.
+  // Format on the server: locale formatting inside a client component
+  // renders differently on server and client and warns.
   const fmt = (iso: string | null) => {
     if (!iso) return null;
     const d = new Date(iso);
@@ -41,54 +38,47 @@ export default async function ZeroDayPage() {
   }));
 
   const openItems = list.filter((r) => r.outcome === "needs-attention").length;
+  const confirmed = list.reduce(
+    (n, r) =>
+      n +
+      (Array.isArray(r.findings) ? r.findings : []).filter(
+        (f) => f.status === "confirmed",
+      ).length,
+    0,
+  );
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <h1 className="text-2xl font-semibold">IT › Zero-Day</h1>
-      <p className="mt-1 text-sm text-muted">
-        Security and evaluation reviews run on this codebase, archived by date
-        and time. Entries cannot be edited or deleted once filed — not by
-        anyone, including you. Reports are filed by hand today, so an empty
-        stretch means no review was filed, not that nothing needed one.
-      </p>
-
+    <OsShell
+      email={email}
+      isOwner={isOwner}
+      crumbs={[
+        { label: "Modules", href: "/dashboard" },
+        { label: "IT", href: "/it/identity-access" },
+        { label: "Zero-Day" },
+      ]}
+      lead="Security and evaluation reviews run on this codebase, archived by date and time. Entries cannot be edited or deleted once filed — not by anyone, including you. Reports are filed by hand today, so an empty stretch means no review was filed, not that nothing needed one."
+    >
       {error ? (
-        <p className="mt-8 text-sm text-danger">
-          Could not load reports: {error.message}. Has migration 0007 been
-          run?
+        <p className="note" style={{ color: "var(--danger)" }}>
+          Could not load reports: {error.message}. Has migration 0007 been run?
         </p>
       ) : (
-        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-surface p-4">
-                <div className="text-2xl font-semibold text-accent">
-                  {list.length}
-                </div>
-                <div className="text-xs text-muted">reviews archived</div>
+        <div className="zd-grid">
+          <div>
+            <div className="tiles" style={{ marginBottom: 18 }}>
+              <div className="tile">
+                <div className="n">{list.length}</div>
+                <div className="l">reviews archived</div>
               </div>
-              <div className="rounded-xl border border-border bg-surface p-4">
-                <div className="text-2xl font-semibold">
-                  {list.reduce(
-                    (n, r) =>
-                      n +
-                      (Array.isArray(r.findings) ? r.findings : []).filter(
-                        (f) => f.status === "confirmed",
-                      ).length,
-                    0,
-                  )}
-                </div>
-                <div className="text-xs text-muted">confirmed findings</div>
+              <div className="tile">
+                <div className="n">{confirmed}</div>
+                <div className="l">confirmed findings</div>
               </div>
-              <div className="rounded-xl border border-border bg-surface p-4">
-                <div
-                  className={`text-2xl font-semibold ${
-                    openItems > 0 ? "text-danger" : "text-success"
-                  }`}
-                >
+              <div className="tile">
+                <div className="n" style={{ color: openItems > 0 ? "var(--danger)" : "var(--ok)" }}>
                   {openItems}
                 </div>
-                <div className="text-xs text-muted">need your attention</div>
+                <div className="l">need your attention</div>
               </div>
             </div>
 
@@ -98,6 +88,6 @@ export default async function ZeroDayPage() {
           <ReviewGuide />
         </div>
       )}
-    </div>
+    </OsShell>
   );
 }

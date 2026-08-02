@@ -1,58 +1,47 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getViewer } from "@/lib/viewer";
 import { checkPerm } from "@/lib/permissions";
+import { OsShell } from "../../shell";
 import { CHANGE_COLUMNS, type ChangeRow } from "../change-log/page";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Security Tooling › Change Management — Scout Quest Inc",
-};
-
-// Class definitions come from the Enterprise Constitution — this screen
-// shows how work is classified and what each class requires.
+// Class definitions come from the Enterprise Constitution §4.
 const CLASSES = [
   {
     id: "1",
     name: "Routine",
-    rule: "Reversible, no new surface. Ship it and log it.",
-    gate: "No approval needed.",
+    rule: "Reversible, low-cost, no regulated data, within budget.",
+    gate: "Agent may proceed; logged and evaluated.",
   },
   {
     id: "2",
     name: "Notable",
-    rule: "Changes behaviour people rely on, still reversible.",
-    gate: "Review before merge; record the entry.",
+    rule: "Cross-module impact, new dependencies, moderate cost, or a new workflow.",
+    gate: "Department Manager approval.",
   },
   {
     id: "3",
     name: "Governed",
-    rule: "Auth, data model, permissions, or a new external surface.",
-    gate: "State tradeoffs, get the owner's ruling, review before merge.",
+    rule: "Architecture, security, compliance, spend structure, or org design.",
+    gate: "Jessica — executive approval.",
   },
   {
     id: "3+",
     name: "High risk",
-    rule: "Anything touching regulated data or hard to reverse.",
-    gate: "Owner ruling required, plus an independent review on record.",
+    rule: "Regulated-data flows to external parties, legal exposure.",
+    gate: "Jessica plus external counsel / compliance review.",
   },
 ];
 
 export default async function ChangeManagementPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/");
-
+  const { supabase, email, isOwner } = await getViewer();
   if (!(await checkPerm("Security Tooling: Change Management"))) {
     redirect("/security/change-log");
   }
 
   const LIMIT = 50;
-  // count: "exact" gives the true total even though only LIMIT rows come
-  // back, so the per-class tallies aren't quietly capped.
   const { data: governed, error, count } = await supabase
     .from("change_log")
     .select(CHANGE_COLUMNS, { count: "exact" })
@@ -70,89 +59,108 @@ export default async function ChangeManagementPage() {
   const truncated = (count ?? shown.length) > shown.length;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold">
-        Security Tooling › Change Management
-      </h1>
-      <p className="mt-1 text-sm text-muted">
-        How changes are classified, and every governed change on record. New
-        entries are recorded on{" "}
-        <Link href="/security/change-log" className="text-accent hover:underline">
-          Change Log
-        </Link>
-        .
-      </p>
-
-      <div className="mt-8 space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {CLASSES.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-2xl border border-border bg-surface p-5"
-            >
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
-                  Class {c.id}
+    <OsShell
+      email={email}
+      isOwner={isOwner}
+      crumbs={[
+        { label: "Modules", href: "/dashboard" },
+        { label: "Security Tooling", href: "/security/change-management" },
+        { label: "Change Management" },
+      ]}
+      lead="How changes are classified, and every governed change on record. New entries are recorded on the Change Log."
+    >
+      <h2 className="sec">Change classes</h2>
+      <div className="modgrid">
+        {CLASSES.map((c) => (
+          <div className="modcard" key={c.id}>
+            <h3>
+              Class {c.id} <span className="badge b-gov">{c.name}</span>
+              {counts.get(c.id) != null && (
+                <span
+                  style={{
+                    marginLeft: "auto",
+                    fontSize: 11.5,
+                    color: "var(--muted)",
+                  }}
+                >
+                  {counts.get(c.id)} shown
                 </span>
-                <span className="text-sm font-semibold">{c.name}</span>
-                {counts.get(c.id) != null && (
-                  <span className="ml-auto text-xs text-muted">
-                    {counts.get(c.id)} shown
-                  </span>
-                )}
-              </div>
-              <p className="mt-2 text-sm text-muted">{c.rule}</p>
-              <p className="mt-1 text-xs text-gold">{c.gate}</p>
+              )}
+            </h3>
+            <p>{c.rule}</p>
+            <div className="open" style={{ color: "var(--warn)" }}>
+              {c.gate}
             </div>
-          ))}
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-          <div className="border-b border-border px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted">
-            Governed changes (class 3 and 3+)
-            {truncated && (
-              <span className="ml-2 font-normal normal-case text-muted">
-                — showing the {LIMIT} most recent of {count}
-              </span>
-            )}
           </div>
-          {error ? (
-            <p className="p-5 text-sm text-danger">
-              Could not load governed changes: {error.message}. This list is
-              not empty — it failed to load.
-            </p>
-          ) : shown.length === 0 ? (
-            <p className="p-5 text-sm text-muted">
-              None recorded yet. Governed work should leave a trail here.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
+        ))}
+      </div>
+
+      <h2 className="sec">
+        Governed changes — class 3 and 3+
+        {truncated && (
+          <span style={{ textTransform: "none", fontWeight: 400 }}>
+            {" "}
+            (showing the {LIMIT} most recent of {count})
+          </span>
+        )}
+      </h2>
+
+      {error ? (
+        <p className="note" style={{ color: "var(--danger)" }}>
+          Could not load governed changes: {error.message}. This list is not
+          empty — it failed to load.
+        </p>
+      ) : shown.length === 0 ? (
+        <p className="note">
+          None recorded yet. Governed work should leave a trail here —{" "}
+          <Link href="/security/change-log" className="crumb">
+            record one
+          </Link>
+          .
+        </p>
+      ) : (
+        <div className="card">
+          <table>
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Class</th>
+                <th>Where</th>
+                <th>Change</th>
+              </tr>
+            </thead>
+            <tbody>
               {shown.map((g) => (
-                <li key={g.id} className="px-5 py-3">
-                  <div className="flex flex-wrap items-center gap-2">
+                <tr key={g.id}>
+                  <td
+                    style={{
+                      whiteSpace: "nowrap",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {new Date(g.created_at)
+                      .toISOString()
+                      .replace("T", " ")
+                      .slice(0, 16)}
+                  </td>
+                  <td>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        g.change_class === "3+"
-                          ? "bg-danger/15 text-danger"
-                          : "bg-gold/15 text-gold"
-                      }`}
+                      className={`tag ${g.change_class === "3+" ? "t-lo" : "t-med"}`}
                     >
                       class {g.change_class}
                     </span>
-                    <span className="text-xs text-muted">
-                      {new Date(g.created_at).toLocaleString()}
-                    </span>
-                    <span className="text-xs text-muted">
-                      {[g.product, g.module, g.tab].filter(Boolean).join(" › ")}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-sm">{g.description}</div>
-                </li>
+                  </td>
+                  <td style={{ fontSize: 12, color: "var(--muted)" }}>
+                    {[g.product, g.module, g.tab].filter(Boolean).join(" › ")}
+                  </td>
+                  <td>{g.description}</td>
+                </tr>
               ))}
-            </ul>
-          )}
+            </tbody>
+          </table>
         </div>
-      </div>
-    </div>
+      )}
+    </OsShell>
   );
 }
