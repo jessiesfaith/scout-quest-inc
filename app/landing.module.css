@@ -1,0 +1,488 @@
+/* Ported from the design reference at /index.html — keep in sync with it.
+   Element selectors (body, nav, footer, a) became classes so nothing leaks
+   into the OS shell. */
+
+.page {
+  --ink: #0b1424;
+  --ink2: #0f1e36;
+  --ink3: #16294a;
+  --teal: #16b8a6;
+  --teal-deep: #0f766e;
+  --teal-soft: #dff5f1;
+  --gold: #fbbf24;
+  --gold-soft: #fef3d6;
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --text: #0f1826;
+  --muted: #5b6775;
+  --line: #e6ebf2;
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 22px;
+}
+
+/* nav */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(11, 20, 36, 0.86);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.navRow {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  height: 64px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+}
+.mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.mark svg {
+  width: 18px;
+  height: 18px;
+}
+.links {
+  display: flex;
+  gap: 22px;
+  margin-left: 14px;
+}
+.links a {
+  color: #c7d2e0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.links a:hover {
+  color: #fff;
+}
+.cta {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.btn {
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  display: inline-block;
+  font-family: inherit;
+}
+.btnPrimary {
+  background: var(--teal);
+  color: #04211d;
+}
+.btnPrimary:hover {
+  background: #13a696;
+}
+.btnGhost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.btnGhost:hover {
+  border-color: #fff;
+}
+.btnGold {
+  background: var(--gold);
+  color: #3a2a02;
+}
+@media (max-width: 760px) {
+  .links {
+    display: none;
+  }
+}
+
+/* hero */
+.hero {
+  background:
+    radial-gradient(1100px 500px at 15% -10%, #1c3a63 0%, transparent 55%),
+    linear-gradient(180deg, var(--ink) 0%, var(--ink2) 100%);
+  color: #fff;
+  padding: 64px 0 76px;
+}
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 44px;
+  align-items: center;
+}
+.eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--teal);
+  background: rgba(22, 184, 166, 0.12);
+  border: 1px solid rgba(22, 184, 166, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+.hero h1 {
+  font-size: 47px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 18px 0 16px;
+  font-weight: 800;
+}
+.hl {
+  color: var(--teal);
+}
+.lead {
+  font-size: 17.5px;
+  color: #c7d2e0;
+  max-width: 540px;
+  margin: 0 0 26px;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.actions .btn {
+  padding: 13px 22px;
+  font-size: 15px;
+}
+.trust {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 30px;
+  color: #93a3b8;
+  font-size: 12.5px;
+}
+.trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.trust i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--teal);
+  display: inline-block;
+}
+
+/* login card */
+.login {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 26px 24px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+.login h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: #fff;
+}
+.loginSub {
+  color: #93a3b8;
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+.field {
+  margin-bottom: 13px;
+}
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #c7d2e0;
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  padding: 11px 13px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.field input::placeholder {
+  color: #7c8aa0;
+}
+.field input:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+.login .btn {
+  width: 100%;
+  padding: 13px;
+  margin-top: 4px;
+}
+.alt {
+  text-align: center;
+  color: #93a3b8;
+  font-size: 12.5px;
+  margin-top: 14px;
+}
+.alt a {
+  color: var(--teal);
+  font-weight: 700;
+}
+.note {
+  font-size: 11.5px;
+  color: #7c8aa0;
+  text-align: center;
+  margin-top: 12px;
+}
+.noteError {
+  color: #fca5a5;
+}
+.noteOk {
+  color: #9fece0;
+}
+@media (max-width: 860px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+  .hero h1 {
+    font-size: 36px;
+  }
+}
+
+/* sections */
+.band {
+  padding: 64px 0;
+}
+.kicker {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teal-deep);
+}
+.title {
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  margin: 8px 0 10px;
+  font-weight: 800;
+}
+.sub2 {
+  color: var(--muted);
+  font-size: 16px;
+  max-width: 640px;
+  margin: 0 0 30px;
+}
+.pillars {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.pillar {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px 22px;
+  border-top: 4px solid var(--teal);
+}
+.pillarScale {
+  border-top-color: #2563eb;
+}
+.pillarFrontier {
+  border-top-color: var(--gold);
+}
+.ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--teal-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.pillarScale .ic {
+  background: #e6effe;
+}
+.pillarFrontier .ic {
+  background: var(--gold-soft);
+}
+.ic svg {
+  width: 23px;
+  height: 23px;
+}
+.pillar h3 {
+  margin: 0 0 7px;
+  font-size: 18px;
+}
+.pillar p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* careers */
+.careers {
+  background: linear-gradient(180deg, #0f1e36, #0b1424);
+  color: #fff;
+  border-radius: 22px;
+  padding: 46px 40px;
+  margin-top: 6px;
+}
+.careers h2 {
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin: 6px 0 12px;
+  font-weight: 800;
+  max-width: 640px;
+}
+.careers .lead {
+  color: #c7d2e0;
+  font-size: 16px;
+  max-width: 620px;
+  margin: 0 0 26px;
+}
+.values {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 26px 0 30px;
+}
+.value {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  padding: 16px;
+}
+.value b {
+  display: block;
+  font-size: 14.5px;
+  margin-bottom: 4px;
+}
+.value span {
+  font-size: 12.5px;
+  color: #93a3b8;
+}
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+.role {
+  background: rgba(22, 184, 166, 0.12);
+  border: 1px solid rgba(22, 184, 166, 0.3);
+  color: #9fece0;
+  border-radius: 20px;
+  padding: 8px 15px;
+  font-size: 13px;
+  font-weight: 600;
+}
+@media (max-width: 860px) {
+  .pillars {
+    grid-template-columns: 1fr;
+  }
+  .values {
+    grid-template-columns: 1fr 1fr;
+  }
+  .careers {
+    padding: 32px 22px;
+  }
+}
+
+/* brand system */
+.brandsys {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 26px 24px;
+}
+.bsGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr;
+  gap: 26px;
+}
+.bsGrid h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sw {
+  width: 76px;
+}
+.chip {
+  height: 44px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+}
+.sw small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.typerow {
+  margin: 4px 0;
+}
+.bsNote {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 14px 0 0;
+}
+.voice {
+  margin: 0;
+  padding-left: 18px;
+}
+.voice li {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 5px 0;
+}
+
+/* footer */
+.footer {
+  padding: 34px 0;
+  color: var(--muted);
+  font-size: 13px;
+  border-top: 1px solid var(--line);
+  margin-top: 52px;
+}
+.footerRow {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}

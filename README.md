@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scout Quest Inc — Company OS
 
-## Getting Started
+Internal operating system for Scout Quest Inc. Stage 1 skeleton: sign in → add a
+team member → reload → still there. Every later module repeats this pattern.
 
-First, run the development server:
+**Stack:** Next.js (App Router) · Supabase (Auth + Postgres with RLS) · Tailwind.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Local setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and fill in the values. The publishable
+   key is browser-safe; `SUPABASE_SECRET_KEY` is server-only, never
+   `NEXT_PUBLIC_`, never committed. Stage 1 does not use it.
+3. Run the Stage 1 migration: paste
+   [supabase/migrations/0001_stage1_profiles_team_members.sql](supabase/migrations/0001_stage1_profiles_team_members.sql)
+   into Supabase → SQL Editor → Run.
+4. Create your user: Supabase → Authentication → Users → Add user
+   (email + password, auto-confirm). The owner account is seeded
+   `is_owner = true` by the migration trigger.
+5. `npm run dev` → http://localhost:3000 → sign in from the landing page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stage 1 guarantees
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **RLS on** for every table (`profiles`, `team_members`).
+- **Secret never in the browser:** `npm run build` runs
+  `scripts/check-client-bundle.mjs` (postbuild), which fails the build if
+  `sb_secret` or `SUPABASE_SECRET_KEY` appears anywhere in `.next/static`.
+- `is_owner` is decided in SQL (signup trigger + RLS check) — the client cannot
+  self-escalate.
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+- `index.html` — landing-page design reference (not served; `app/page.tsx` is
+  the converted version — edit the app, not the HTML)
+- `app/page.tsx` + `app/landing.module.css` — public landing with the sign-in
+  card (email + password, Supabase Auth → `/dashboard`)
+- `proxy.ts` — session refresh + auth redirect (Next 16 successor to middleware)
+- `lib/supabase/` — browser and server Supabase clients
+- `app/(app)/` — authenticated shell (sidebar, topbar); dashboard at
+  `/dashboard`
+- `app/(app)/hr/team/` — HR › Team: live list + Add member (server action insert)
+- `supabase/migrations/` — SQL to paste into the Supabase SQL Editor
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stage 2 seam
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Roles & permissions, contracts, work orders, products. The `team_members` RLS
+policies are the seam: replace the two Stage 1 policies with role-based ones;
+tables and app code stay.
