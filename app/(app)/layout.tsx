@@ -21,16 +21,18 @@ const NAV = [
   },
 ];
 
-const IT_NAV = [{ label: "Identity & Access", href: "/it/identity-access" }];
+const IT_NAV = [
+  { label: "Identity & Access", href: "/it/identity-access" },
+  { label: "Zero-Day", href: "/it/zero-day" },
+];
+
+const SECURITY_NAV = [
+  { label: "Change Management", href: "/security/change-management" },
+  { label: "Change Log", href: "/security/change-log" },
+];
 
 // Stage 2 seam — listed so the shell shows the shape of the OS, not clickable yet.
-const UPCOMING = [
-  "Agent Platform",
-  "Security Tooling",
-  "Products",
-  "Finance",
-  "Projects",
-];
+const UPCOMING = ["Agent Platform", "Products", "Finance", "Projects"];
 
 export default async function AppLayout({
   children,
@@ -63,7 +65,11 @@ export default async function AppLayout({
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-surface">
-        <div className="flex items-center gap-3 px-5 py-5">
+        <Link
+          href="/"
+          title="View the public Scout Quest Inc site"
+          className="group flex items-center gap-3 px-5 py-5 transition hover:bg-surface-raised"
+        >
           <div
             className="flex h-9 w-9 items-center justify-center rounded-lg"
             style={{
@@ -77,13 +83,15 @@ export default async function AppLayout({
               />
             </svg>
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="text-sm font-semibold leading-tight">
               {COMPANY_NAME}
             </div>
-            <div className="text-xs text-muted">Company OS</div>
+            <div className="text-xs text-muted group-hover:text-accent">
+              View public site →
+            </div>
           </div>
-        </div>
+        </Link>
 
         <nav className="flex-1 space-y-6 px-3 py-4">
           {NAV.map((group) => (
@@ -102,6 +110,21 @@ export default async function AppLayout({
               ))}
             </div>
           ))}
+
+          <div>
+            <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
+              Security Tooling
+            </div>
+            {SECURITY_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
           {isOwner && (
             <div>
@@ -144,11 +167,25 @@ export default async function AppLayout({
               </span>
             )}
           </div>
-          <form action="/auth/signout" method="post" className="mt-2">
+          <form action="/auth/signout" method="post" className="mt-3">
             <button
               type="submit"
-              className="text-xs text-muted underline-offset-2 transition hover:text-foreground hover:underline"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition hover:border-danger hover:bg-danger/10 hover:text-danger"
             >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
               Sign out
             </button>
           </form>

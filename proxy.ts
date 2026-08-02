@@ -49,12 +49,8 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Signed-in users go to the app, not the marketing page.
-  if (user && path === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // "/" always serves the marketing site, signed in or not — the sidebar
+  // brand links back to it, and sign-in navigates to /dashboard itself.
 
   return response;
 }
