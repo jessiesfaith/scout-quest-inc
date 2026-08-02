@@ -9,6 +9,7 @@ type TeamMember = {
   name: string;
   role: string | null;
   email: string | null;
+  working_on: string | null;
   status: string;
   created_at: string;
 };
@@ -17,7 +18,7 @@ export default async function TeamPage() {
   const supabase = await createClient();
   const { data: members, error } = await supabase
     .from("team_members")
-    .select("id, name, role, email, status, created_at")
+    .select("id, name, role, email, working_on, status, created_at")
     .order("created_at", { ascending: true })
     .returns<TeamMember[]>();
 
@@ -47,6 +48,7 @@ export default async function TeamPage() {
                 <tr className="border-b border-border text-xs uppercase tracking-wider text-muted">
                   <th className="px-5 py-3 font-medium">Name</th>
                   <th className="px-5 py-3 font-medium">Role</th>
+                  <th className="px-5 py-3 font-medium">Working on</th>
                   <th className="px-5 py-3 font-medium">Email</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                 </tr>
@@ -59,6 +61,9 @@ export default async function TeamPage() {
                   >
                     <td className="px-5 py-3 font-medium">{m.name}</td>
                     <td className="px-5 py-3 text-muted">{m.role ?? "—"}</td>
+                    <td className="px-5 py-3 text-muted">
+                      {m.working_on ?? "—"}
+                    </td>
                     <td className="px-5 py-3 text-muted">{m.email ?? "—"}</td>
                     <td className="px-5 py-3">
                       <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">

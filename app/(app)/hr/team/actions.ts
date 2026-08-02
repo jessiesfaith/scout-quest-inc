@@ -15,6 +15,7 @@ export async function addTeamMember(
   const name = String(formData.get("name") ?? "").trim();
   const role = String(formData.get("role") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const workingOn = String(formData.get("working_on") ?? "").trim();
 
   if (!name) {
     return { error: "Name is required.", success: false };
@@ -33,6 +34,7 @@ export async function addTeamMember(
     name,
     role: role || null,
     email: email || null,
+    working_on: workingOn || null,
   });
 
   if (error) {

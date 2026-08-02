@@ -23,7 +23,7 @@ export function AddMemberForm() {
       className="rounded-2xl border border-border bg-surface p-5"
     >
       <h2 className="text-sm font-semibold">Add member</h2>
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label htmlFor="name" className="mb-1.5 block text-xs text-muted">
             Name *
@@ -56,6 +56,20 @@ export function AddMemberForm() {
             name="email"
             type="email"
             placeholder="ada@example.com"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="working_on"
+            className="mb-1.5 block text-xs text-muted"
+          >
+            Working on
+          </label>
+          <input
+            id="working_on"
+            name="working_on"
+            placeholder="Tutor onboarding flow"
             className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm outline-none placeholder:text-muted/50 focus:border-accent"
           />
         </div>

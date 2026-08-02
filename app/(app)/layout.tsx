@@ -13,8 +13,17 @@ const NAV = [
   { section: "HR", items: [{ label: "Team", href: "/hr/team" }] },
 ];
 
+const IT_NAV = [{ label: "Identity & Access", href: "/it/identity-access" }];
+
 // Stage 2 seam — listed so the shell shows the shape of the OS, not clickable yet.
-const UPCOMING = ["Contracts", "Work orders", "Products"];
+const UPCOMING = [
+  "Agent Platform",
+  "Security Tooling",
+  "Products",
+  "Finance",
+  "Contracts",
+  "Projects",
+];
 
 export default async function AppLayout({
   children,
@@ -90,14 +99,17 @@ export default async function AppLayout({
           {isOwner && (
             <div>
               <div className="px-2 pb-2 text-xs font-medium uppercase tracking-wider text-muted">
-                Admin
+                IT
               </div>
-              <Link
-                href="/admin/access"
-                className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
-              >
-                Access &amp; roles
-              </Link>
+              {IT_NAV.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-lg px-2 py-1.5 text-sm text-foreground transition hover:bg-surface-raised"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </div>
           )}
 
