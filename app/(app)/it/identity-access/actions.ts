@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { checkPerm, ALL_PERMISSION_KEYS, ALL_KEY } from "@/lib/permissions";
 
 const IA_PERM = "IT: Identity & Access";
@@ -180,5 +181,95 @@ export async function linkAccount(
     };
 
   revalidatePath(PAGE);
+  return { error: null };
+}
+
+// ---------------------------------------------------------------------
+// Two-factor reset
+// ---------------------------------------------------------------------
+
+// The last resort when someone has lost their authenticator AND run out of
+// recovery codes. It replaces the old procedure — deleting the auth user
+// and asking them to sign up again — which also destroyed their profile,
+// their role assignments and the link to their team member record.
+//
+// This does NOT sign anyone in and does NOT grant a session. It removes
+// the enrolled factor, so the next time that person signs in with their
+// password they are walked through enrolling a new authenticator. Without
+// the password it is worth nothing.
+//
+// It is still the most dangerous button on this screen: whoever holds
+// Identity & Access can strip a colleague's second factor. So every use is
+// written to `mfa_resets` before the factor is touched, by a trigger that
+// stamps the actor from auth.uid() rather than from anything the caller
+// sends.
+export async function resetTwoFactor(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const denied = await guard();
+  if (denied) return { error: denied };
+
+  const profileId = String(formData.get("profile_id") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!profileId) return { error: "This member has no linked account." };
+
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) return { error: "Not signed in." };
+
+  // Record the intent first. If the audit write fails, nothing happens —
+  // an untraceable reset is worse than a reset that did not occur.
+  //
+  // Written as the caller, not with the service key, and deliberately: the
+  // stamp_mfa_reset trigger takes the actor from auth.uid(), which is null
+  // under the service key. Writing as the signed-in person is what makes
+  // the actor field something they cannot choose. RLS admits it through
+  // mfa_resets_insert_admin (migration 0016).
+  const { data: logged, error: logError } = await supabase
+    .from("mfa_resets")
+    .insert({ target_user: profileId, reason: reason || null })
+    .select("id");
+
+  if (logError)
+    return {
+      error: `Not reset — the audit entry failed (${logError.message}). Has migration 0016 been run?`,
+    };
+  // A refusal by RLS is zero rows, not an error.
+  if (!logged || logged.length === 0)
+    return {
+      error: `Not reset — the audit entry was refused. ${IA_PERM} permission required.`,
+    };
+
+  const admin = createAdminClient();
+  const { data: target, error: lookupError } =
+    await admin.auth.admin.getUserById(profileId);
+  if (lookupError) return { error: lookupError.message };
+
+  // TOTP only — see the same reasoning in app/mfa/actions.ts. Removing a
+  // factor type this flow was not asked about is not a favour.
+  const totp = (target.user?.factors ?? []).filter(
+    (f) => f.factor_type === "totp",
+  );
+  if (totp.length === 0)
+    return { error: "That account has no authenticator enrolled." };
+
+  const failures: string[] = [];
+  for (const factor of totp) {
+    const { error: deleteError } = await admin.auth.admin.mfa.deleteFactor({
+      id: factor.id,
+      userId: profileId,
+    });
+    if (deleteError) failures.push(deleteError.message);
+  }
+
+  revalidatePath(PAGE);
+  if (failures.length > 0)
+    return {
+      error: `Audit entry recorded, but the reset failed: ${failures.join("; ")}`,
+    };
+
   return { error: null };
 }

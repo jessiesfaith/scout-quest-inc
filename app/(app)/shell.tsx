@@ -58,10 +58,17 @@ export function OsShell({
         </Link>
         <span className="dot" aria-hidden="true" />
         <span className="pill">Live</span>
-        <span className="who">
+        {/* The signed-in identity doubles as the way into your own
+            account settings — two-factor and recovery codes. */}
+        <Link
+          href="/account/security"
+          className="who"
+          title="Your account security"
+          style={{ textDecoration: "none" }}
+        >
           {email}
           {isOwner && " · Owner"}
-        </span>
+        </Link>
         <form action="/auth/signout" method="post" style={{ marginLeft: 12 }}>
           <button
             type="submit"

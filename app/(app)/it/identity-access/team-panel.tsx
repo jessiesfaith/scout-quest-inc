@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { Role } from "./role-builder";
 import {
   assignRole,
   unassignRole,
   linkAccount,
+  resetTwoFactor,
   type ActionState,
 } from "./actions";
 
@@ -130,6 +131,74 @@ function LinkAccountForm({
   );
 }
 
+/**
+ * Last resort for a colleague who lost their authenticator and has no
+ * recovery codes left. Two clicks and a stated reason, because it strips
+ * someone's second factor and the record of why is the only thing that
+ * distinguishes a favour from an attack.
+ */
+function ResetTwoFactor({ profileId }: { profileId: string }) {
+  const [open, setOpen] = useState(false);
+  const [state, formAction, pending] = useActionState(
+    resetTwoFactor,
+    initialState,
+  );
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="minibtn del"
+        style={{ marginLeft: 0, marginTop: 6 }}
+        onClick={() => setOpen(true)}
+      >
+        Reset 2FA
+      </button>
+    );
+  }
+
+  return (
+    <form action={formAction} style={{ marginTop: 6 }}>
+      <input type="hidden" name="profile_id" value={profileId} />
+      <input
+        name="reason"
+        required
+        maxLength={140}
+        placeholder="Why — e.g. lost phone, confirmed by call"
+        aria-label="Reason for resetting two-factor"
+        style={{ font: "inherit", fontSize: 12, padding: "4px 7px", width: "100%" }}
+      />
+      <div style={{ marginTop: 5 }}>
+        <button
+          type="submit"
+          className="minibtn del"
+          style={{ marginLeft: 0 }}
+          disabled={pending}
+        >
+          {pending ? "Resetting…" : "Confirm reset"}
+        </button>
+        <button
+          type="button"
+          className="minibtn"
+          onClick={() => setOpen(false)}
+          disabled={pending}
+        >
+          Cancel
+        </button>
+      </div>
+      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+        Removes their authenticator so they can enrol a new one. It does not
+        sign them in, and it is recorded against your account.
+      </div>
+      {state.error && (
+        <div className="err" style={{ fontSize: 11.5 }}>
+          {state.error}
+        </div>
+      )}
+    </form>
+  );
+}
+
 export function TeamPanel({
   members,
   roles,
@@ -179,10 +248,12 @@ export function TeamPanel({
                     current={m.profile_id}
                     profiles={profiles}
                   />
-                  {!m.profile_id && (
+                  {!m.profile_id ? (
                     <div style={{ fontSize: 11.5, color: "var(--warn)" }}>
                       Roles only take effect once an account is linked.
                     </div>
+                  ) : (
+                    <ResetTwoFactor profileId={m.profile_id} />
                   )}
                 </td>
                 <td style={{ verticalAlign: "top" }}>
