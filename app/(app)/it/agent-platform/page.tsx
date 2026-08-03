@@ -15,8 +15,13 @@ type WorkOrder = {
   title: string;
   description: string | null;
   status: string;
-  confidence: string | null;
-  review: string | null;
+  run_status: string | null;
+  cost_usd: number | null;
+  tokens_in: number | null;
+  tokens_out: number | null;
+  started_at: string | null;
+  finished_at: string | null;
+  source: string;
   product_id: string | null;
   created_at: string;
 };
@@ -27,14 +32,59 @@ type Agent = {
   data_classes: string | null;
   evaluation: string | null;
   status: string;
+  registry: string | null;
+  owner: string | null;
+  enabled: boolean | null;
+  per_run_cap_usd: number | null;
+  monthly_cap_usd: number | null;
+  allowed_models: string | null;
+  source: string;
+  synced_at: string | null;
   product_id: string | null;
+};
+type SpendRow = {
+  agent_id: string | null;
+  product: string | null;
+  cost_usd: number | null;
+  tokens_in: number | null;
+  tokens_out: number | null;
+  reservations: number | null;
+  last_seen: string | null;
+};
+type IngestState = {
+  source: string;
+  cursor: string | null;
+  last_ingest_at: string | null;
+  last_count: number;
+  last_note: string | null;
 };
 
 const TABS = [
   { id: "console", label: "Console" },
   { id: "wos", label: "Agent Work Orders" },
+  { id: "spend", label: "Model Spend" },
   { id: "vision", label: "The Vision" },
 ] as const;
+
+const SOURCE_LABEL: Record<string, string> = {
+  "asl-runs": "Work orders ← runner_event",
+  "asl-spend": "Model spend ← metering",
+  agents: "Agent library ← spend_policy.yaml",
+  git: "Change log ← git history",
+};
+
+const usd = (n: number | null | undefined) =>
+  n == null ? "—" : `$${Number(n).toFixed(Math.abs(Number(n)) < 1 ? 4 : 2)}`;
+
+function ago(iso: string | null) {
+  if (!iso) return "never";
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 export default async function AgentPlatformPage({
   searchParams,
@@ -52,21 +102,38 @@ export default async function AgentPlatformPage({
     { data: wos, error: wosError },
     { data: agents, error: agentsError },
     { data: products, error: productsError },
+    { data: spend, error: spendError },
+    { data: ingest },
   ] = await Promise.all([
     supabase
       .from("work_orders")
       .select(
-        "id, wo_code, agent, title, description, status, confidence, review, product_id, created_at",
+        "id, wo_code, agent, title, description, status, run_status, cost_usd, tokens_in, tokens_out, started_at, finished_at, source, product_id, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(200)
       .returns<WorkOrder[]>(),
     supabase
       .from("agents")
-      .select("id, agent_id, role, data_classes, evaluation, status, product_id")
+      .select(
+        "id, agent_id, role, data_classes, evaluation, status, registry, owner, enabled, per_run_cap_usd, monthly_cap_usd, allowed_models, source, synced_at, product_id",
+      )
       .order("agent_id")
       .returns<Agent[]>(),
     supabase.from("products").select("id, name"),
+    supabase
+      .from("agent_spend_summary")
+      .select("agent_id, product, cost_usd, tokens_in, tokens_out, reservations, last_seen")
+      .order("cost_usd", { ascending: false })
+      .returns<SpendRow[]>(),
+    // Sync status is a courtesy: if 0015 has not been run the rest of the
+    // page must still render, so this error is swallowed rather than
+    // folded into loadError.
+    supabase
+      .from("ingest_state")
+      .select("source, cursor, last_ingest_at, last_count, last_note")
+      .order("source")
+      .returns<IngestState[]>(),
   ]);
 
   const productName = new Map(
@@ -75,7 +142,9 @@ export default async function AgentPlatformPage({
   const loadError = wosError ?? agentsError ?? productsError;
   const woList = wos ?? [];
   const agentList = agents ?? [];
+  const spendList = spend ?? [];
   const open = woList.filter((w) => w.status === "open").length;
+  const totalSpend = spendList.reduce((sum, r) => sum + Number(r.cost_usd ?? 0), 0);
 
   return (
     <OsShell
@@ -86,7 +155,7 @@ export default async function AgentPlatformPage({
         { label: "IT", href: itCrumbHref("/it/agent-platform", held) },
         { label: "Agent Platform" },
       ]}
-      lead="The governed agent library and the work orders they execute. Both are generated from the ASL ledger and the spend policy rather than entered here, so this module is read-only by design."
+      lead="The governed agent library and the work orders they execute. Rows sourced from the ASL ledger and the spend policy are a mirror: the database refuses to let anyone edit them, because the next sync would overwrite the change anyway. Rows marked 'entered by hand' are this module's own and remain writable with the IT: Agent Platform key. Model spend is mirrored and never editable."
       nav={itNav("/it/agent-platform", held)}
     >
       <div className="g2nav">
@@ -125,6 +194,10 @@ export default async function AgentPlatformPage({
               </div>
               <div className="l">open</div>
             </div>
+            <div className="tile">
+              <div className="n">{usd(totalSpend)}</div>
+              <div className="l">model spend, all time</div>
+            </div>
           </div>
 
           <h2 className="sec">Agent library</h2>
@@ -133,9 +206,11 @@ export default async function AgentPlatformPage({
               <thead>
                 <tr>
                   <th>Agent</th>
-                  <th>Role</th>
+                  <th>Registry</th>
                   <th>Data classes</th>
-                  <th>Evaluation</th>
+                  <th>Models</th>
+                  <th>Caps (run / month)</th>
+                  <th>Owner</th>
                   <th>Product</th>
                   <th>Status</th>
                 </tr>
@@ -143,9 +218,9 @@ export default async function AgentPlatformPage({
               <tbody>
                 {agentList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ color: "var(--muted)" }}>
+                    <td colSpan={8} style={{ color: "var(--muted)" }}>
                       No agents registered. The library mirrors the governed
-                      spend policy; the Stage 3 ingest fills it.
+                      spend policy; run the Stage 3 publisher to fill it.
                     </td>
                   </tr>
                 ) : (
@@ -153,8 +228,15 @@ export default async function AgentPlatformPage({
                     <tr key={a.id}>
                       <td>
                         <code>{a.agent_id}</code>
+                        {a.role && (
+                          <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                            {a.role}
+                          </div>
+                        )}
                       </td>
-                      <td>{a.role ?? "—"}</td>
+                      <td style={{ color: "var(--muted)" }}>
+                        {a.registry ?? "—"}
+                      </td>
                       <td>
                         <span
                           className={
@@ -164,14 +246,24 @@ export default async function AgentPlatformPage({
                           {a.data_classes ?? "—"}
                         </span>
                       </td>
-                      <td>{a.evaluation ?? "—"}</td>
+                      <td style={{ fontSize: 12 }}>{a.allowed_models ?? "—"}</td>
+                      <td style={{ fontSize: 12 }}>
+                        {usd(a.per_run_cap_usd)} / {usd(a.monthly_cap_usd)}
+                      </td>
+                      <td>{a.owner ?? "—"}</td>
                       <td>
                         {a.product_id
                           ? (productName.get(a.product_id) ?? "—")
                           : "company-wide"}
                       </td>
                       <td>
-                        <span className="badge b-live">{a.status}</span>
+                        <span
+                          className={`badge ${
+                            a.enabled === false ? "b-reg" : "b-live"
+                          }`}
+                        >
+                          {a.status}
+                        </span>
                       </td>
                     </tr>
                   ))
@@ -180,8 +272,56 @@ export default async function AgentPlatformPage({
             </table>
           </div>
           <p className="note">
-            D3 (student or patient) data must never appear here — this app
-            holds company data only.
+            An agent marked <b>disabled</b> is stopped enterprise-wide by the
+            policy&apos;s kill switch, not by anything in this screen. D3
+            (student or patient) data never appears here — an agent may be
+            <i> allowed</i> to touch D3 on the governed plane, and this column
+            records that permission, not any data.
+          </p>
+
+          <h2 className="sec">Sync status</h2>
+          {!ingest ? (
+            <p className="note">
+              No sync record — migration 0015 has not been run on this
+              database yet.
+            </p>
+          ) : (
+            <div className="card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Last sync</th>
+                    <th>Rows written</th>
+                    <th>Position</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ingest.map((s) => (
+                    <tr key={s.source}>
+                      <td>{SOURCE_LABEL[s.source] ?? s.source}</td>
+                      <td
+                        style={{
+                          color: s.last_ingest_at ? undefined : "var(--muted)",
+                        }}
+                      >
+                        {ago(s.last_ingest_at)}
+                      </td>
+                      <td>{s.last_ingest_at ? s.last_count : "—"}</td>
+                      <td style={{ fontSize: 12, color: "var(--muted)" }}>
+                        <code>{s.cursor ?? "—"}</code>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="note">
+            The publisher runs on the governed local plane and pushes
+            metadata outward — this OS cannot reach the ledger, deliberately.
+            A stale timestamp means the publisher has not run, not that
+            nothing happened.
           </p>
         </>
       )}
@@ -197,8 +337,8 @@ export default async function AgentPlatformPage({
                   <th>Agent</th>
                   <th>Title</th>
                   <th>Product</th>
-                  <th>Confidence</th>
-                  <th>Review</th>
+                  <th>Tokens</th>
+                  <th>Cost</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -206,8 +346,8 @@ export default async function AgentPlatformPage({
                 {woList.length === 0 ? (
                   <tr>
                     <td colSpan={7} style={{ color: "var(--muted)" }}>
-                      No work orders yet. Stage 3 feeds these from the ledger
-                      rather than by hand.
+                      No work orders yet. These come from the ledger; run the
+                      Stage 3 publisher on the machine that holds it.
                     </td>
                   </tr>
                 ) : (
@@ -215,13 +355,23 @@ export default async function AgentPlatformPage({
                     <tr key={w.id}>
                       <td>
                         <code>{w.wo_code ?? "—"}</code>
+                        {w.source === "manual" && (
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                            entered by hand
+                          </div>
+                        )}
                       </td>
-                      <td>{w.agent ?? "—"}</td>
+                      <td style={{ fontSize: 12 }}>{w.agent ?? "—"}</td>
                       <td>
                         {w.title}
                         {w.description && (
                           <div style={{ fontSize: 12, color: "var(--muted)" }}>
                             {w.description}
+                          </div>
+                        )}
+                        {w.started_at && (
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                            {new Date(w.started_at).toLocaleString()}
                           </div>
                         )}
                       </td>
@@ -230,13 +380,24 @@ export default async function AgentPlatformPage({
                           ? (productName.get(w.product_id) ?? "—")
                           : "—"}
                       </td>
-                      <td>{w.confidence ?? "—"}</td>
-                      <td>{w.review ?? "—"}</td>
+                      <td style={{ fontSize: 12 }}>
+                        {w.tokens_in == null && w.tokens_out == null
+                          ? "—"
+                          : `${w.tokens_in ?? 0} in / ${w.tokens_out ?? 0} out`}
+                      </td>
+                      <td style={{ fontSize: 12 }}>{usd(w.cost_usd)}</td>
                       <td>
                         <span
-                          className={`badge ${w.status === "open" ? "b-ready" : "b-live"}`}
+                          className={`badge ${
+                            w.status === "open"
+                              ? "b-ready"
+                              : w.status === "blocked"
+                                ? "b-plan"
+                                : "b-live"
+                          }`}
+                          title={w.run_status ?? undefined}
                         >
-                          {w.status}
+                          {w.run_status ?? w.status}
                         </span>
                       </td>
                     </tr>
@@ -245,6 +406,78 @@ export default async function AgentPlatformPage({
               </tbody>
             </table>
           </div>
+          <p className="note">
+            One row per run. Step output, run parameters and error detail stay
+            on the governed plane and are never sent here — what crosses is
+            the identifier, the counts and the outcome.
+          </p>
+        </>
+      )}
+
+      {tab === "spend" && (
+        <>
+          <h2 className="sec">Model spend by agent</h2>
+          {spendError ? (
+            <p className="note" style={{ color: "var(--danger)" }}>
+              Could not load spend: {spendError.message}. Has migration 0015
+              been run?
+            </p>
+          ) : (
+            <>
+              <div className="card">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Agent</th>
+                      <th>Product</th>
+                      <th>Runs metered</th>
+                      <th>Tokens</th>
+                      <th>Cost</th>
+                      <th>Last activity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spendList.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ color: "var(--muted)" }}>
+                          Nothing metered yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      spendList.map((r) => (
+                        <tr key={`${r.agent_id}-${r.product}`}>
+                          <td>
+                            <code>{r.agent_id ?? "—"}</code>
+                          </td>
+                          <td>{r.product ?? "unattributed"}</td>
+                          <td>{r.reservations ?? 0}</td>
+                          <td style={{ fontSize: 12 }}>
+                            {(r.tokens_in ?? 0) + (r.tokens_out ?? 0)}
+                          </td>
+                          <td>
+                            <b>{usd(r.cost_usd)}</b>
+                          </td>
+                          <td style={{ fontSize: 12, color: "var(--muted)" }}>
+                            {r.last_seen
+                              ? new Date(r.last_seen).toLocaleDateString()
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <p className="note">
+                A mirror of the governed metering ledger, not the ledger
+                itself. The authoritative, hash-chained record lives on the
+                local plane; these numbers are for people who cannot open it.
+                Costs are the sum of signed events — a reservation, then an
+                adjustment to the real cost — so a run in flight shows its
+                estimate until it settles.
+              </p>
+            </>
+          )}
         </>
       )}
 
@@ -267,13 +500,16 @@ export default async function AgentPlatformPage({
               <p>
                 Regulated data never leaves local infrastructure. This company
                 OS holds company and operations data only — the governed plane
-                stays separate, by design and by policy.
+                stays separate, by design and by policy. The link between them
+                runs one way: the plane pushes a metadata summary outward, and
+                nothing here can reach in.
               </p>
               <p>
-                What is not automated yet is stated plainly rather than implied:
-                work orders and the agent library are filled by the Stage 3
-                ingest, and until that ships these tables stay empty rather
-                than being hand-maintained.
+                What is not automated yet is stated plainly rather than
+                implied. The evaluator&apos;s verdicts are not mirrored here,
+                and the publisher is run by hand rather than on a schedule — so
+                the sync timestamps on the Console tab are worth reading before
+                trusting a number on this page.
               </p>
             </div>
           </div>

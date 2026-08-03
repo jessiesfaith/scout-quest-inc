@@ -16,10 +16,13 @@ export type ChangeRow = {
   created_by: string | null;
   created_by_email: string | null;
   created_at: string;
+  source: string | null;
+  source_ref: string | null;
+  authored_at: string | null;
 };
 
 export const CHANGE_COLUMNS =
-  "id, product, module, tab, change_type, change_class, description, created_by, created_by_email, created_at";
+  "id, product, module, tab, change_type, change_class, description, created_by, created_by_email, created_at, source, source_ref, authored_at";
 
 const CLASS_TAG: Record<string, string> = {
   "1": "t-hi",
@@ -44,6 +47,15 @@ export default async function ChangeLogPage() {
     .limit(200)
     .returns<ChangeRow[]>();
 
+  // A git sync files a batch of commits within the same second, so filing
+  // order says nothing useful about them. Re-sort by when each change
+  // actually happened. The 200-row window is still chosen by filing time —
+  // ordering on an expression is not something PostgREST can do — so a
+  // very old commit synced today appears, correctly, near the bottom.
+  const rows = [...(entries ?? [])].sort((a, b) =>
+    (b.authored_at ?? b.created_at).localeCompare(a.authored_at ?? a.created_at),
+  );
+
   return (
     <OsShell
       email={email}
@@ -53,7 +65,7 @@ export default async function ChangeLogPage() {
         { label: "Security Tooling", href: "/security/change-management" },
         { label: "Change Log" },
       ]}
-      lead="Append-only record of what changed, where, and who recorded it. There is no edit or delete path — not in the app, and not in the database — and the timestamp and author are stamped server-side, so neither can be set by whoever files the entry. Showing the most recent 200."
+      lead="Append-only record of what changed, where, and who recorded it. There is no edit or delete path — not in the app, and not in the database — and the filing timestamp and author are stamped server-side, so neither can be set by whoever files the entry. Entries tagged git are generated from commit history: their date is the commit's, and their author is a commit author rather than a signed-in person. Showing the most recent 200."
     >
       {error ? (
         <p className="note" style={{ color: "var(--danger)" }}>
@@ -80,14 +92,14 @@ export default async function ChangeLogPage() {
                 </tr>
               </thead>
               <tbody>
-                {(entries ?? []).length === 0 ? (
+                {rows.length === 0 ? (
                   <tr>
                     <td colSpan={4} style={{ color: "var(--muted)" }}>
                       No entries yet.
                     </td>
                   </tr>
                 ) : (
-                  (entries ?? []).map((e) => (
+                  rows.map((e) => (
                     <tr key={e.id}>
                       <td
                         style={{
@@ -96,10 +108,21 @@ export default async function ChangeLogPage() {
                           color: "var(--muted)",
                         }}
                       >
-                        {new Date(e.created_at)
+                        {/* When the change happened, which for a commit is
+                            its author date rather than the moment the sync
+                            filed it. created_at stays the forced, unforgeable
+                            one and is shown underneath when they differ. */}
+                        {new Date(e.authored_at ?? e.created_at)
                           .toISOString()
                           .replace("T", " ")
                           .slice(0, 16)}
+                        {e.authored_at &&
+                          e.authored_at.slice(0, 10) !==
+                            e.created_at.slice(0, 10) && (
+                            <div style={{ fontSize: 10.5 }}>
+                              filed {e.created_at.slice(0, 10)}
+                            </div>
+                          )}
                       </td>
                       <td style={{ fontSize: 12, color: "var(--muted)" }}>
                         {[e.product, e.module, e.tab].filter(Boolean).join(" › ") ||
@@ -122,6 +145,12 @@ export default async function ChangeLogPage() {
                       </td>
                       <td style={{ fontSize: 12, color: "var(--muted)" }}>
                         {e.created_by_email ?? "—"}
+                        {e.source === "git" && (
+                          <div style={{ fontSize: 10.5 }}>
+                            <span className="tag t-lo">git</span>{" "}
+                            <code>{e.source_ref?.slice(0, 7)}</code>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))

@@ -36,12 +36,20 @@ export default async function proxy(request: NextRequest) {
 
   // Public: the marketing site (Jessica's index.html served at "/"),
   // legal documents, auth endpoints, and the password-reset landing.
+  //
+  // /api/ingest is not public — it is machine-to-machine, and it does its
+  // own bearer-token check. It has to be excluded here because redirecting
+  // it turns "your token is wrong" into a 307 to an HTML page, which a
+  // script reads as a confusing success. Nothing is loosened by this: the
+  // route rejects every request that does not carry the token, and it
+  // never reads a cookie, so a browser session grants nothing there.
   const path = request.nextUrl.pathname;
   const isPublic =
     path === "/" ||
     path.startsWith("/auth") ||
     path.startsWith("/legal") ||
-    path.startsWith("/reset-password");
+    path.startsWith("/reset-password") ||
+    path === "/api/ingest";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
