@@ -3,37 +3,20 @@ import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
 import { getPermissions, can } from "@/lib/reachable";
 import { OsShell } from "../shell";
+import { AddContractForm, ContractsTable, type Contract } from "./editor";
+import { CATEGORY_LABEL } from "./vocab";
 
 export const dynamic = "force-dynamic";
-
-type Contract = {
-  id: string;
-  team_member_id: string | null;
-  counterparty: string | null;
-  category: string;
-  type: string | null;
-  status: string;
-  file_path: string | null;
-  effective_on: string | null;
-  expires_on: string | null;
-  obligations: string | null;
-  created_at: string;
-};
-
-const CATEGORY_LABEL: Record<string, string> = {
-  employment: "Employment",
-  vendor: "Vendor",
-  district: "District",
-  "dpa-baa": "DPA / BAA",
-  partner: "Partner",
-  other: "Other",
-};
 
 export default async function CompanyContractsPage() {
   const { supabase, email, isOwner } = await getViewer();
   const held = await getPermissions();
   if (!can(held, "Contracts", "HR: HR Contracts", "Security Tooling: Change Management"))
     redirect("/dashboard");
+
+  // Change Management holds a read key only: it can see every agreement for
+  // audit, but maintaining them belongs to Contracts and HR.
+  const canEdit = can(held, "Contracts", "HR: HR Contracts");
 
   const [{ data: contracts, error }, { data: members }] = await Promise.all([
     supabase
@@ -50,6 +33,15 @@ export default async function CompanyContractsPage() {
     (members ?? []).map((m: { id: string; name: string }) => [m.id, m.name]),
   );
   const list = contracts ?? [];
+
+  // The party column resolves here, where the team_members join lives, so
+  // the table component never needs the member list.
+  const partyNames: Record<string, string> = {};
+  for (const c of list) {
+    partyNames[c.id] =
+      c.counterparty ??
+      (c.team_member_id ? (memberName.get(c.team_member_id) ?? "—") : "—");
+  }
 
   // Anything expiring inside 60 days is what you actually came here for —
   // and anything already past its end date is a separate, worse problem.
@@ -78,7 +70,7 @@ export default async function CompanyContractsPage() {
       email={email}
       isOwner={isOwner}
       crumbs={[{ label: "Modules", href: "/dashboard" }, { label: "Contracts" }]}
-      lead="The company's agreements in one place — NDAs, DPAs and BAAs, district agreements and vendors — with the compliance obligations attached to each. This screen is read-only. Employment contracts appear here only for HR: they stay behind the HR key, so whoever tracks vendor paperwork does not also read staff offers."
+      lead="The company's agreements in one place — NDAs, DPAs and BAAs, district agreements and vendors — with the compliance obligations attached to each. Employment contracts are visible only to holders of HR: HR Contracts or Security Tooling: Change Management, so whoever tracks vendor paperwork does not also read staff offers, and they are maintained on HR › Contracts rather than here."
     >
       {error ? (
         <p className="note" style={{ color: "var(--danger)" }}>
@@ -118,97 +110,39 @@ export default async function CompanyContractsPage() {
             </div>
           </div>
 
+          {canEdit && <AddContractForm />}
+
           {[...byCategory.entries()].map(([category, rows]) => (
             <div key={category}>
               <h2 className="sec">
                 {CATEGORY_LABEL[category] ?? category} ({rows.length})
               </h2>
-              <div className="card">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Party</th>
-                      <th>Type</th>
-                      <th>Obligations</th>
-                      <th>Dates</th>
-                      <th>File</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((c) => (
-                      <tr key={c.id}>
-                        <td>
-                          <b>
-                            {c.counterparty ??
-                              (c.team_member_id
-                                ? (memberName.get(c.team_member_id) ?? "—")
-                                : "—")}
-                          </b>
-                        </td>
-                        <td>{c.type ?? "—"}</td>
-                        <td style={{ color: "var(--muted)", fontSize: 12.5 }}>
-                          {c.obligations ?? "—"}
-                        </td>
-                        <td style={{ fontSize: 12, color: "var(--muted)" }}>
-                          {c.effective_on ?? "—"} → {c.expires_on ?? "—"}
-                          {isLapsed(c) && (
-                            <span className="tag t-hi" style={{ marginLeft: 5 }}>
-                              expired
-                            </span>
-                          )}
-                          {isExpiring(c) && (
-                            <span className="tag t-lo" style={{ marginLeft: 5 }}>
-                              expiring
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {c.file_path ? (
-                            <a
-                              href={`/hr/contracts/download/${c.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="crumb"
-                            >
-                              Open
-                            </a>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>
-                          <span
-                            className={`tag ${c.status === "complete" ? "t-hi" : "t-med"}`}
-                          >
-                            {c.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <ContractsTable
+                rows={rows}
+                partyNames={partyNames}
+                canEdit={canEdit}
+                todayStr={todayStr}
+                soonStr={soonStr}
+              />
             </div>
           ))}
 
           {list.length === 0 && (
             <p className="note">
               No agreements visible here yet.{" "}
-              {can(held, "HR: HR Contracts") ? (
-                <>
-                  Add them under{" "}
-                  <Link href="/hr/contracts" className="crumb">
-                    HR › Contracts
-                  </Link>
-                  .
-                </>
-              ) : (
-                <>
-                  Non-employment agreements are entered in SQL for now; ask HR
-                  to add one.
-                </>
-              )}
+              {canEdit
+                ? "Record the first one above."
+                : "This view is read-only; the Contracts permission covers changes."}
+            </p>
+          )}
+
+          {can(held, "HR: HR Contracts") && (
+            <p className="note">
+              Employment contracts are maintained on{" "}
+              <Link href="/hr/contracts" className="crumb">
+                HR › Contracts
+              </Link>
+              , where the person they belong to is part of the form.
             </p>
           )}
         </>

@@ -2,34 +2,20 @@ import { getViewer } from "@/lib/viewer";
 import { getPermissions, can } from "@/lib/reachable";
 import { OsShell } from "../../shell";
 import { itNav, itCrumbHref } from "../nav";
+import { AddInfrastructureForm, InfraTable, type Item } from "./editor";
 
 export const dynamic = "force-dynamic";
-
-type Item = {
-  id: string;
-  name: string;
-  kind: string;
-  environment: string;
-  provider: string | null;
-  data_classes: string | null;
-  status: string;
-  notes: string | null;
-};
-
-const STATUS: Record<string, string> = {
-  live: "b-live",
-  building: "b-ready",
-  planned: "b-plan",
-  retired: "b-reg",
-};
 
 export default async function InfrastructurePage() {
   const { supabase, email, isOwner } = await getViewer();
   const held = await getPermissions();
+  const canEdit = can(held, "IT: Agent Platform");
 
   const { data: items, error } = await supabase
     .from("infrastructure")
-    .select("id, name, kind, environment, provider, data_classes, status, notes")
+    .select(
+      "id, name, kind, environment, provider, data_classes, status, notes, sort",
+    )
     .order("sort")
     .order("id")
     .returns<Item[]>();
@@ -59,63 +45,28 @@ export default async function InfrastructurePage() {
           Could not load infrastructure: {error.message}. Has migration 0012
           been run?
         </p>
-      ) : list.length === 0 ? (
-        <p className="note">Nothing recorded yet — run migration 0012.</p>
       ) : (
         <>
+          {canEdit && <AddInfrastructureForm />}
+
+          {list.length === 0 && (
+            <p className="note">
+              Nothing recorded yet — migration 0012 seeds what this OS runs on.
+            </p>
+          )}
+
           {[...byEnv.entries()].map(([env, rows]) => (
             <div key={env}>
               <h2 className="sec">{env}</h2>
-              <div className="card">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Component</th>
-                      <th>Kind</th>
-                      <th>Provider</th>
-                      <th>Data classes</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((i) => (
-                      <tr key={i.id}>
-                        <td>
-                          <b>{i.name}</b>
-                          {i.notes && (
-                            <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                              {i.notes}
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ color: "var(--muted)" }}>{i.kind}</td>
-                        <td>{i.provider ?? "—"}</td>
-                        <td>
-                          <span
-                            className={
-                              i.data_classes?.includes("D3") ? "no-d3" : undefined
-                            }
-                          >
-                            {i.data_classes ?? "—"}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`badge ${STATUS[i.status] ?? "b-reg"}`}>
-                            {i.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <InfraTable rows={rows} canEdit={canEdit} />
             </div>
           ))}
+
           <p className="note">
             Anything marked <span className="no-d3">D3</span> is regulated
             (student or patient) data and must stay on local infrastructure.
-            {can(held, "IT: Agent Platform")
-              ? " Editing this inventory is not built yet — change it in migration 0012 so the record stays version-controlled."
+            {canEdit
+              ? " Changes made here are live immediately and are not version-controlled — record anything structural in Security Tooling › Change Log."
               : " Read-only — the IT: Agent Platform permission covers changes."}
           </p>
         </>

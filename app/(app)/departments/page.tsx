@@ -1,16 +1,11 @@
 import Link from "next/link";
 import { getViewer } from "@/lib/viewer";
+import { getPermissions, can } from "@/lib/reachable";
 import { OsShell } from "../shell";
+import { AddDepartmentForm, DepartmentCard, type Department } from "./editor";
 
 export const dynamic = "force-dynamic";
 
-type Department = {
-  id: string;
-  name: string;
-  summary: string | null;
-  manager: string | null;
-  status: string;
-};
 type Member = {
   id: string;
   name: string;
@@ -18,20 +13,16 @@ type Member = {
   department_id: string | null;
 };
 
-const BADGE: Record<string, string> = {
-  active: "b-live",
-  forming: "b-ready",
-  reserved: "b-plan",
-};
-
 export default async function DepartmentsPage() {
   const { supabase, email, isOwner } = await getViewer();
+  const held = await getPermissions();
+  const canEdit = can(held, "HR: Team");
 
   const [{ data: departments, error }, { data: members, error: membersError }] =
     await Promise.all([
       supabase
         .from("departments")
-        .select("id, name, summary, manager, status")
+        .select("id, name, summary, manager, status, sort")
         .order("sort")
         .order("id")
         .returns<Department[]>(),
@@ -73,37 +64,17 @@ export default async function DepartmentsPage() {
             </p>
           )}
 
+          {canEdit && <AddDepartmentForm />}
+
           <div className="modgrid">
-            {list.map((d) => {
-              const people = byDept.get(d.id) ?? [];
-              return (
-                <div className="modcard" key={d.id}>
-                  <h3>
-                    {d.name}{" "}
-                    <span className={`badge ${BADGE[d.status] ?? "b-reg"}`}>
-                      {d.status}
-                    </span>
-                  </h3>
-                  <p>{d.summary ?? "—"}</p>
-                  <div className="parts">
-                    <span>
-                      {people.length} {people.length === 1 ? "person" : "people"}
-                    </span>
-                    {d.manager && <span>Manager: {d.manager}</span>}
-                  </div>
-                  {people.length > 0 && (
-                    <div style={{ marginTop: 8, fontSize: 12.5 }}>
-                      {people.map((p) => (
-                        <div key={p.id} style={{ color: "var(--muted)" }}>
-                          {p.name}
-                          {p.role ? ` — ${p.role}` : ""}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {list.map((d) => (
+              <DepartmentCard
+                key={d.id}
+                department={d}
+                people={byDept.get(d.id) ?? []}
+                canEdit={canEdit}
+              />
+            ))}
           </div>
 
           {list.length === 0 && (
@@ -145,7 +116,10 @@ export default async function DepartmentsPage() {
             <Link href="/hr/constitution" className="crumb">
               Constitution
             </Link>
-            .
+            .{" "}
+            {canEdit
+              ? "A department cannot be deleted while anyone is still assigned to it."
+              : "Read-only here — the HR: Team permission covers changes."}
           </p>
         </>
       )}
