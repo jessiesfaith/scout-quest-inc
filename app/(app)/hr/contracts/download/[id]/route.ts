@@ -11,7 +11,8 @@ export async function GET(
 ) {
   const canRead =
     (await checkPerm("HR: HR Contracts")) ||
-    (await checkPerm("Security Tooling: Change Management"));
+    (await checkPerm("Security Tooling: Change Management")) ||
+    (await checkPerm("Contracts"));
   if (!canRead) {
     return NextResponse.json({ error: "Not permitted." }, { status: 403 });
   }

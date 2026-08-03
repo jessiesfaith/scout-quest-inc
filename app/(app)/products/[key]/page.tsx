@@ -14,6 +14,7 @@ import {
   DeleteWebsite,
   LogProductChangeForm,
 } from "./forms";
+import { MissionValuesForm } from "../../hr/mission-values/form";
 
 export const dynamic = "force-dynamic";
 
@@ -143,11 +144,12 @@ export default async function ProductPage({
       .maybeSingle<Mission>(),
   ]);
 
-  const [canBuild, canPlan, canSite, canLog] = await Promise.all([
+  const [canBuild, canPlan, canSite, canLog, canMission] = await Promise.all([
     checkPerm("Products: Build Board"),
     checkPerm("Products: Plan Board"),
     checkPerm("Products: Website"),
     checkPerm("Products: Change Log"),
+    checkPerm("Products: Mission & Values"),
   ]);
 
   // Any failed query must say so — "empty" and "failed" look identical
@@ -535,7 +537,25 @@ export default async function ProductPage({
         </>
       )}
 
-      {tab === "mission" && (
+      {tab === "mission" && canMission && (
+        <>
+          <MissionValuesForm
+            scope={key}
+            purpose={mission?.purpose ?? ""}
+            mission={mission?.mission ?? ""}
+            values={values}
+          />
+          <p className="note">
+            Product-specific, nested under the company{" "}
+            <Link href="/hr/mission-values" className="crumb">
+              Mission &amp; Values
+            </Link>
+            .
+          </p>
+        </>
+      )}
+
+      {tab === "mission" && !canMission && (
         <>
           <h2 className="sec">Mission</h2>
           <div className="card" style={{ padding: "16px 18px", marginBottom: 14 }}>
@@ -573,7 +593,8 @@ export default async function ProductPage({
             </table>
           </div>
           <p className="note">
-            Product-specific, nested under the company{" "}
+            Read-only — editing needs the Products: Mission &amp; Values
+            permission. Product-specific, nested under the company{" "}
             <Link href="/hr/mission-values" className="crumb">
               Mission &amp; Values
             </Link>

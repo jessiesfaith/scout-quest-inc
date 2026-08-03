@@ -1,63 +1,115 @@
 import Link from "next/link";
 import { getViewer } from "@/lib/viewer";
+import { getPermissions, can } from "@/lib/reachable";
 import { OsShell } from "../shell";
 
 export const dynamic = "force-dynamic";
 
-// Home — "a company built from modules", ported from the design.
-const MODULES = [
+// Home — "a company built from modules", from the design.
+//
+// A module lists its screens as `doors`: the first one the viewer can open
+// becomes the card's link. Landing on a page that immediately redirects is
+// the thing this replaces, so a door's `needs` must match the gate on the
+// page it points at. `needs: []` means any signed-in member with a role.
+type Door = { href: string; needs: string[] };
+
+const MODULES: {
+  tone: string;
+  title: string;
+  badge: { label: string; cls: string };
+  body: string;
+  parts: string[];
+  doors: Door[];
+}[] = [
   {
-    href: "/it/identity-access",
-    tone: "live",
-    title: "IT",
-    badge: { label: "Live", cls: "b-live" },
-    body: "The agent platform, identity and access, and who is waiting for an account.",
-    parts: ["Agent Platform", "Identity & access", "Access requests"],
-  },
-  {
-    href: "/hr/team",
     tone: "live",
     title: "HR",
     badge: { label: "Live", cls: "b-live" },
-    body: "Team, contracts, mission and values, and the Constitution.",
+    body: "People and teams, contracts, mission and values, and the Constitution.",
     parts: ["Team", "HR Contracts", "Mission & Values", "Constitution"],
+    doors: [{ href: "/hr/team", needs: [] }],
   },
   {
-    href: "/security/change-management",
+    tone: "live",
+    title: "IT",
+    badge: { label: "Live", cls: "b-live" },
+    body: "The systems that run the company — including the agent platform.",
+    parts: ["Agent Platform", "Infrastructure", "Identity & access", "Zero-Day"],
+    doors: [
+      { href: "/it/identity-access", needs: ["IT: Identity & Access"] },
+      { href: "/it/agent-platform", needs: ["IT: Agent Platform"] },
+      { href: "/it/access-requests", needs: ["HR: Team"] },
+      { href: "/it/infrastructure", needs: [] },
+    ],
+  },
+  {
+    tone: "live",
+    title: "Products",
+    badge: { label: "Live", cls: "b-live" },
+    body: "Each product with its plan board, build board, agents, website and change log.",
+    parts: ["Education", "Game", "Tutor", "Soundwiserx", "AI Bookmark"],
+    doors: [{ href: "/products", needs: [] }],
+  },
+  {
     tone: "live",
     title: "Security Tooling",
     badge: { label: "Live", cls: "b-live" },
     body: "Change classification and the append-only change log.",
     parts: ["Change Management", "Change Log"],
+    doors: [
+      {
+        href: "/security/change-management",
+        needs: ["Security Tooling: Change Management"],
+      },
+      { href: "/security/change-log", needs: [] },
+    ],
   },
   {
-    href: "/products",
     tone: "live",
-    title: "Products",
+    title: "Contracts",
     badge: { label: "Live", cls: "b-live" },
-    body: "Each product with its own plan board, build board, agents, website, and change log.",
-    parts: ["Education", "Game", "Tutor", "Soundwiserx", "AI Bookmark"],
+    body: "Every agreement in one place, tied to compliance obligations.",
+    parts: ["NDAs", "DPAs / BAAs", "District agreements", "Vendors"],
+    doors: [
+      {
+        href: "/contracts",
+        needs: [
+          "Contracts",
+          "HR: HR Contracts",
+          "Security Tooling: Change Management",
+        ],
+      },
+    ],
   },
   {
-    href: "/finance",
+    tone: "live",
+    title: "Projects",
+    badge: { label: "Live", cls: "b-live" },
+    body: "Cross-product work with its own schedule.",
+    parts: ["Schedule", "Status"],
+    doors: [{ href: "/projects", needs: [] }],
+  },
+  {
+    tone: "portfolio",
+    title: "Departments",
+    badge: { label: "Expanding", cls: "b-plan" },
+    body: "Each department becomes a module with its own roles, teams, and agents.",
+    parts: ["Product & Design", "Engineering", "Security & Compliance"],
+    doors: [{ href: "/departments", needs: [] }],
+  },
+  {
     tone: "soon",
     title: "Finance",
     badge: { label: "Shell", cls: "b-ready" },
-    body: "AR and AP — permissions live, entry deliberately not built yet.",
-    parts: ["AR", "AP"],
-  },
-  {
-    href: "/projects",
-    tone: "portfolio",
-    title: "Projects",
-    badge: { label: "Live", cls: "b-live" },
-    body: "Cross-product projects with their own schedule.",
-    parts: ["Schedule", "Status"],
+    body: "Money in and out — permissions live, entry deliberately not built yet.",
+    parts: ["AR — receivable", "AP — payable"],
+    doors: [{ href: "/finance", needs: ["Finance: AR", "Finance: AP"] }],
   },
 ];
 
 export default async function HomePage() {
   const { supabase, email, isOwner } = await getViewer();
+  const held = await getPermissions();
 
   const [{ count: members }, { count: reports }, { count: changes }] =
     await Promise.all([
@@ -97,6 +149,9 @@ export default async function HomePage() {
 
       <div className="modgrid">
         {MODULES.map((m) => {
+          const door = m.doors.find(
+            (d) => d.needs.length === 0 || can(held, ...d.needs),
+          );
           const inner = (
             <>
               <h3>
@@ -109,20 +164,31 @@ export default async function HomePage() {
                   <span key={p}>{p}</span>
                 ))}
               </div>
-              {m.href && <div className="open">Open →</div>}
+              {door ? (
+                <div className="open">Open →</div>
+              ) : (
+                <div className="open" style={{ color: "var(--muted)" }}>
+                  Needs {m.doors[0].needs[0]}
+                </div>
+              )}
             </>
           );
-          return m.href ? (
+
+          return door ? (
             <Link
               key={m.title}
-              href={m.href}
+              href={door.href}
               className={`modcard ${m.tone} clickable`}
               style={{ display: "block", color: "inherit" }}
             >
               {inner}
             </Link>
           ) : (
-            <div key={m.title} className={`modcard ${m.tone}`}>
+            <div
+              key={m.title}
+              className={`modcard ${m.tone}`}
+              style={{ opacity: 0.65 }}
+            >
               {inner}
             </div>
           );

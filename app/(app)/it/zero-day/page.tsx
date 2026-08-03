@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
+import { getPermissions } from "@/lib/reachable";
 import { checkPerm } from "@/lib/permissions";
 import { OsShell } from "../../shell";
+import { itNav, itCrumbHref } from "../nav";
 import { ReportList, type Report } from "./report-list";
 import { ReviewGuide } from "./guide";
 
@@ -9,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ZeroDayPage() {
   const { supabase, email, isOwner } = await getViewer();
+  const held = await getPermissions();
   const canRead =
     (await checkPerm("IT: Agent Platform")) ||
     (await checkPerm("Security Tooling: Change Management"));
@@ -53,16 +56,11 @@ export default async function ZeroDayPage() {
       isOwner={isOwner}
       crumbs={[
         { label: "Modules", href: "/dashboard" },
-        { label: "IT", href: "/it/identity-access" },
+        { label: "IT", href: itCrumbHref("/it/zero-day", held) },
         { label: "Zero-Day" },
       ]}
       lead="Security and evaluation reviews run on this codebase, archived by date and time. Entries cannot be edited or deleted once filed — not by anyone, including you. Reports are filed by hand today, so an empty stretch means no review was filed, not that nothing needed one."
-      nav={[
-        { label: "Identity & Access", href: "/it/identity-access" },
-        { label: "Agent Platform", href: "/it/agent-platform" },
-        { label: "Access Requests", href: "/it/access-requests" },
-        { label: "Zero-Day", href: "/it/zero-day", on: true },
-      ]}
+      nav={itNav("/it/zero-day", held)}
     >
       {error ? (
         <p className="note" style={{ color: "var(--danger)" }}>

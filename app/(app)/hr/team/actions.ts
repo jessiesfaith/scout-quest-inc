@@ -45,3 +45,36 @@ export async function addTeamMember(
   revalidatePath("/dashboard");
   return { error: null, success: true };
 }
+
+export type SetDepartmentState = { error: string | null };
+
+export async function setDepartment(
+  _prev: SetDepartmentState,
+  formData: FormData,
+): Promise<SetDepartmentState> {
+  const memberId = String(formData.get("member_id") ?? "").trim();
+  const departmentId = String(formData.get("department_id") ?? "").trim();
+  if (!memberId) return { error: "Missing team member." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in." };
+
+  // RLS decides whether this is allowed; a silent zero-row update is a
+  // refusal, not a success, so ask for the id back and check.
+  const { data, error } = await supabase
+    .from("team_members")
+    .update({ department_id: departmentId || null })
+    .eq("id", memberId)
+    .select("id");
+
+  if (error) return { error: error.message };
+  if (!data || data.length === 0)
+    return { error: "Not saved — you do not have permission (HR: Team)." };
+
+  revalidatePath("/hr/team");
+  revalidatePath("/departments");
+  return { error: null };
+}

@@ -1,6 +1,8 @@
 import { getViewer } from "@/lib/viewer";
+import { getPermissions, can } from "@/lib/reachable";
 import { OsShell } from "../../shell";
 import { AddMemberForm } from "./add-member-form";
+import { DepartmentPicker } from "./department-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +24,14 @@ type ContractSummary = {
 
 export default async function TeamPage() {
   const { supabase, email, isOwner } = await getViewer();
+  const held = await getPermissions();
+  const canEdit = can(held, "HR: Team");
 
   const [
     { data: members, error },
     { data: contracts, error: contractsError },
+    { data: departments, error: departmentsError },
+    { data: memberDepartments },
   ] = await Promise.all([
     supabase
       .from("team_members")
@@ -38,7 +44,24 @@ export default async function TeamPage() {
       .from("contracts")
       .select("team_member_id, type, status")
       .returns<ContractSummary[]>(),
+    // Departments arrive with migration 0012. Both of these are asked for
+    // separately so that, before 0012 is applied, the team list itself still
+    // loads — the Department column just disappears.
+    supabase
+      .from("departments")
+      .select("id, name")
+      .order("sort")
+      .returns<{ id: string; name: string }[]>(),
+    supabase
+      .from("team_members")
+      .select("id, department_id")
+      .returns<{ id: string; department_id: string | null }[]>(),
   ]);
+
+  const hasDepartments = !departmentsError && (departments ?? []).length > 0;
+  const departmentOf = new Map(
+    (memberDepartments ?? []).map((m) => [m.id, m.department_id]),
+  );
 
   const byMember = new Map<string, ContractSummary[]>();
   for (const c of contracts ?? []) {
@@ -81,6 +104,7 @@ export default async function TeamPage() {
               <tr>
                 <th>Name</th>
                 <th>Role</th>
+                {hasDepartments && <th>Department</th>}
                 <th>Working on</th>
                 <th>Email</th>
                 <th>Contracts</th>
@@ -90,7 +114,10 @@ export default async function TeamPage() {
             <tbody>
               {(members ?? []).length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ color: "var(--muted)" }}>
+                  <td
+                    colSpan={hasDepartments ? 7 : 6}
+                    style={{ color: "var(--muted)" }}
+                  >
                     No team members yet — add the first one above.
                   </td>
                 </tr>
@@ -103,6 +130,16 @@ export default async function TeamPage() {
                         <b>{m.name}</b>
                       </td>
                       <td>{m.role ?? "—"}</td>
+                      {hasDepartments && (
+                        <td>
+                          <DepartmentPicker
+                            memberId={m.id}
+                            current={departmentOf.get(m.id) ?? null}
+                            departments={departments ?? []}
+                            disabled={!canEdit}
+                          />
+                        </td>
+                      )}
                       <td>{m.working_on ?? "—"}</td>
                       <td>{m.email ?? "—"}</td>
                       <td>

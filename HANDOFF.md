@@ -45,18 +45,25 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 | Company OS design adopted | `slice-08-os-design` | — |
 | Products module | `slice-09-products` | 0010 |
 | Gantt tasks + Finance/Projects/Agent Platform/Access Requests | `slice-10-remaining-modules` | 0011 |
+| Contracts, Departments, Infrastructure, permission-aware nav | `slice-11-os-complete` | 0012, 0013 |
 
 ### Screens that exist
 
 - **Public site** `/` — Jessica's `index.html`, served verbatim. Sign in,
   request an account, reset password.
 - **Dashboard** `/dashboard` — module cards with live counts.
-- **HR** — Team, Contracts (private file storage), Mission & Values, Constitution.
+- **HR** — Team (with department assignment), Contracts (private file storage),
+  Mission & Values, Constitution.
 - **IT** — Identity & Access (role builder + assignment), Agent Platform,
-  Access Requests, Zero-Day (security review archive + reviewer's guide).
+  Infrastructure (what the company runs on, by data class), Access Requests,
+  Zero-Day (security review archive + reviewer's guide).
 - **Security Tooling** — Change Management, Change Log (append-only).
 - **Products** — 6 products × 6 tabs (Plan Board, Build Board, Agents,
-  Website, Change Log, Mission & Values) + consolidated Gantt.
+  Website, Change Log, Mission & Values — the last now editable with the
+  `Products: Mission & Values` key) + consolidated Gantt.
+- **Contracts** — company-wide view: NDAs, DPAs/BAAs, district and vendor
+  agreements with obligations and an expiring-within-60-days count.
+- **Departments** — the Constitution §7 departments with their head counts.
 - **Finance** — AR/AP shell, deliberately no data model.
 - **Projects** — cross-product work with schedule.
 - **Auth flow** — `/mfa` (TOTP), `/pending` (awaiting role), `/reset-password`,
@@ -66,22 +73,40 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 
 ## 3. IMMEDIATE ACTIONS OUTSTANDING
 
-### 3.1 Migrations 0010 and 0011 have NOT been run
+### 3.1 Migrations 0010–0013 have NOT been run
 
-Everything through **0009 is applied and verified live**. `0010` and `0011`
-were written and pushed but not yet pasted into Supabase.
+Everything through **0009 is applied and verified live**. `0010`, `0011`,
+`0012` and `0013` were written and pushed but not yet pasted into Supabase.
 
 Until they run: Products screens will error or show empty, `/projects` will
-fail, and Access Requests will complain about missing columns.
+fail, Access Requests will complain about missing columns, and Contracts,
+Departments and IT › Infrastructure will each show a red "has migration 0012
+been run?" line instead of data.
 
-**To run them:** open `supabase/migrations/0010_products_module.sql`, copy the
-whole file, paste into Supabase → SQL Editor → New query → Run. Then the same
-for `0011_plan_tasks_projects.sql`. In order.
+**To run them:** copy the whole file, paste into Supabase → SQL Editor → New
+query → Run. In order: 0010, 0011, 0012, then 0013. If a dialog offers to "Run
+and enable RLS", choose the orange **Run without RLS** — see §4.3.
 
-A fast way to hand the file over without GitHub links:
+**0012 tightens four policies that 0003 and 0006 created.** If you ever re-run
+one of those older files, run 0012 again straight afterwards or the tightening
+is silently undone.
+
+A fast way to hand each file over without GitHub links:
 
 ```powershell
 Get-Content "supabase\migrations\0010_products_module.sql" -Raw | Set-Clipboard
+```
+
+```powershell
+Get-Content "supabase\migrations\0011_plan_tasks_projects.sql" -Raw | Set-Clipboard
+```
+
+```powershell
+Get-Content "supabase\migrations\0012_departments_infra_contracts.sql" -Raw | Set-Clipboard
+```
+
+```powershell
+Get-Content "supabase\migrations\0013_seed_review_0012.sql" -Raw | Set-Clipboard
 ```
 
 ### 3.2 Other open items
@@ -172,6 +197,14 @@ of the app.
 role sees only `/pending` ("a role will be assigned soon"). This is stricter
 than the architecture doc, deliberately.
 
+**Navigation follows the same keys.** `lib/reachable.ts` answers "which keys
+does this viewer hold?" in one query, and the dashboard and IT sub-nav use it
+to hide links the viewer cannot open. That is a courtesy layer only — RLS and
+the per-page `redirect()` are still the real gate. Each dashboard card lists
+its screens as *doors* with the keys each one needs; the first door the viewer
+can open becomes the card's link. **If you add a page with a permission gate,
+add its door too**, or the card will point at a page that bounces them back.
+
 ---
 
 ## 6. Append-only records
@@ -237,12 +270,12 @@ documented in `lib/review-guide.ts`:
 2. **Finance data model** — when money actually moves through this OS. The
    shell and permissions are live; the Constitution's counterweight principle
    says don't build the machinery before there's a consumer.
-3. **Departments module** — named in the design's module grid, not built.
-4. **Nice-to-haves surfaced by reviews but not done:** permission-aware
-   navigation (links are visible to everyone and pages redirect instead),
-   in-app 2FA recovery for a lost authenticator (today: owner deletes the user
-   and re-creates them), and product-scoped Mission & Values editing (the
-   company one is editable; product ones are read-only).
+3. **Editing screens for the 0012 tables** — Departments, Infrastructure and
+   the non-employment Contracts rows are read-only in the app; they are seeded
+   and changed in SQL so the record stays version-controlled. Add forms when
+   the lists start changing often enough to be annoying.
+4. **In-app 2FA recovery** for a lost authenticator. Today the owner deletes
+   the user in Supabase and re-creates them.
 
 ---
 
@@ -262,7 +295,7 @@ $base = "https://odovdbxhsrrfpdjobiwj.supabase.co/rest/v1"
 foreach ($t in @("profiles","team_members","roles","role_assignments","products",
                  "product_areas","plan_items","websites","work_orders","change_log",
                  "agents","contracts","mission_values","account_requests",
-                 "security_reports","projects")) {
+                 "security_reports","projects","departments","infrastructure")) {
   try { $r = Invoke-WebRequest -Uri "$base/${t}?select=*&limit=1" -Headers $h -UseBasicParsing
         "OK  $t" } catch { "MISSING $t" }
 }
@@ -270,7 +303,8 @@ foreach ($t in @("profiles","team_members","roles","role_assignments","products"
 
 Every table should answer `HTTP 200` with `[]` — an empty array proves the
 table exists **and** that RLS is refusing anonymous reads. `MISSING projects`
-or `MISSING` on a Products table means 0010/0011 still need running.
+or `MISSING` on a Products table means 0010/0011 still need running;
+`MISSING departments` or `MISSING infrastructure` means 0012 does.
 
 **Do not attempt to run migrations yourself.** The app holds only the
 publishable (browser) key; creating tables needs the secret key or the database
@@ -291,6 +325,8 @@ always a paste by Jessica.
 | `app/(app)/layout.tsx` | The gate: auth → 2FA → role. |
 | `app/(app)/shell.tsx` | The OS chrome (top bar, breadcrumbs, sub-nav). |
 | `lib/permission-keys.ts` | Canonical keys — must match the RLS policies exactly. |
+| `lib/reachable.ts` | Which keys the viewer holds, for hiding unreachable links. |
+| `app/(app)/it/nav.ts` | The IT sub-nav, filtered by permission. |
 | `lib/review-guide.ts` | The honest account of what reviews do and don't cover. |
 | `supabase/migrations/` | Run in filename order. Later files tighten earlier ones. |
 | `SCOUT_QUEST_INC_DEPLOYMENT_ARCHITECTURE.md` | Schema/auth source of truth. |

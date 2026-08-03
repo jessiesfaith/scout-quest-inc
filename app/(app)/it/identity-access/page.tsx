@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
+import { getPermissions } from "@/lib/reachable";
 import { checkPerm } from "@/lib/permissions";
 import { OsShell } from "../../shell";
+import { itNav, itCrumbHref } from "../nav";
 import { RolesPanel, type Role } from "./role-builder";
 import { TeamPanel, type Member, type ProfileOption } from "./team-panel";
 
@@ -12,6 +14,7 @@ type AssignmentRow = { id: string; team_member_id: string; role_id: string };
 export default async function IdentityAccessPage() {
   const { supabase, email, isOwner } = await getViewer();
   if (!(await checkPerm("IT: Identity & Access"))) redirect("/dashboard");
+  const held = await getPermissions();
 
   const [
     { data: roles, error: rolesError },
@@ -63,16 +66,11 @@ export default async function IdentityAccessPage() {
       isOwner={isOwner}
       crumbs={[
         { label: "Modules", href: "/dashboard" },
-        { label: "IT", href: "/it/identity-access" },
+        { label: "IT", href: itCrumbHref("/it/identity-access", held) },
         { label: "Identity & Access" },
       ]}
       lead="Create roles as sets of permissions (checkboxes over modules and tabs), then assign roles to team members. A member can hold more than one role. Roles only take effect once the member's login account is linked."
-      nav={[
-        { label: "Identity & Access", href: "/it/identity-access", on: true },
-        { label: "Agent Platform", href: "/it/agent-platform" },
-        { label: "Access Requests", href: "/it/access-requests" },
-        { label: "Zero-Day", href: "/it/zero-day" },
-      ]}
+      nav={itNav("/it/identity-access", held)}
     >
       {loadError ? (
         <p className="note" style={{ color: "var(--danger)" }}>

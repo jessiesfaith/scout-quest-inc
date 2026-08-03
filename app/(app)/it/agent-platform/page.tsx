@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
+import { getPermissions } from "@/lib/reachable";
 import { checkPerm } from "@/lib/permissions";
 import { OsShell } from "../../shell";
+import { itNav, itCrumbHref } from "../nav";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +46,7 @@ export default async function AgentPlatformPage({
 
   const { supabase, email, isOwner } = await getViewer();
   if (!(await checkPerm("IT: Agent Platform"))) redirect("/dashboard");
+  const held = await getPermissions();
 
   const [
     { data: wos, error: wosError },
@@ -80,16 +83,11 @@ export default async function AgentPlatformPage({
       isOwner={isOwner}
       crumbs={[
         { label: "Modules", href: "/dashboard" },
-        { label: "IT", href: "/it/identity-access" },
+        { label: "IT", href: itCrumbHref("/it/agent-platform", held) },
         { label: "Agent Platform" },
       ]}
       lead="The governed agent library and the work orders they execute. Both are generated from the ASL ledger and the spend policy rather than entered here, so this module is read-only by design."
-      nav={[
-        { label: "Identity & Access", href: "/it/identity-access" },
-        { label: "Agent Platform", href: "/it/agent-platform", on: true },
-        { label: "Access Requests", href: "/it/access-requests" },
-        { label: "Zero-Day", href: "/it/zero-day" },
-      ]}
+      nav={itNav("/it/agent-platform", held)}
     >
       <div className="g2nav">
         {TABS.map((t) => (

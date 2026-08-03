@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
+import { getPermissions } from "@/lib/reachable";
 import { checkPerm } from "@/lib/permissions";
 import { OWNER_EMAIL } from "@/lib/constants";
 import { OsShell } from "../../shell";
+import { itNav, itCrumbHref } from "../nav";
 import { Decide } from "./forms";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +33,7 @@ export default async function AccessRequestsPage() {
   const { supabase, email, isOwner } = await getViewer();
   const allowed = isOwner || (await checkPerm("HR: Team"));
   if (!allowed) redirect("/dashboard");
+  const held = await getPermissions();
 
   const { data: requests, error } = await supabase
     .from("account_requests")
@@ -49,16 +52,11 @@ export default async function AccessRequestsPage() {
       isOwner={isOwner}
       crumbs={[
         { label: "Modules", href: "/dashboard" },
-        { label: "IT", href: "/it/identity-access" },
+        { label: "IT", href: itCrumbHref("/it/access-requests", held) },
         { label: "Access Requests" },
       ]}
       lead="People who asked for an account from the public site. The consent badges record what the request form submitted at sign-up — treat them as the person's own assertion, not independent proof. Deciding here records your decision; it does not create a login."
-      nav={[
-        { label: "Identity & Access", href: "/it/identity-access" },
-        { label: "Agent Platform", href: "/it/agent-platform" },
-        { label: "Access Requests", href: "/it/access-requests", on: true },
-        { label: "Zero-Day", href: "/it/zero-day" },
-      ]}
+      nav={itNav("/it/access-requests", held)}
     >
       {error ? (
         <p className="note" style={{ color: "var(--danger)" }}>

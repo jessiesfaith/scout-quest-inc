@@ -15,10 +15,13 @@ export function MissionValuesForm({
   purpose,
   mission,
   values,
+  scope = "company",
 }: {
   purpose: string;
   mission: string;
   values: ValueItem[];
+  /** "company", or a product key for the product-scoped copy. */
+  scope?: string;
 }) {
   const [state, formAction, pending] = useActionState(
     saveMissionValues,
@@ -41,6 +44,7 @@ export function MissionValuesForm({
 
   return (
     <form action={formAction}>
+      <input type="hidden" name="scope" value={scope} />
       <h2 className="sec">Purpose</h2>
       <div className="formcard">
         <div className="field">
