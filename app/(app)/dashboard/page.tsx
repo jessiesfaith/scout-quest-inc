@@ -98,11 +98,11 @@ const MODULES: {
     doors: [{ href: "/departments", needs: [] }],
   },
   {
-    tone: "soon",
+    tone: "live",
     title: "Finance",
-    badge: { label: "Shell", cls: "b-ready" },
-    body: "Money in and out — permissions live, entry deliberately not built yet.",
-    parts: ["AR — receivable", "AP — payable"],
+    badge: { label: "Live", cls: "b-live" },
+    body: "An invoice register: what customers owe, what the company owes, and what is overdue.",
+    parts: ["AR — receivable", "AP — payable", "Payments"],
     doors: [{ href: "/finance", needs: ["Finance: AR", "Finance: AP"] }],
   },
 ];

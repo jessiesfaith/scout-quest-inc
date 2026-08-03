@@ -1,6 +1,8 @@
 # Scout Quest Inc — Company OS · Session Handoff
 
-*Written 2026-08-02 at the end of the first build session. Read this top to
+*Written 2026-08-02 at the end of the first build session, updated the same
+day after slices 12–15 (editing screens, Stage 3 ingest, two-factor
+recovery, Finance). Read this top to
 bottom before touching anything; the "Rules that were learned the hard way"
 section will save you from repeating mistakes that cost real time.*
 
@@ -46,6 +48,10 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 | Products module | `slice-09-products` | 0010 |
 | Gantt tasks + Finance/Projects/Agent Platform/Access Requests | `slice-10-remaining-modules` | 0011 |
 | Contracts, Departments, Infrastructure, permission-aware nav | `slice-11-os-complete` | 0012, 0013 |
+| Editing screens for the 0012 tables | `slice-12-editing` | 0014 |
+| Stage 3 ingest (ASL ledger, spend policy, git) | `slice-13-stage3` | 0015 |
+| Two-factor recovery codes + owner reset | `slice-14-mfa-recovery` | 0016 |
+| Finance: invoices, payments, balances | `slice-15-finance` | 0017 |
 
 ### Screens that exist
 
@@ -54,9 +60,12 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 - **Dashboard** `/dashboard` — module cards with live counts.
 - **HR** — Team (with department assignment), Contracts (private file storage),
   Mission & Values, Constitution.
-- **IT** — Identity & Access (role builder + assignment), Agent Platform,
+- **IT** — Identity & Access (role builder + assignment + two-factor reset),
+  Agent Platform (library, work orders, model spend, sync status),
   Infrastructure (what the company runs on, by data class), Access Requests,
   Zero-Day (security review archive + reviewer's guide).
+- **My account** — Security: your own two-factor state and recovery codes.
+  Reached from your email address in the top bar. No permission gates it.
 - **Security Tooling** — Change Management, Change Log (append-only).
 - **Products** — 6 products × 6 tabs (Plan Board, Build Board, Agents,
   Website, Change Log, Mission & Values — the last now editable with the
@@ -64,7 +73,9 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 - **Contracts** — company-wide view: NDAs, DPAs/BAAs, district and vendor
   agreements with obligations and an expiring-within-60-days count.
 - **Departments** — the Constitution §7 departments with their head counts.
-- **Finance** — AR/AP shell, deliberately no data model.
+- **Finance** — AR and AP as an invoice register: invoices, part payments,
+  outstanding balances and an overdue total. The two keys are separate on
+  purpose.
 - **Projects** — cross-product work with schedule.
 - **Auth flow** — `/mfa` (TOTP), `/pending` (awaiting role), `/reset-password`,
   `/legal/nda`, `/legal/privacy`.
@@ -73,43 +84,77 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 
 ## 3. IMMEDIATE ACTIONS OUTSTANDING
 
-### 3.1 Migrations 0010–0013 have NOT been run
+### 3.1 Migrations 0001–0013 are applied; **0014–0017 are not**
 
-Everything through **0009 is applied and verified live**. `0010`, `0011`,
-`0012` and `0013` were written and pushed but not yet pasted into Supabase.
+0001–0013 were verified live on **2026-08-02** by probing the REST API for
+the columns each one adds, not just the tables. Re-run the probe in §10
+before trusting that line again.
 
-Until they run: Products screens will error or show empty, `/projects` will
-fail, Access Requests will complain about missing columns, and Contracts,
-Departments and IT › Infrastructure will each show a red "has migration 0012
-been run?" line instead of data.
+`0014`, `0015`, `0016` and `0017` were written and pushed but have **not**
+been pasted into Supabase. Until they run:
 
-**To run them:** copy the whole file, paste into Supabase → SQL Editor → New
-query → Run. In order: 0010, 0011, 0012, then 0013. If a dialog offers to "Run
-and enable RLS", choose the orange **Run without RLS** — see §4.3.
+| Missing | What breaks |
+|---|---|
+| 0014 | Recording a company agreement on **Contracts** fails — that is the only one of the three editing screens that needed new SQL, because Departments and Infrastructure already had write policies from 0012. Also missing: the guard that refuses to delete an occupied department, the `company/` storage lane, and the CHECK constraints behind the dropdowns. |
+| 0015 | The ingest route returns "has migration 0015 been run?"; Model Spend and Sync status are empty. |
+| 0016 | Recovery codes cannot be generated or redeemed; the owner's "Reset 2FA" refuses. |
+| 0017 | Finance shows a load error instead of the register. |
 
-**0012 tightens four policies that 0003 and 0006 created.** If you ever re-run
-one of those older files, run 0012 again straight afterwards or the tightening
-is silently undone.
-
-A fast way to hand each file over without GitHub links:
+Run them **in order**, and finish with the highest number — later files
+tighten policies that earlier ones created, so re-running an old file
+silently reverts the tightening:
 
 ```powershell
-Get-Content "supabase\migrations\0010_products_module.sql" -Raw | Set-Clipboard
+Get-Content "supabase\migrations\0014_editing_rights_0012_tables.sql" -Raw | Set-Clipboard
 ```
 
 ```powershell
-Get-Content "supabase\migrations\0011_plan_tasks_projects.sql" -Raw | Set-Clipboard
+Get-Content "supabase\migrations\0015_stage3_ingest.sql" -Raw | Set-Clipboard
 ```
 
 ```powershell
-Get-Content "supabase\migrations\0012_departments_infra_contracts.sql" -Raw | Set-Clipboard
+Get-Content "supabase\migrations\0016_mfa_recovery.sql" -Raw | Set-Clipboard
 ```
 
 ```powershell
-Get-Content "supabase\migrations\0013_seed_review_0012.sql" -Raw | Set-Clipboard
+Get-Content "supabase\migrations\0017_finance.sql" -Raw | Set-Clipboard
 ```
 
-### 3.2 Other open items
+If a dialog offers to "Run and enable RLS", choose the orange **Run without
+RLS** — see §4.3.
+
+**0014 note.** It adds CHECK constraints to existing tables. If one fails,
+some row already holds a value outside the allowed set — fix that row and
+re-run, rather than dropping the constraint.
+
+### 3.2 Vercel environment — two variables the app now needs
+
+**This changed.** Up to slice 11 the app used only the publishable key.
+Stage 3 writes rows on behalf of a machine that has no user session and
+therefore no RLS identity, so the ingest route needs the service key. See
+§5.1 for what is done to keep that from becoming a back door.
+
+1. **Rotate the Supabase secret first.** It was pasted into a chat once and
+   until now nothing used it, so rotating was free. It stops being free the
+   moment it is in Vercel — rotate, then set the new value.
+2. **`SUPABASE_SECRET_KEY`** — the rotated secret, in Vercel only. Never in
+   `NEXT_PUBLIC_*`, never in the repo.
+3. **`INGEST_TOKEN`** — a fresh random string shared with the publisher:
+
+   ```powershell
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+
+   Set it in Vercel, and put the *same* value in `.env.ingest` on the
+   machine that runs the publisher. Anything under 32 characters is
+   refused. A **different** token already exists in local `.env.local` for
+   development; that is intended — local and production should not share
+   one.
+
+Without these the ingest route answers 503 and says which variable is
+missing. Everything else in the app keeps working.
+
+### 3.3 Other open items
 
 - **2FA on the Supabase and Vercel accounts themselves** (not the app — the
   dashboards). Constitution §5 calls this security-critical. Not done.
@@ -118,8 +163,9 @@ Get-Content "supabase\migrations\0013_seed_review_0012.sql" -Raw | Set-Clipboard
 - **Supabase is on the FREE plan** — daily backups only, no point-in-time
   recovery. If this app ever holds anything worth more than a day, that is the
   upgrade that matters.
-- **Rotate the Supabase secret** if it was ever pasted in a chat. The app does
-  not use it (`SUPABASE_SECRET_KEY` is referenced nowhere), so rotating is free.
+- **The publisher is run by hand.** Nothing schedules it. The Sync status
+  table on IT › Agent Platform shows how stale each source is, which is the
+  honest version of "we have not automated this yet".
 
 ---
 
@@ -193,6 +239,53 @@ of the app.
   them to `team_members`; a member's roles only apply once their
   `profile_id` is linked (guarded by a database trigger).
 
+### 5.1 The service key, and why it exists now
+
+`lib/supabase/admin.ts` holds a client that **bypasses every RLS policy**.
+Three things use it, and all three are places where there is no user to
+act as. Keep this list and the one in `admin.ts` in step — it is the only
+inventory of what holds this capability:
+
+- **`app/api/ingest/route.ts`** — the publisher is a script, not a person.
+  It writes only through migration 0015's `security definer` functions,
+  and reads exactly one table directly (`ingest_state`, to answer the
+  publisher's "where did I get to?").
+- **`app/mfa/actions.ts`** (`redeemRecoveryCode`) and
+  **`app/(app)/it/identity-access/actions.ts`** (`resetTwoFactor`) —
+  removing an enrolled authenticator needs the Auth admin API; an aal1
+  session cannot do it, correctly. Both use it for that API only, never
+  for table access. Note `resetTwoFactor` deliberately writes its audit
+  row with the *caller's* client, not this one: under the service key
+  `auth.uid()` is null, and the trigger that stamps who did it would then
+  fall back to a value the caller supplied.
+
+What keeps it contained:
+
+- `import "server-only"` makes importing it from a client component a build
+  error, and `scripts/check-client-bundle.mjs` fails the build if the key,
+  its variable name, or `INGEST_TOKEN` reaches a browser asset. Both
+  secrets are in `SECRET_VARS` in that script — **add new ones there**, the
+  guard only checks what the list names.
+- The ingest route never composes SQL and never reads a table. Every write
+  goes through a `security definer` function from migration 0015, each of
+  which writes one table and ignores unexpected keys. `EXECUTE` on those is
+  granted to `service_role` only — not `anon`, not `authenticated`.
+- What this does **not** protect against: a leaked service key, which can
+  write any table without going near those functions. Vercel's environment
+  is the only thing guarding that.
+
+### 5.2 The D3 boundary in the ingest
+
+`scripts/ingest/sources.mjs` decides what leaves the governed plane. The
+rule when extending it: **if a field could differ between two runs because
+of what a student wrote, it does not cross.** Identifiers, counts, costs,
+statuses and timestamps do. Step output, run parameters, error detail and
+the ledger's `tenant` column do not.
+
+`node scripts/ingest/publish.mjs --dry-run` prints the exact payload and
+sends nothing. Read it after any change to that file — checking the
+boundary there is far easier than auditing the database afterwards.
+
 **Jessica's ruling on reads:** no role → no data. A signed-in person without a
 role sees only `/pending` ("a role will be assigned soon"). This is stricter
 than the architecture doc, deliberately.
@@ -264,18 +357,32 @@ documented in `lib/review-guide.ts`:
 
 ## 9. What is left
 
-1. **Stage 3 ingest seams** — feed `work_orders` and `agents` from the ASL
-   ledger; generate `change_log` entries from git history. The tables and
-   read-only screens already exist and are waiting for data.
-2. **Finance data model** — when money actually moves through this OS. The
-   shell and permissions are live; the Constitution's counterweight principle
-   says don't build the machinery before there's a consumer.
-3. **Editing screens for the 0012 tables** — Departments, Infrastructure and
-   the non-employment Contracts rows are read-only in the app; they are seeded
-   and changed in SQL so the record stays version-controlled. Add forms when
-   the lists start changing often enough to be annoying.
-4. **In-app 2FA recovery** for a lost authenticator. Today the owner deletes
-   the user in Supabase and re-creates them.
+The four items that stood here on 2026-08-02 are all built. What replaced
+them:
+
+1. **Nothing schedules the publisher.** It runs when someone types the
+   command. A Windows Task Scheduler entry or a cron job on the machine
+   holding the ledger is the obvious next step; until then read the Sync
+   status table before trusting a spend figure.
+2. **Postgres ledgers are not supported by the publisher.** It reads
+   SQLite through `node:sqlite`. `asl-gateway`'s own README recommends
+   Postgres "for anything real" — when that switch happens, `openLedger`
+   in `sources.mjs` is the one function that needs a second implementation.
+3. **Evaluator verdicts are not mirrored.** `work_orders.confidence` and
+   `.review` exist and stay null. The verdict is a governance fact worth
+   showing, but it is produced from content, so what crosses needs
+   deciding deliberately rather than by adding a column.
+4. **Finance is a register, not accounting.** No double entry, no chart of
+   accounts, no tax, no multi-currency, no credit notes — an overpayment
+   is refused rather than netted off. When those are genuinely needed they
+   belong in accounting software this OS reads from.
+5. **A recovery-code sheet cannot be reprinted.** By design: only hashes
+   are stored. Someone who loses both their phone and their codes needs an
+   Identity & Access holder to reset them, which is recorded in
+   `mfa_resets`. There is no self-service path out of that, deliberately.
+6. **`mfa_resets` has no screen.** The table records every reset and who
+   did it, and is readable by Identity & Access holders — but only through
+   SQL today. It deserves a panel on that page.
 
 ---
 
@@ -295,7 +402,9 @@ $base = "https://odovdbxhsrrfpdjobiwj.supabase.co/rest/v1"
 foreach ($t in @("profiles","team_members","roles","role_assignments","products",
                  "product_areas","plan_items","websites","work_orders","change_log",
                  "agents","contracts","mission_values","account_requests",
-                 "security_reports","projects","departments","infrastructure")) {
+                 "security_reports","projects","departments","infrastructure",
+                 "ingest_state","agent_spend","invoices","payments",
+                 "mfa_recovery_codes","mfa_resets")) {
   try { $r = Invoke-WebRequest -Uri "$base/${t}?select=*&limit=1" -Headers $h -UseBasicParsing
         "OK  $t" } catch { "MISSING $t" }
 }
@@ -305,6 +414,14 @@ Every table should answer `HTTP 200` with `[]` — an empty array proves the
 table exists **and** that RLS is refusing anonymous reads. `MISSING projects`
 or `MISSING` on a Products table means 0010/0011 still need running;
 `MISSING departments` or `MISSING infrastructure` means 0012 does.
+`MISSING ingest_state` / `agent_spend` means 0015; `MISSING invoices` /
+`payments` means 0017; `MISSING mfa_recovery_codes` / `mfa_resets` means
+0016.
+
+0014 adds no tables, so the probe cannot see it. Check it by trying to
+**record an agreement on /contracts** — that needs the policy 0014 adds.
+Editing a *department* is not a test: those writes worked from 0012, so a
+success there would falsely read as "0014 applied".
 
 **Do not attempt to run migrations yourself.** The app holds only the
 publishable (browser) key; creating tables needs the secret key or the database
@@ -325,6 +442,12 @@ always a paste by Jessica.
 | `app/(app)/layout.tsx` | The gate: auth → 2FA → role. |
 | `app/(app)/shell.tsx` | The OS chrome (top bar, breadcrumbs, sub-nav). |
 | `lib/permission-keys.ts` | Canonical keys — must match the RLS policies exactly. |
+| `lib/supabase/admin.ts` | The service-role client. Two callers only — see §5.1. |
+| `lib/ingest-auth.ts` | Bearer-token gate for the ingest route; fails closed. |
+| `scripts/ingest/sources.mjs` | **The D3 boundary.** What may leave the governed plane. |
+| `scripts/ingest/publish.mjs` | The publisher. `--dry-run` prints without sending. |
+| `.env.ingest.example` | What the publisher needs, and how to generate it. |
+| `lib/recovery-codes.ts` | Recovery-code generation, normalization and hashing. |
 | `lib/reachable.ts` | Which keys the viewer holds, for hiding unreachable links. |
 | `app/(app)/it/nav.ts` | The IT sub-nav, filtered by permission. |
 | `lib/review-guide.ts` | The honest account of what reviews do and don't cover. |

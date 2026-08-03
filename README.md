@@ -40,10 +40,14 @@ never redesign the screens from scratch.
 1. `npm install`
 2. Copy `.env.example` to `.env.local` and fill in the values. The publishable
    key is browser-safe; `SUPABASE_SECRET_KEY` is server-only, never
-   `NEXT_PUBLIC_`, never committed. Nothing uses it yet.
+   `NEXT_PUBLIC_`, never committed. Since the Stage 3 slice it **is** used —
+   by the ingest route and the two 2FA-reset paths, which have no user
+   session to act as. Leaving it blank only disables those; the rest of the
+   app runs without it. Add `INGEST_TOKEN` too if you want to exercise the
+   ingest locally (see `.env.ingest.example`).
 3. Run the migrations **in order** — paste each into Supabase → SQL Editor →
    Run every file in `supabase/migrations/` in filename order — currently
-   `0001` … `0011`, and any later ones as they land (see
+   `0001` … `0017`, and any later ones as they land (see
    [supabase/migrations/](supabase/migrations/)). Re-running an older file
    loosens what a later one tightened, so always re-run the later ones after
    it. Migrate before deploying app code that expects the schema.
@@ -72,15 +76,23 @@ never redesign the screens from scratch.
   owner OR (role assigned AND an aal2 session), so a stolen password without
   the 2FA device gets nothing from the REST API either. Writes additionally
   require the matching `has_perm('Module: Tab')` key.
-- Lost 2FA device: the owner deletes the user in Supabase → Authentication →
-  Users and re-creates them. (In-app recovery is a later stage.)
+- Lost 2FA device: use one of the ten recovery codes issued at enrolment, at
+  the "Lost your authenticator?" link on `/mfa`. A code does not sign anyone
+  in — it removes the lost authenticator so a new one can be enrolled, so the
+  password is still required. Codes are regenerated from **My account →
+  Security** (your email address in the top bar). If they are gone too, an
+  `IT: Identity & Access` holder resets two-factor from Identity & Access, and
+  the reset is recorded in `mfa_resets` against whoever did it.
 
 ## Guarantees
 
 - **RLS on** for every table (`profiles`, `team_members`, `roles`).
-- **Secret never in the browser:** `npm run build` runs
+- **Secrets never in the browser:** `npm run build` runs
   `scripts/check-client-bundle.mjs` (postbuild), which fails the build if
-  `sb_secret` or `SUPABASE_SECRET_KEY` appears anywhere in `.next/static`.
+  `sb_secret` key material, or the name or value of any variable listed in
+  that script's `SECRET_VARS` (`SUPABASE_SECRET_KEY`, `INGEST_TOKEN`),
+  appears anywhere in `.next/static`. **Add new secrets to that list** — the
+  guard only checks what it is told about.
 - `is_owner` is decided in SQL (trigger keyed to auth.users + RLS checks) —
   the client cannot self-escalate, and self-inserted profile rows cannot
   carry a role or a forged consent record.
@@ -126,9 +138,25 @@ superset with four deliberate deviations (all owner-ruled or review-driven):
    `team_members.profile_id`, delete-restricted `contracts` FK, and
    `change_log.created_by` bound to the real author.
 
-## Stage 2/3 remainder
+## Stage 3 — the ingest
 
-Identity & Access screen (roles builder + assignment + account-request
-queue), then contracts, boards, work orders, change log, mission/values per
-module — schema already live via migration 0003. Stage 3: ledger/git ingest
-seams.
+Every module from the kickoff is built. Stage 3 connects this OS to the
+governed local plane, in one direction only: a publisher runs *there*,
+reads the ledger, and posts a metadata summary *here*. This app cannot
+reach the ledger, and is not meant to be able to.
+
+```bash
+node scripts/ingest/publish.mjs --dry-run
+```
+
+- `scripts/ingest/sources.mjs` is the D3 boundary — identifiers, counts,
+  costs, statuses and timestamps cross; content never does. `--dry-run`
+  prints exactly what would be sent.
+- `POST /api/ingest` takes a bearer token (`INGEST_TOKEN`) and writes only
+  through the `security definer` functions in migration 0015.
+- Sources: `runner_event` → work orders, `metering` → model spend,
+  `config/spend_policy.yaml` → the agent library, `git log` → the change
+  log.
+
+Copy `.env.ingest.example` to `.env.ingest` to configure it. See §5.1 and
+§5.2 of `HANDOFF.md` for the service-key containment and the boundary rule.
