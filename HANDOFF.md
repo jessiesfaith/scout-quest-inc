@@ -84,48 +84,54 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 
 ## 3. IMMEDIATE ACTIONS OUTSTANDING
 
-### 3.1 Migrations 0001–0013 are applied; **0014–0017 are not**
+### 3.1 Migrations — all of 0001–0017 are applied
 
-0001–0013 were verified live on **2026-08-02** by probing the REST API for
-the columns each one adds, not just the tables. Re-run the probe in §10
-before trusting that line again.
+0001–0013 were verified on **2026-08-02** by probing the REST API for the
+columns each one adds. 0014–0017 were run the same day and verified two
+ways: the REST probe for every table, view and column they create, and a
+catalog query for the things REST cannot see.
 
-`0014`, `0015`, `0016` and `0017` were written and pushed but have **not**
-been pasted into Supabase. Until they run:
+That second check matters and is worth repeating after any future
+migration, because **0014 creates no tables at all** — a table probe
+cannot tell whether it ran. Nor can it see a policy, a trigger, a CHECK
+constraint, or the contents of a function body:
 
-| Missing | What breaks |
-|---|---|
-| 0014 | Recording a company agreement on **Contracts** fails — that is the only one of the three editing screens that needed new SQL, because Departments and Infrastructure already had write policies from 0012. Also missing: the guard that refuses to delete an occupied department, the `company/` storage lane, and the CHECK constraints behind the dropdowns. |
-| 0015 | The ingest route returns "has migration 0015 been run?"; Model Spend and Sync status are empty. |
-| 0016 | Recovery codes cannot be generated or redeemed; the owner's "Reset 2FA" refuses. |
-| 0017 | Finance shows a load error instead of the register. |
-
-Run them **in order**, and finish with the highest number — later files
-tighten policies that earlier ones created, so re-running an old file
-silently reverts the tightening:
-
-```powershell
-Get-Content "supabase\migrations\0014_editing_rights_0012_tables.sql" -Raw | Set-Clipboard
+```sql
+select case when
+      (select count(*) from pg_policy     where polname = 'contracts_write_company') = 1
+  and (select count(*) from pg_policy     where polname = 'contracts_objects_insert_company') = 1
+  and (select count(*) from pg_trigger    where tgname  = 'departments_block_occupied_delete') = 1
+  and (select count(*) from pg_constraint where conname = 'contracts_category_check') = 1
+  and (select count(*) from pg_policy     where polname = 'mfa_resets_insert_admin') = 1
+  and (select count(*) from pg_proc       where proname = 'mfa_recovery_unspend') = 1
+  and (select count(*) from pg_proc       where proname = 'ingest_work_orders') = 1
+  and (select count(*) from pg_trigger    where tgname  = 'invoices_recalc_status') = 1
+  and (select count(*) from pg_trigger    where tgname  = 'invoices_guard_amount') = 1
+  and (select position('aal2' in pg_get_functiondef(oid)) > 0
+         from pg_proc where proname = 'mfa_recovery_issue')
+  then 'PASS - all four migrations verified, aal2 gate present'
+  else 'FAIL - something is missing'
+end as verdict;
 ```
 
-```powershell
-Get-Content "supabase\migrations\0015_stage3_ingest.sql" -Raw | Set-Clipboard
-```
+The last line of that check is the important one. `mfa_recovery_issue`
+without its `aal2` gate is a complete two-factor bypass (§5.3), and the
+only way to know the deployed function has it is to read the deployed
+function. Returned PASS on 2026-08-02.
+
+**Ordering, for whatever comes next.** Later files tighten policies that
+earlier ones created — 0012 and 0014 both replace policies from 0003 and
+0006, and 0015 replaces `stamp_change_log` from 0008. Re-running an old
+file silently reverts the tightening, so always finish with the highest
+number. When handing SQL over, the reliable way is to have Claude Code
+put it on the clipboard directly:
 
 ```powershell
-Get-Content "supabase\migrations\0016_mfa_recovery.sql" -Raw | Set-Clipboard
-```
-
-```powershell
-Get-Content "supabase\migrations\0017_finance.sql" -Raw | Set-Clipboard
+Set-Clipboard -Value ([System.IO.File]::ReadAllText("C:\dev\scoutquestaiinc\supabase\migrations\0017_finance.sql", [System.Text.Encoding]::UTF8))
 ```
 
 If a dialog offers to "Run and enable RLS", choose the orange **Run without
 RLS** — see §4.3.
-
-**0014 note.** It adds CHECK constraints to existing tables. If one fails,
-some row already holds a value outside the allowed set — fix that row and
-re-run, rather than dropping the constraint.
 
 ### 3.2 Vercel environment — two variables the app now needs
 
@@ -285,6 +291,45 @@ the ledger's `tenant` column do not.
 `node scripts/ingest/publish.mjs --dry-run` prints the exact payload and
 sends nothing. Read it after any change to that file — checking the
 boundary there is far easier than auditing the database afterwards.
+
+### 5.3 A check in a server action is not enforcement
+
+The single most serious defect an adversarial review has caught in this
+codebase, and it is worth understanding rather than just avoiding.
+
+`mfa_recovery_issue` required a 2FA-verified session before it would
+print a sheet of recovery codes. That requirement lived in the server
+action, in TypeScript. Redeeming a code is deliberately allowed at aal1 —
+that is what a recovery code is *for*. So the two composed into a
+complete bypass: someone holding only a stolen password could print
+themselves a sheet, redeem one, unenrol the real authenticator, enrol
+their own, and reach aal2 with every permission the victim held.
+
+The reason the TypeScript check was worthless: **PostgREST exposes every
+function granted to `authenticated` at `/rest/v1/rpc/<name>`**, reachable
+with the publishable key that ships in the browser bundle. The server
+action is one caller among several, and the attacker simply does not use
+it.
+
+Rules that follow:
+
+- Gate assurance level and permissions **inside the SQL function body**,
+  using the idiom 0003 already established:
+  `(select auth.jwt() ->> 'aal') = 'aal2'`. Keep the app-layer check too,
+  for the friendly message — but never as the only one.
+- Prefer granting `EXECUTE` to `service_role` alone, as migration 0015
+  does for the ingest functions. `authenticated` is a public surface.
+- A `security definer` function must scope to `auth.uid()` internally and
+  never take a user id as an argument, or it can be aimed at anyone.
+- Verify the *deployed* function, not the file — see the `pg_get_functiondef`
+  line in §3.1.
+
+Related: enabling RLS on a table and giving it only a SELECT policy does
+not make it "written server-side only", it makes it unwritable. The
+insert fails 42501 — an error, not the zero-rows refusal this codebase
+normally guards for — so an "audit, then act" function returns early and
+the whole capability is dead. That was `mfa_resets`, and it meant Reset
+2FA could never have worked once.
 
 **Jessica's ruling on reads:** no role → no data. A signed-in person without a
 role sees only `/pending` ("a role will be assigned soon"). This is stricter
