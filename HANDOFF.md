@@ -2,7 +2,8 @@
 
 *Written 2026-08-02 at the end of the first build session, updated the same
 day after slices 12–15 (editing screens, Stage 3 ingest, two-factor
-recovery, Finance). Read this top to
+recovery, Finance) shipped, all migrations were applied, the Vercel
+environment was configured and the first ingest ran. Read this top to
 bottom before touching anything; the "Rules that were learned the hard way"
 section will save you from repeating mistakes that cost real time.*
 
@@ -82,7 +83,11 @@ slice, so `git checkout slice-06-hr` gets you that point exactly.
 
 ---
 
-## 3. IMMEDIATE ACTIONS OUTSTANDING
+## 3. Deployment state — and what is still outstanding
+
+*3.1–3.3 record what has been done and how it was verified; **3.4 is the
+only part still open**. Read 3.1–3.3 anyway: each one is a description of
+how to check the thing, not just a claim that it was checked.*
 
 ### 3.1 Migrations — all of 0001–0017 are applied
 
@@ -133,37 +138,69 @@ Set-Clipboard -Value ([System.IO.File]::ReadAllText("C:\dev\scoutquestaiinc\supa
 If a dialog offers to "Run and enable RLS", choose the orange **Run without
 RLS** — see §4.3.
 
-### 3.2 Vercel environment — two variables the app now needs
+### 3.2 Vercel environment — configured 2026-08-02
 
-**This changed.** Up to slice 11 the app used only the publishable key.
-Stage 3 writes rows on behalf of a machine that has no user session and
-therefore no RLS identity, so the ingest route needs the service key. See
-§5.1 for what is done to keep that from becoming a back door.
+**This changed at Stage 3.** Up to slice 11 the app used only the
+publishable key. The ingest writes on behalf of a machine that has no
+user session and therefore no RLS identity, so it needs the service key.
+See §5.1 for what keeps that from becoming a back door.
 
-1. **Rotate the Supabase secret first.** It was pasted into a chat once and
-   until now nothing used it, so rotating was free. It stops being free the
-   moment it is in Vercel — rotate, then set the new value.
-2. **`SUPABASE_SECRET_KEY`** — the rotated secret, in Vercel only. Never in
-   `NEXT_PUBLIC_*`, never in the repo.
-3. **`INGEST_TOKEN`** — a fresh random string shared with the publisher:
+Both variables are now set in Vercel for Production and Preview, and the
+Supabase secret was rotated first:
 
-   ```powershell
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
+| Variable | Where |
+|---|---|
+| `SUPABASE_SECRET_KEY` | Vercel (rotated `sb_secret_…`), and local `.env.local` |
+| `INGEST_TOKEN` | Vercel, and local `.env.ingest` — the **same** value; the publisher posts to production |
 
-   Set it in Vercel, and put the *same* value in `.env.ingest` on the
-   machine that runs the publisher. Anything under 32 characters is
-   refused. A **different** token already exists in local `.env.local` for
-   development; that is intended — local and production should not share
-   one.
+A **different** `INGEST_TOKEN` lives in `.env.local` for testing against
+`localhost:3000`. That is intended. It also means `.env.ingest` and
+`.env.local` disagree, and `.env.ingest` wins because the publisher loads
+it first — so pointing `OS_INGEST_URL` at localhost without overriding
+the token gets a 401.
 
-Without these the ingest route answers 503 and says which variable is
-missing. Everything else in the app keeps working.
+**If either value is ever replaced:** environment changes do not reach a
+running deployment. Change the variable, then Deployments → `···` →
+**Redeploy**, or the old value stays live. Both of these cost a
+round trip during setup for exactly that reason.
 
-### 3.3 Other open items
+Failure modes, so the next person can read the error instead of guessing:
+
+| Response | Meaning |
+|---|---|
+| `503` naming a variable | that variable is unset on the deployment |
+| `{"error":"Bad token."}` | `INGEST_TOKEN` differs between Vercel and `.env.ingest` |
+| `{"error":"Invalid API key"}` | `SUPABASE_SECRET_KEY` is wrong — usually set *before* the rotation rather than after |
+| `{"source":…,"cursor":…}` | working end to end |
+
+### 3.3 First ingest — run 2026-08-02
+
+`agents` and `git` have been run against production. `asl-runs` and
+`asl-spend` deliberately have **not**: the only ledger on disk is
+`_TEST_runbook.db`, whose 24 runs and 84 metering events are all tagged
+`environment: test`, and they would land in production Work Orders and
+Model Spend with SQL as the only way back out.
+
+- **agents** — 6 rows from `spend_policy.yaml`, cursor `full`. Idempotent;
+  re-run whenever the policy changes.
+- **git** — 23 commits into `change_log`, cursor at `a5aa295`.
+  **Irreversible**: `change_log` has no delete policy for anyone,
+  including the owner. That is the 0008 append-only guarantee working, but
+  it means a bad git sync cannot be undone — check `--dry-run` first.
+
+Note `change_log.created_by_email` holds a git author *name* for these
+rows, not an email. The screen tags them `git` with the short sha and the
+lead text says they are commit authors rather than signed-in people, so
+nothing on screen misleads. Left as is deliberately: the rows cannot be
+backfilled, so "fixing" the format would only make new entries disagree
+with old ones.
+
+### 3.4 Other open items
 
 - **2FA on the Supabase and Vercel accounts themselves** (not the app — the
-  dashboards). Constitution §5 calls this security-critical. Not done.
+  dashboards). Constitution §5 calls this security-critical. Not done, and
+  it now matters more: those dashboards hold a service key that bypasses
+  every RLS policy in this database.
 - **`NEXT_PUBLIC_SITE_URL`** should be set in Vercel to the live URL so
   password-reset emails point at the deployment rather than the request origin.
 - **Supabase is on the FREE plan** — daily backups only, no point-in-time
@@ -211,7 +248,28 @@ Its green "Run and enable RLS" button appends a malformed statement and fails
 with `relation "an" does not exist`. Every migration enables RLS itself. This
 cost several rounds before it was identified.
 
-### 4.4 Testing gotchas
+### 4.4 Handing SQL over — do it, don't describe it
+
+Claude Code runs **on Jessica's machine**, so the right move is to put the
+migration on her clipboard directly and say "it's on your clipboard,
+Ctrl+A, Ctrl+V, Run":
+
+```powershell
+Set-Clipboard -Value ([System.IO.File]::ReadAllText("C:\dev\scoutquestaiinc\supabase\migrations\0017_finance.sql", [System.Text.Encoding]::UTF8))
+```
+
+**Do not put that command in a code block for her to run.** Given a
+fenced block during the 0014 handover she reasonably pasted it straight
+into the Supabase SQL Editor, which answered
+`syntax error at or near "Get"`. A block that looks runnable will be run
+wherever she happens to be looking.
+
+Same technique for secrets, and better: generate the value, write it to
+the gitignored file, put it on the clipboard, and print only its length.
+It never enters the transcript. `Get-Clipboard` reads the other
+direction, so she can hand a key over without pasting it into chat either.
+
+Other testing gotchas:
 
 - Jessica has repeatedly tested login by opening `index.html` **as a file**
   (`file:///C:/dev/...`). The wire script never loads there, so nothing works.
@@ -224,7 +282,32 @@ cost several rounds before it was identified.
 
 `Get-Content -Raw | ... | Set-Content` mangles em-dashes into `â€"`. Use Node
 for text rewriting, or `[System.IO.File]::ReadAllText/WriteAllText` with an
-explicit UTF8 encoding.
+explicit UTF8 encoding — and `New-Object System.Text.UTF8Encoding($false)`
+when writing, or every file gains a BOM.
+
+### 4.6 Don't diagnose an API with Invoke-WebRequest
+
+Testing the rotated service key, `Invoke-WebRequest` with an
+`authorization` header returned **401 Unauthorized** for a key that was
+perfectly valid — `curl.exe` against the same URL with the same headers
+got `200` and the expected rows. Windows PowerShell 5.1 does not pass
+that header through cleanly.
+
+That nearly caused a good key to be thrown away and re-rotated. When a
+request fails against Supabase, reproduce it with `curl.exe` before
+believing the failure:
+
+```powershell
+& curl.exe -s -w "`n[%{http_code}]`n" -H "apikey: $k" -H "authorization: Bearer $k" "$base/ingest_state?select=source&limit=1"
+```
+
+It also prints the response body, which `Invoke-WebRequest` throws away
+on a non-2xx — and for PostgREST the body is where the actual reason is.
+
+A useful property while testing: the same request with the **publishable**
+key returns `[]` and with the **secret** key returns rows. That difference
+is a one-line proof that RLS is on and that the service role is bypassing
+it, which is worth checking after any key change.
 
 ---
 
@@ -370,6 +453,22 @@ visitor's browser, 2FA that was enforced only in the UI, a privilege
 escalation via account re-linking, uploads that would have silently failed
 over 1 MB, a Gantt that drew bars under the wrong month.
 
+Slices 12–15 were reviewed together: 35 agents, five lenses, two
+independent refuters per finding — 14 confirmed, 1 refuted. That run
+found a **complete two-factor bypass** (§5.3), a capability that could
+never have worked at all because its table had RLS on and no INSERT
+policy, an edit path that silently voided any paid invoice, and a
+cents check that rejected one legitimate amount in eight. None of those
+were visible from reading the diff; each needed an agent to trace an
+actual path through the code.
+
+Two habits worth keeping from it. **Cap verification, but log what you
+drop** — that run verified the three most severe findings per lens and
+logged the eleven it did not, several of which turned out to be right on
+inspection. And **give the verifiers different jobs**: one refuting the
+claim, one required to write a concrete reproduction. The second caught
+things the first waved through.
+
 **Add a "guide-accuracy" or "truthfulness" lens when a slice makes claims to
 the user.** On the Zero-Day slice that lens audited the reviewer's guide
 against what the harness actually does and found it overstating in five
@@ -436,8 +535,13 @@ them:
 Open the new session in `C:\dev\scoutquestaiinc` and say something like:
 
 > Read HANDOFF.md, README.md, SCOUT_QUEST_INC_DEPLOYMENT_ARCHITECTURE.md and
-> CLAUDE_CODE_KICKOFF_SCOUT_QUEST_INC_FULL.md, then confirm which migrations
-> are applied before doing anything.
+> CLAUDE_CODE_KICKOFF_SCOUT_QUEST_INC_FULL.md, then confirm the schema and
+> the deployment still match what §3 claims before doing anything.
+
+As of 2026-08-02 all migrations through 0017 are applied, both Vercel
+variables are set, and the `agents` and `git` ingests have run. Verify
+rather than trust — that paragraph is exactly the kind of line that goes
+stale first.
 
 Verifying applied migrations without the dashboard — read-only, no writes:
 
@@ -463,15 +567,33 @@ or `MISSING` on a Products table means 0010/0011 still need running;
 `payments` means 0017; `MISSING mfa_recovery_codes` / `mfa_resets` means
 0016.
 
-0014 adds no tables, so the probe cannot see it. Check it by trying to
-**record an agreement on /contracts** — that needs the policy 0014 adds.
-Editing a *department* is not a test: those writes worked from 0012, so a
-success there would falsely read as "0014 applied".
+0014 adds no tables, so the probe cannot see it — use the catalog query in
+§3.1, which also covers the policies, triggers and function bodies the
+REST API cannot show you.
 
-**Do not attempt to run migrations yourself.** The app holds only the
-publishable (browser) key; creating tables needs the secret key or the database
-password, neither of which is in this repo — deliberately. Migrations are
-always a paste by Jessica.
+Checking the ingest is alive, end to end, without writing anything:
+
+```bash
+TOKEN=$(grep '^INGEST_TOKEN=' .env.ingest | cut -d= -f2 | tr -d '\r')
+curl -s -H "authorization: Bearer $TOKEN" "https://scout-quest-inc.vercel.app/api/ingest?source=git"
+```
+
+A JSON object with `cursor` means the bearer token, the service key and
+the database are all working. Anything else, read the table in §3.2.
+
+**Do not run migrations yourself.** This used to be true because the repo
+held no credential that could; that reason has expired and the rule has
+not. `.env.local` now carries the service key, but PostgREST exposes no
+arbitrary SQL, so DDL still needs the dashboard or the database password.
+Migrations remain a paste by Jessica.
+
+**What the service key in `.env.local` does change:** a local session can
+now read and write production data directly, bypassing every RLS policy.
+That is genuinely useful for verifying a migration landed — and it means
+a careless `curl` can modify live rows with nothing to stop it. Treat
+reads as free and writes as something to confirm with Jessica first,
+particularly against `change_log` and `security_reports`, which are
+append-only and cannot be undone by anyone.
 
 ---
 
