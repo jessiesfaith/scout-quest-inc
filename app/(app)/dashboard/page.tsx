@@ -26,7 +26,7 @@ const MODULES: {
     title: "HR",
     badge: { label: "Live", cls: "b-live" },
     body: "People and teams, contracts, mission and values, and the Constitution.",
-    parts: ["Team", "HR Contracts", "Mission & Values", "Constitution"],
+    parts: ["Team", "Org Chart", "HR Contracts", "Mission & Values", "Constitution"],
     doors: [{ href: "/hr/team", needs: [] }],
   },
   {
