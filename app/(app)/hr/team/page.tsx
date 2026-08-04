@@ -1,6 +1,7 @@
 import { getViewer } from "@/lib/viewer";
 import { getPermissions, can } from "@/lib/reachable";
 import { OsShell } from "../../shell";
+import { hrNav } from "../nav";
 import { AddMemberForm } from "./add-member-form";
 import { DepartmentPicker } from "./department-picker";
 
@@ -80,6 +81,7 @@ export default async function TeamPage() {
         { label: "HR", href: "/hr/team" },
         { label: "Team" },
       ]}
+      nav={hrNav("/hr/team")}
       lead="Everyone in the company, what they are working on, and their contract status. Contract badges are a live join from HR › Contracts — gold is pending, green is complete."
     >
       {contractsError && (
