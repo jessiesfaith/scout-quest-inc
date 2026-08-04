@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { getViewer } from "@/lib/viewer";
 import { checkPerm } from "@/lib/permissions";
+import { getPermissions } from "@/lib/reachable";
 import { OsShell } from "../../shell";
+import { itNav, itCrumbHref } from "../../it/nav";
 import { LogChangeForm } from "./form";
 
 export const dynamic = "force-dynamic";
@@ -34,9 +37,11 @@ const CLASS_TAG: Record<string, string> = {
 export default async function ChangeLogPage() {
   const { supabase, email, isOwner } = await getViewer();
 
+  const canGov = await checkPerm("Security Tooling: Change Management");
   const canWrite =
-    (await checkPerm("Security Tooling: Change Log")) ||
-    (await checkPerm("Security Tooling: Change Management"));
+    (await checkPerm("Security Tooling: Change Log")) || canGov;
+
+  const held = await getPermissions();
 
   // Attribution reads from the row's own snapshot column: profiles are
   // visible only to self and the owner, and it survives account deletion.
@@ -62,10 +67,12 @@ export default async function ChangeLogPage() {
       isOwner={isOwner}
       crumbs={[
         { label: "Modules", href: "/dashboard" },
-        { label: "Security Tooling", href: "/security/change-management" },
+        { label: "IT", href: itCrumbHref("/security/change-log", held) },
+        { label: "Security Tooling", href: "/security/change-log" },
         { label: "Change Log" },
       ]}
       lead="Append-only record of what changed, where, and who recorded it. There is no edit or delete path — not in the app, and not in the database — and the filing timestamp and author are stamped server-side, so neither can be set by whoever files the entry. Entries tagged git are generated from commit history: their date is the commit's, and their author is a commit author rather than a signed-in person. Showing the most recent 200."
+      nav={itNav("/security/change-log", held)}
     >
       {error ? (
         <p className="note" style={{ color: "var(--danger)" }}>
@@ -73,6 +80,15 @@ export default async function ChangeLogPage() {
         </p>
       ) : (
         <>
+          {canGov && (
+            <p className="note">
+              Governed changes (class 3 / 3+) have their own view:{" "}
+              <Link href="/security/change-management" className="crumb">
+                Change Management →
+              </Link>
+            </p>
+          )}
+
           {canWrite && (
             <>
               <h2 className="sec">Log a change</h2>

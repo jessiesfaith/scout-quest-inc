@@ -22,6 +22,10 @@ const TABS: (SubNavItem & { needs: string[] })[] = [
     href: "/it/zero-day",
     needs: ["IT: Agent Platform", "Security Tooling: Change Management"],
   },
+  // Security Tooling now lives under IT. Points at the always-open Change
+  // Log (needs: []) so every role can reach it; the governed Change
+  // Management view is linked from there for those who hold its permission.
+  { label: "Security Tooling", href: "/security/change-log", needs: [] },
 ];
 
 export function itNav(current: string, held: Set<string>): SubNavItem[] {

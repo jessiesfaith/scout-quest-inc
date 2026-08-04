@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/viewer";
 import { checkPerm } from "@/lib/permissions";
 import { OsShell } from "../../shell";
+import { getPermissions } from "@/lib/reachable";
+import { itNav, itCrumbHref } from "../../it/nav";
 import { CHANGE_COLUMNS, type ChangeRow } from "../change-log/page";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +43,8 @@ export default async function ChangeManagementPage() {
     redirect("/security/change-log");
   }
 
+  const held = await getPermissions();
+
   const LIMIT = 50;
   const { data: governed, error, count } = await supabase
     .from("change_log")
@@ -64,10 +68,12 @@ export default async function ChangeManagementPage() {
       isOwner={isOwner}
       crumbs={[
         { label: "Modules", href: "/dashboard" },
-        { label: "Security Tooling", href: "/security/change-management" },
+        { label: "IT", href: itCrumbHref("/security/change-log", held) },
+        { label: "Security Tooling", href: "/security/change-log" },
         { label: "Change Management" },
       ]}
       lead="How changes are classified, and every governed change on record. New entries are recorded on the Change Log."
+      nav={itNav("/security/change-log", held)}
     >
       <h2 className="sec">Change classes</h2>
       <div className="modgrid">

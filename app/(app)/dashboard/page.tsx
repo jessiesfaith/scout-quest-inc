@@ -34,7 +34,13 @@ const MODULES: {
     title: "IT",
     badge: { label: "Live", cls: "b-live" },
     body: "The systems that run the company — including the agent platform.",
-    parts: ["Agent Platform", "Infrastructure", "Identity & access", "Zero-Day"],
+    parts: [
+      "Agent Platform",
+      "Infrastructure",
+      "Identity & access",
+      "Zero-Day",
+      "Security Tooling",
+    ],
     doors: [
       { href: "/it/identity-access", needs: ["IT: Identity & Access"] },
       { href: "/it/agent-platform", needs: ["IT: Agent Platform"] },
@@ -49,20 +55,6 @@ const MODULES: {
     body: "Each product with its plan board, build board, agents, website and change log.",
     parts: ["Education", "Game", "Tutor", "Soundwiserx", "AI Bookmark"],
     doors: [{ href: "/products", needs: [] }],
-  },
-  {
-    tone: "live",
-    title: "Security Tooling",
-    badge: { label: "Live", cls: "b-live" },
-    body: "Change classification and the append-only change log.",
-    parts: ["Change Management", "Change Log"],
-    doors: [
-      {
-        href: "/security/change-management",
-        needs: ["Security Tooling: Change Management"],
-      },
-      { href: "/security/change-log", needs: [] },
-    ],
   },
   {
     tone: "live",
