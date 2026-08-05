@@ -26,10 +26,9 @@ const TABS: (SubNavItem & { needs: string[] })[] = [
   // Log (needs: []) so every role can reach it; the governed Change
   // Management view is linked from there for those who hold its permission.
   { label: "Security Tooling", href: "/security/change-log", needs: [] },
-  // Coding Cards — the per-product "how it's built" read, moved here from the
-  // product page. The product itself is the next tab over.
-  { label: "Scout Quest", href: "/it/coding-cards", needs: [] },
-  { label: "Coding Cards", href: "/products/education", needs: [] },
+  // Coding Cards — one hub for the per-product "how it's built" reads. The
+  // page itself lists a button per product; pick one to see its cards.
+  { label: "Coding Cards", href: "/it/coding-cards", needs: [] },
 ];
 
 export function itNav(current: string, held: Set<string>): SubNavItem[] {
