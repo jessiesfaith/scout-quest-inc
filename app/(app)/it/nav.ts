@@ -28,8 +28,8 @@ const TABS: (SubNavItem & { needs: string[] })[] = [
   { label: "Security Tooling", href: "/security/change-log", needs: [] },
   // Coding Cards — the per-product "how it's built" read, moved here from the
   // product page. The product itself is the next tab over.
-  { label: "Coding Cards", href: "/it/coding-cards", needs: [] },
-  { label: "Scout Quest Education", href: "/products/education", needs: [] },
+  { label: "Scout Quest", href: "/it/coding-cards", needs: [] },
+  { label: "Coding Cards", href: "/products/education", needs: [] },
 ];
 
 export function itNav(current: string, held: Set<string>): SubNavItem[] {
