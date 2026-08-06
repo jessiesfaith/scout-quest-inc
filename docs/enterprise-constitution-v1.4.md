@@ -1,15 +1,15 @@
 # SCOUT QUEST ENTERPRISE — ENTERPRISE CONSTITUTION
-## Version 1.3 (Approved)
+## Version 1.4 (Draft — pending legal review)
 
 | Field | Value |
 |---|---|
 | Document type | Enterprise governance (Document A — Constitution) |
 | document_id | GOV-CONST-001 |
 | Owner | Jessica (Chief Executive) |
-| Status | **Approved — effective 2026-07-27** |
+| Status | **Draft — pending attorney review.** v1.3 (approved, effective 2026-07-27) remains the last approved version and is retrievable from git history. Sections 1 (Enterprise Longevity), 3.9–3.12, and 10 are new in this draft and have not yet been reviewed by counsel. |
 | Review cadence | Quarterly, or after any Class 3 change |
 | Companion documents | `Enterprise Current State` (Document B) · `GOV-CANON-001` (vocabulary & precedence) |
-| Changelog | v1.3 (2026-08-01): §3.5 gains a v0-scope clause — independent evaluation ships only for workflows registered and digest-pinned in `config/approved_workflows.yaml`; general author-wired evaluation and producer/evaluator model diversity are deferred as Class 3 "not yet" (asl-gateway #32). Records that agent-evaluator v0 merged to `main` @ `b6f6044`. v1.2 (2026-07-27, per Canon approvals A2/A3): §3.2 ladder reordered — existing approved content is rung 1; human gate may be required at any rung; §3.6 adopts five operating modes (adds Restricted). v1.1: glossary, decision rights, risk guardrails, measurable standards; split Current State into Document B. v1.0: archived, superseded |
+| Changelog | v1.4 (2026-08-03, **draft**): adds legal governance language absent from prior versions — §1 gains an *Enterprise Longevity* clause; §3 gains 3.9 Enterprise Stewardship, 3.10 Corporate Separation, 3.11 Documentation as an Enterprise Asset, 3.12 Legal and Governance by Design; new §10 *Legal Governance Principles* (10.1–10.11). These are governance principles, not contractual clauses; detailed agreements derive from them per §10. Class 3 change; requires executive approval **and** attorney review before the status moves to Approved. v1.3 (2026-08-01): §3.5 gains a v0-scope clause — independent evaluation ships only for workflows registered and digest-pinned in `config/approved_workflows.yaml`; general author-wired evaluation and producer/evaluator model diversity are deferred as Class 3 "not yet" (asl-gateway #32). Records that agent-evaluator v0 merged to `main` @ `b6f6044`. v1.2 (2026-07-27, per Canon approvals A2/A3): §3.2 ladder reordered — existing approved content is rung 1; human gate may be required at any rung; §3.6 adopts five operating modes (adds Restricted). v1.1: glossary, decision rights, risk guardrails, measurable standards; split Current State into Document B. v1.0: archived, superseded |
 
 This is the durable governance constitution for Scout Quest Enterprise. It is not a coding prompt. All recommendations, architecture changes, folder structures, agents, workflows, and implementations produced by any AI assistant (Claude Code, ChatGPT, or others) must remain aligned with this document. The rules are assistant-agnostic. Vocabulary and document precedence are governed by GOV-CANON-001. Deviations require approval per Section 4.
 
@@ -20,6 +20,16 @@ This is the durable governance constitution for Scout Quest Enterprise. It is no
 Scout Quest Enterprise is an AI-native enterprise, not a traditional software company. AI agents perform most operational work; human leaders provide governance, strategy, oversight, ethics, approvals, and executive decisions.
 
 The enterprise must support rapid scaling while maintaining security, operability, maintainability, cost-efficient AI operations, modular architecture, enterprise governance, compliance, and investor readiness. Architecture must always favor long-term maintainability over short-term convenience — balanced by the counterweight principle in Section 3.8.
+
+### Enterprise Longevity
+
+Scout Quest Enterprise is designed to endure beyond individual technologies, AI providers, personnel, organizational structures, vendors, leadership transitions, and market changes.
+
+Architectural, governance, legal, operational, financial, educational, and technical decisions shall prioritize long-term sustainability, maintainability, transparency, stewardship, enterprise resilience, and continuity over short-term convenience.
+
+Enterprise knowledge, enterprise assets, governance, documentation, enterprise architecture, and operational standards shall remain durable regardless of organizational growth, technological evolution, organizational restructuring, or future leadership transitions.
+
+Enterprise systems shall be designed to support continuous improvement without requiring wholesale replacement of governance, documentation, or enterprise knowledge.
 
 ## 2. GLOSSARY
 
@@ -78,6 +88,54 @@ A capability exists only when it has: (1) an Overview.md, (2) a named owner, (3)
 
 ### 3.8 Counterweight principle
 Never optimize only for today's prototype — but equally, **never build enterprise machinery that has no consumer today**. Do not create a folder, service, agent, standard, platform, or workflow until it has a current consumer, owner, or approved near-term implementation need; record future needs in the capability map or roadmap instead of creating empty structures. Shared platforms are extracted when a second product needs the same function. If a recommendation creates technical debt, explain the tradeoff before implementing.
+
+### 3.9 Enterprise Stewardship
+
+Enterprise assets—including intellectual property, enterprise knowledge, software, source code, repositories, documentation, curricula, assessments, educational content, research, AI systems, workflows, prompts, agent specifications, security controls, governance artifacts, operational processes, architectural standards, datasets, models, enterprise services, shared capabilities, and strategic information—shall be managed as long-term enterprise assets.
+
+Ownership, governance, accountability, maintainability, operational resilience, investor readiness, and organizational continuity shall be preserved throughout the enterprise lifecycle.
+
+Enterprise assets shall never depend upon the continued participation of any single individual.
+
+Enterprise knowledge shall be documented before it becomes operationally critical.
+
+Enterprise governance shall favor institutional knowledge over individual knowledge.
+
+### 3.10 Corporate Separation
+
+The Enterprise shall maintain appropriate separation between Company assets, governance, records, finances, contracts, intellectual property, obligations, approvals, operational authority, and enterprise decision-making and the personal assets, obligations, activities, or affairs of founders, officers, directors, contributors, employees, contractors, advisors, vendors, consultants, and other individuals.
+
+Enterprise governance shall preserve appropriate legal separation between the Enterprise and individuals acting on its behalf while recognizing that each individual remains responsible for his or her own conduct under applicable law.
+
+Enterprise documentation, approvals, financial obligations, contracts, enterprise assets, and intellectual property shall remain attributable to the Enterprise rather than to individuals except where expressly documented otherwise.
+
+### 3.11 Documentation as an Enterprise Asset
+
+Documentation is a first-class enterprise asset.
+
+Enterprise documentation shall be treated with the same importance as software, source code, architecture, infrastructure, security controls, and intellectual property.
+
+Documentation shall be:
+
+* version controlled;
+* maintained;
+* reviewed;
+* reusable;
+* traceable;
+* searchable;
+* appropriately classified;
+* linked rather than duplicated whenever practical; and
+* continuously improved.
+
+Undocumented enterprise knowledge should be considered organizational risk.
+
+### 3.12 Legal and Governance by Design
+
+Legal governance shall be integrated into enterprise architecture rather than added after implementation.
+
+Enterprise capabilities, workflows, platforms, agents, services, and products should be designed to support legal compliance, contractual obligations, auditability, privacy, security, intellectual property ownership, regulatory obligations, and investor due diligence from inception.
+
+Enterprise governance shall be proactive rather than reactive.
 
 ## 4. DECISION RIGHTS AND CHANGE CLASSIFICATION
 
@@ -138,4 +196,208 @@ Documentation is Markdown-first, Obsidian-first, Git-first. Documents are enterp
 7. If a recommendation creates technical debt, state the tradeoff before implementing.
 8. Before proposing anything new, ask: "Can this become a shared enterprise capability instead?"
 
-— End of Constitution v1.3 —
+## 10. LEGAL GOVERNANCE PRINCIPLES
+
+The Enterprise shall maintain a documented legal governance framework that supports sustainable enterprise operations, protection of enterprise assets, compliance, responsible growth, investor readiness, operational resilience, and long-term stewardship.
+
+Legal governance exists to support—not replace—enterprise governance established by this Constitution.
+
+Detailed contractual obligations, enterprise policies, procedures, legal agreements, and operational controls shall derive from this Constitution and remain consistent with its principles unless superseded by mandatory applicable law.
+
+### 10.1 Enterprise Legal Framework
+
+The Enterprise shall maintain a version-controlled legal framework supporting:
+
+* enterprise governance;
+* contributor management;
+* contractual relationships;
+* confidentiality;
+* intellectual property;
+* information security;
+* artificial intelligence governance;
+* privacy;
+* records management;
+* regulatory compliance;
+* enterprise risk management;
+* operational continuity; and
+* investor due diligence.
+
+Legal documentation shall be organized, traceable, internally consistent, version controlled, and maintained as enterprise knowledge.
+
+### 10.2 Enterprise Ownership
+
+Enterprise assets shall be owned, licensed, assigned, registered, transferred, or otherwise documented through approved enterprise processes.
+
+Enterprise ownership shall never depend solely upon:
+
+* verbal understandings;
+* informal conversations;
+* undocumented assumptions;
+* individual possession;
+* repository access;
+* system access;
+* employment status; or
+* historical practice.
+
+Enterprise ownership shall always be capable of independent verification through enterprise records.
+
+### 10.3 Delegated Legal Authority
+
+Only individuals acting within documented delegated authority may:
+
+* legally bind the Enterprise;
+* execute contracts;
+* authorize expenditures;
+* transfer enterprise assets;
+* approve intellectual property assignments;
+* approve material legal commitments;
+* approve settlements;
+* authorize enterprise obligations; or
+* modify governance documents.
+
+Delegated authority shall be documented, reviewed, and maintained through enterprise governance.
+
+AI agents, automation, workflows, software systems, contributors, contractors, vendors, consultants, employees, and advisors possess only authority expressly delegated to them.
+
+### 10.4 Enterprise Records
+
+Enterprise records constitute enterprise assets.
+
+Material legal, governance, financial, operational, compliance, intellectual property, privacy, security, educational, architectural, and strategic records shall be maintained under documented enterprise governance standards.
+
+Enterprise records shall be:
+
+* version controlled;
+* appropriately classified;
+* retained according to documented retention standards;
+* searchable;
+* traceable;
+* auditable;
+* protected against unauthorized modification;
+* recoverable;
+* periodically reviewed; and
+* available for authorized governance, compliance, legal, operational, and investor review.
+
+### 10.5 Intellectual Property Governance
+
+The Enterprise shall maintain documented governance supporting:
+
+* inventions;
+* patents;
+* copyrights;
+* trademarks;
+* trade secrets;
+* software ownership;
+* documentation ownership;
+* AI-generated work;
+* prompt libraries;
+* workflow ownership;
+* enterprise knowledge;
+* datasets;
+* educational content;
+* research;
+* architectural standards;
+* licensing;
+* contributor assignments; and
+* third-party intellectual property.
+
+Ownership shall always be documented through approved enterprise processes.
+
+### 10.6 Enterprise Agreements
+
+Material enterprise relationships shall be governed by documented agreements appropriate to the relationship.
+
+The Enterprise shall maintain standardized agreement frameworks supporting, where applicable:
+
+* contributors;
+* employees;
+* contractors;
+* consultants;
+* advisors;
+* officers;
+* directors;
+* vendors;
+* strategic partners;
+* customers;
+* districts;
+* licensors;
+* licensors of third-party intellectual property;
+* grant providers; and
+* other material enterprise relationships.
+
+Agreement standards shall prioritize consistency, traceability, governance, maintainability, and enterprise protection.
+
+### 10.7 Risk-Based Governance
+
+Legal, operational, financial, educational, privacy, security, compliance, intellectual property, contractual, vendor, artificial intelligence, and enterprise risks shall be evaluated according to documented governance standards.
+
+Material risks shall be:
+
+* identified;
+* documented;
+* assigned an owner;
+* monitored;
+* periodically reviewed;
+* escalated according to Change Class and Risk Tier;
+* documented within the Enterprise Risk Register; and
+* continuously improved through governance.
+
+Enterprise governance shall favor proactive risk reduction over reactive remediation.
+
+### 10.8 Ethical Enterprise Conduct
+
+Every individual acting on behalf of the Enterprise shall conduct Enterprise activities with:
+
+* integrity;
+* professionalism;
+* accountability;
+* transparency;
+* respect;
+* evidence-based decision making;
+* stewardship;
+* good faith;
+* respect for applicable law; and
+* commitment to the Enterprise Mission.
+
+Enterprise governance shall favor documented decisions over undocumented assumptions.
+
+Enterprise governance shall favor transparency over ambiguity.
+
+Enterprise governance shall favor accountability over convenience.
+
+### 10.9 Regulatory Readiness
+
+The Enterprise shall maintain governance capable of supporting applicable regulatory, contractual, privacy, educational, healthcare, security, financial, and industry obligations.
+
+Compliance capabilities shall be designed as reusable enterprise capabilities rather than isolated product-specific implementations whenever practical.
+
+Compliance readiness shall evolve with Enterprise maturity.
+
+### 10.10 Continuous Legal Improvement
+
+The Enterprise legal governance framework shall evolve through:
+
+* documented governance;
+* version control;
+* executive approval;
+* continuous improvement;
+* enterprise learning;
+* architectural evolution;
+* regulatory developments;
+* operational maturity;
+* security improvements;
+* educational best practices;
+* investor requirements; and
+* organizational growth.
+
+Legal governance shall remain aligned with the Enterprise Constitution while adapting to changing legal, technological, educational, and business environments.
+
+### 10.11 Enterprise Stewardship
+
+The purpose of legal governance is not merely legal compliance.
+
+Its purpose is to preserve the Enterprise Mission, protect Enterprise assets, enable responsible innovation, support long-term sustainability, reduce organizational risk, improve investor confidence, strengthen operational resilience, and ensure that future generations of contributors can understand, maintain, and responsibly evolve the Enterprise.
+
+Enterprise governance shall always prioritize stewardship over expediency.
+
+— End of Constitution v1.4 (Draft) —

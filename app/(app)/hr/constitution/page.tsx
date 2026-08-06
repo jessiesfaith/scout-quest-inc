@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // The Constitution is governed outside this app — it lives in the repo as
 // markdown and renders read-only here. To publish a new version, replace
 // the file; never edit governance text through the UI.
-const DOC = "docs/enterprise-constitution-v1.3.md";
+const DOC = "docs/enterprise-constitution-v1.4.md";
 
 export default async function ConstitutionPage() {
   const { email, isOwner } = await getViewer();
@@ -31,9 +31,9 @@ export default async function ConstitutionPage() {
         { label: "HR", href: "/hr/team" },
         { label: "Scout Quest AI Constitution" },
       ]}
-      lead="Enterprise Constitution v1.3 — read-only. Governed outside this app; the source of truth is the markdown in the repo, and version history lives in git."
+      lead="Enterprise Constitution v1.4 (draft — pending attorney review) — read-only. Governed outside this app; the source of truth is the markdown in the repo, and version history lives in git. v1.3 is the last approved version."
     >
-      <h2 className="sec">Full text — Scout Quest AI Constitution (v1.3)</h2>
+      <h2 className="sec">Full text — Scout Quest AI Constitution (v1.4, draft)</h2>
       {markdown === null ? (
         <p className="note" style={{ color: "var(--danger)" }}>
           Could not read {DOC}.

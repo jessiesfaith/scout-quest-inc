@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // Vercel's serverless bundles include them.
   outputFileTracingIncludes: {
     "/": ["./index.html"],
-    "/hr/constitution": ["./docs/enterprise-constitution-v1.3.md"],
+    "/hr/constitution": ["./docs/enterprise-constitution-v1.4.md"],
   },
 
   experimental: {
