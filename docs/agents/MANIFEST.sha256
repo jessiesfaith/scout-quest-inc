@@ -1,0 +1,46 @@
+# Governance document manifest. Regenerate with:
+#   node scripts/governance/manifest.mjs --write
+#
+# One line per governed document, sorted by path, so `git diff` on this
+# file IS the drift report. Hashes are over CRLF-normalised UTF-8 bytes.
+# Columns: path  sha256  lines  bytes
+# 39 documents.
+docs/agents/AGENT_ARCHITECTURE.md	sha256:47340915344fa41abf45a6e850e52488d10c934b77bef4b3acf4304c26b314da	lines:211	bytes:9707
+docs/agents/GAP_ANALYSIS.md	sha256:87121a6786d8844c54d2a892eb50fa54409fb49630790bc1ab432336b2ab7a16	lines:383	bytes:23869
+docs/agents/README.md	sha256:e1ff12caf8c36896fe63cd3b379d2448b0fca531687467958141e2452638a750	lines:89	bytes:3921
+docs/agents/ROADMAP_CATALOG.md	sha256:b6e6b92936573a9e12e72d6bcc2684d466aa75e6c4bf6e1ce62ea6856aa291fa	lines:177	bytes:11748
+docs/agents/_TEMPLATE.md	sha256:00d40cce57a000f430e568a99d92ac42f231184eea60aa52a0aec664df5f4197	lines:86	bytes:2614
+docs/agents/agent_registry.yaml	sha256:2933f68f5e923322391a0d5d458045a7ef98549404dcdd9acc3d6f4fb89eea27	lines:399	bytes:15176
+docs/agents/context/CTX-000-index.md	sha256:9111b941fb060cd6d1be1cda44e44f5e70719c5076f48d2e61b7c70a7df7d960	lines:54	bytes:3682
+docs/agents/context/CTX-001-enterprise-canon.md	sha256:e7c68d64cf57754e94ba678ec142f4ee3665239f31455de8f14d710ec6221ef8	lines:161	bytes:6758
+docs/agents/context/CTX-002-data-classes.md	sha256:57689771d6666c3d1e92bdd3f87e48fc29a09bf98a6675c696af7c0cc5d333d2	lines:111	bytes:5276
+docs/agents/context/CTX-003-risk-tiers-and-gates.md	sha256:36ba46afaa1ce2d94900ef80c747b4eb9f98c68081e96ee5d3aa3a270ec532b1	lines:105	bytes:6089
+docs/agents/context/CTX-004-brand-scout-quest-education.md	sha256:59c75942db36dc0aafc7b78a2e576f25ccad63f310148cfd5df3f08d77dfaffe	lines:114	bytes:5869
+docs/agents/context/CTX-005-brand-soundwiserx.md	sha256:e89e17f9f43451022895352a9bc3ccc8e2949d62f1e34363f9d56afd1135eb3d	lines:130	bytes:6386
+docs/agents/context/CTX-006-audiences.md	sha256:feb7c8775d119e177df59ad848387e165d0bf71094d633f5d4ca88cc4745886f	lines:136	bytes:5747
+docs/agents/context/CTX-007-compliance-boundaries.md	sha256:ee6d85a53ec005120c60aac54850cc7ecc4435fe0e3f6858b18352aab46c7be8	lines:144	bytes:7110
+docs/agents/context/CTX-008-evidence-and-citation.md	sha256:ebdc859f729f0b0ea533589acdb7df30c5f3ff8ba060c00474019596dc37f6e6	lines:164	bytes:6336
+docs/agents/context/CTX-009-channels-and-cadence.md	sha256:1602d07a786bb6bd284de0edbe066647badfab088b7c2993381f07d07ea3218a	lines:107	bytes:4937
+docs/agents/context/CTX-010-budgets-and-stop-conditions.md	sha256:dd0e52f9899143afa632b7be165b99443a922a29be76fa2e56b4e28ff4e089ff	lines:122	bytes:5006
+docs/agents/context/CTX-011-output-contracts.md	sha256:627891d615ad35e08e0edd6baff38f9f62f447c927dbc861a7f0213c57c3f500	lines:212	bytes:8569
+docs/agents/departments/marketing/README.md	sha256:98114f6fabb27193470ccbf784d56cecbf34283f0beaa76c7f72e069e154a39e	lines:106	bytes:5203
+docs/agents/departments/marketing/mkt-brand-messaging.md	sha256:07eb885f190799d4163a7ba14714308db20a0d3a5ca6c58701c6d1d2b8ecd426	lines:111	bytes:4267
+docs/agents/departments/marketing/mkt-editorial-planner.md	sha256:2d4b4bbd77f83c00fd190f2c27d726e29eab13a5992b8fe45ad86489a3ec71d4	lines:106	bytes:3968
+docs/agents/departments/marketing/mkt-linkedin-writer.md	sha256:10aafc770ba7eef0b51550647d3b6c56273aa401a41246a83fe4ab907a73c176	lines:109	bytes:4232
+docs/agents/departments/marketing/mkt-longform-writer.md	sha256:198967fa2c6856d480823704fc551e5439847bd35b36407d380d3bbc1046c7d3	lines:122	bytes:5223
+docs/agents/departments/marketing/mkt-speaking-agent.md	sha256:b922cd042b9edf850b494a8eee542d40422db825451d8e065750c277f19ef1df	lines:122	bytes:5141
+docs/agents/enterprise/GATES.md	sha256:f59ca197bfbe5a7016fd18bb0060c9906dda788411afcd8b54a9f593d7b7dcf5	lines:171	bytes:7651
+docs/agents/enterprise/eval-adjudicator.md	sha256:58ffa802e0a50b56592d8c44f4ca2b0d4286eefd63fb75894254ba490c015d48	lines:117	bytes:4269
+docs/agents/enterprise/eval-adversarial.md	sha256:cb350f8298f02803b6bcd014ed248f072477920537275d4682e0c6fe6f6b0bcc	lines:129	bytes:5174
+docs/agents/enterprise/eval-factuality.md	sha256:bb96a8c3680cb4bdc5df673088e3e5710bd45035f3d0b0a7981915454c8841a6	lines:116	bytes:4747
+docs/agents/enterprise/eval-task-compliance.md	sha256:cbe8f21372971a4ab786d03ad4b3f4708591287a88f829e54ca8a90f41e46fea	lines:100	bytes:3485
+docs/agents/enterprise/gov-brand-conformance.md	sha256:d675122723345b5bd96573395e06635a25b7567402a99808c35e1f37769decc6	lines:106	bytes:4389
+docs/agents/enterprise/gov-compliance-reviewer.md	sha256:ed60826f0355abf27a8a75baea3be22534a2a27a0f93e3332fef9f435275831b	lines:123	bytes:5504
+docs/agents/enterprise/orch-enterprise.md	sha256:9002471c0f47ca5079aca983127a1fbacda92cfa0c820e3190c9d8000d083f58	lines:136	bytes:5925
+docs/agents/enterprise/sec-prompt-context.md	sha256:a9dd8b77f949d67a5d15481f174f52fc545c2d5d831cedfd3f6df1382155e0ce	lines:119	bytes:5005
+docs/agents/products/scout-quest-education/README.md	sha256:04d8ceb602b52ffa207eaec58335432bc33979e7c12cd7b702822d0958168386	lines:51	bytes:2431
+docs/agents/products/scout-quest-education/sqe-pilot-evidence.md	sha256:88f632f1ea3e707fff78cafb64a51e810f78a8066f4d9985b9aba9f25d462744	lines:128	bytes:5286
+docs/agents/products/scout-quest-education/sqe-standards-alignment.md	sha256:d32370a9d0ad9a70a81d45d4f9b1a65cf619236ab04f0b4886a876375f7d2e82	lines:125	bytes:5080
+docs/agents/products/soundwiserx/README.md	sha256:aa0a898976bf5f841176b9f528d4278faefbe00fa1de9c334d35cb84876715f7	lines:57	bytes:2755
+docs/agents/products/soundwiserx/swx-clinical-evidence.md	sha256:35fd3609a8f7547d9587ca948a54cadcca60df3778e714c7b1b4cec9289c5810	lines:134	bytes:5581
+docs/governance/CHG-001-marketing-department.md	sha256:aa6599facae9e3920bd9fc21bc1f24cfdbf587b5fbac4327a28860ec63d73569	lines:200	bytes:9097
