@@ -1,0 +1,399 @@
+# Scout Quest Enterprise — Agent Registry
+#
+# The machine-readable index of the agent library. One entry per specification in
+# docs/agents/**. Governed by the Enterprise Constitution v1.4.
+#
+# ---------------------------------------------------------------------------
+# RECONCILIATION REQUIRED BEFORE ANY INGEST RUN
+# ---------------------------------------------------------------------------
+# The `agents` table in the Company OS is ingest-owned: readAgents() in
+# scripts/ingest/sources.mjs reads config/spend_policy.yaml from the asl-gateway
+# repo, and ingest_agents() (migration 0015) upserts on agent_id with
+# source = 'spend-policy'.
+#
+# asl-gateway was NOT a connected folder in the session that wrote this file, so
+# the six agents already in spend_policy.yaml have not been reconciled against
+# these entries. Two consequences:
+#
+#   1. Do not hand-seed these rows into `agents`. The next ingest would overwrite
+#      them, or worse, half of them.
+#   2. Activating an agent here means adding it to spend_policy.yaml with the same
+#      agent_id, caps, data_classes, and registry class. THAT file is what the
+#      Company OS mirrors. This file is the governance source of truth; that file
+#      is the operational one, and they must agree.
+#
+# Fields below match the INPUT shape readAgents() expects — that is, spend_policy.yaml
+# itself — so an entry can be transcribed across without translation. (readAgents()'s
+# OUTPUT differs: it adds a `role` field and comma-joins data_classes and
+# allowed_models into strings.) Fields prefixed `sq_` are governance metadata that
+# neither spend_policy.yaml nor the ingest reads.
+#
+# Change class to modify this file: Class 2 (an entry) · Class 3 (a status change
+# to active, a cap change, or a data_classes change).
+
+version: 0.1.0
+updated: 2026-08-06
+status: proposed
+constitution: v1.4
+
+# ---------------------------------------------------------------------------
+# LAYER 1 — ENTERPRISE
+# ---------------------------------------------------------------------------
+agents:
+
+  orch-enterprise:
+    registry: internal
+    owner: jessica
+    enabled: false            # planned — activates when GATE-intake and GATE-authz exist
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.05
+    monthly_cap_usd: 15.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: planned
+    sq_spec: enterprise/orch-enterprise.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-002, CTX-003, CTX-010, CTX-011]
+    sq_owns: work-order state
+    sq_consumer: "every workflow, once gates ship; manual routing until then"
+
+  eval-task-compliance:
+    registry: internal
+    owner: security-compliance
+    enabled: true
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.15
+    monthly_cap_usd: 20.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: active
+    sq_spec: enterprise/eval-task-compliance.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-003, CTX-011]
+    sq_owns: task-compliance verdict
+    sq_consumer: "every Medium+ work order"
+
+  eval-factuality:
+    registry: internal
+    owner: security-compliance
+    enabled: true
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.60
+    monthly_cap_usd: 45.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: active
+    sq_spec: enterprise/eval-factuality.md
+    sq_note: "no web access — fetch activates only with sec-prompt-context"
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-008, CTX-011]
+    sq_owns: factuality verdict
+    sq_consumer: "every High+ work order"
+
+  eval-adversarial:
+    registry: internal
+    owner: security-compliance
+    enabled: true
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.75
+    monthly_cap_usd: 45.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: active
+    sq_spec: enterprise/eval-adversarial.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-003, CTX-006, CTX-007, CTX-011]
+    sq_owns: adversarial verdict
+    sq_consumer: "every High+ work order"
+    sq_note: "holds a veto — CTX-003"
+
+  eval-adjudicator:
+    registry: internal
+    owner: security-compliance
+    enabled: true
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.10
+    monthly_cap_usd: 10.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: active
+    sq_spec: enterprise/eval-adjudicator.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-003, CTX-011]
+    sq_owns: adjudication record
+    sq_consumer: "every work order with 2+ evaluators"
+
+  sec-prompt-context:
+    registry: internal
+    owner: security-compliance
+    enabled: false            # planned — activates with external retrieval
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.20
+    monthly_cap_usd: 15.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: planned
+    sq_spec: enterprise/sec-prompt-context.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-002, CTX-011]
+    sq_owns: context safety verdict
+    sq_consumer: "research agents, once web retrieval is enabled"
+
+  gov-compliance-reviewer:
+    registry: internal
+    owner: security-compliance
+    enabled: true
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.50
+    monthly_cap_usd: 35.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: active
+    sq_spec: enterprise/gov-compliance-reviewer.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-002, CTX-003, CTX-007, CTX-011, "CTX-004|CTX-005"]
+    sq_owns: compliance verdict
+    sq_consumer: "every Critical-tier Education and Soundwiserx output (CTX-003)"
+    sq_note: "block is non-overridable"
+
+  gov-brand-conformance:
+    registry: internal
+    owner: jessica
+    enabled: true
+    product: null
+    data_classes: [D0, D1]
+    per_run_cap_usd: 0.30
+    monthly_cap_usd: 25.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: enterprise
+    sq_status: active
+    sq_spec: enterprise/gov-brand-conformance.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-006, CTX-011, "CTX-004|CTX-005"]
+    sq_owns: brand verdict
+    sq_consumer: "every Medium+ content output"
+
+# ---------------------------------------------------------------------------
+# LAYER 2 — MARKETING DEPARTMENT
+# Blocked on CHG-001 (Class 3, unapplied). Specs complete and consumers named, but
+# sq_status is `blocked` and enabled stays false until the department exists.
+# ---------------------------------------------------------------------------
+
+  mkt-brand-messaging:
+    registry: internal
+    owner: jessica
+    enabled: false
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.40
+    monthly_cap_usd: 20.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: department
+    sq_department: marketing
+    sq_status: blocked          # spec complete; blocked on CHG-001
+    sq_spec: departments/marketing/mkt-brand-messaging.md
+    sq_risk_ceiling: high
+    sq_context: [CTX-001, CTX-006, CTX-007, CTX-008, CTX-011]
+    sq_owns: "CTX-004, CTX-005"
+    sq_consumer: "UNSET fields blocking Education and Soundwiserx content"
+
+  mkt-editorial-planner:
+    registry: internal
+    owner: jessica
+    enabled: false
+    product: null
+    data_classes: [D0, D1]
+    per_run_cap_usd: 0.35
+    monthly_cap_usd: 15.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: department
+    sq_department: marketing
+    sq_status: blocked          # spec complete; blocked on CHG-001
+    sq_spec: departments/marketing/mkt-editorial-planner.md
+    sq_risk_ceiling: low
+    sq_context: [CTX-001, CTX-006, CTX-009, CTX-010, CTX-011]
+    sq_owns: editorial calendar
+    sq_consumer: "monthly article + biweekly cadence"
+
+  mkt-longform-writer:
+    registry: internal
+    owner: jessica
+    enabled: false
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 1.20
+    monthly_cap_usd: 50.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: department
+    sq_department: marketing
+    sq_status: blocked          # spec complete; blocked on CHG-001
+    sq_spec: departments/marketing/mkt-longform-writer.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-002, CTX-006, CTX-007, CTX-008, CTX-009, CTX-011, "CTX-004|CTX-005"]
+    sq_owns: long-form drafts
+    sq_consumer: "monthly article, pilot articles, book sections"
+
+  mkt-linkedin-writer:
+    registry: internal
+    owner: jessica
+    enabled: false
+    product: null
+    data_classes: [D0, D1]
+    per_run_cap_usd: 0.25
+    monthly_cap_usd: 20.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: department
+    sq_department: marketing
+    sq_status: blocked          # spec complete; blocked on CHG-001
+    sq_spec: departments/marketing/mkt-linkedin-writer.md
+    sq_risk_ceiling: high
+    sq_context: [CTX-001, CTX-006, CTX-007, CTX-008, CTX-009, CTX-011, "CTX-004|CTX-005"]
+    sq_owns: linkedin drafts
+    sq_consumer: "biweekly thought-leadership cadence"
+
+  mkt-speaking-agent:
+    registry: internal
+    owner: jessica
+    enabled: false
+    product: null
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.60
+    monthly_cap_usd: 25.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: department
+    sq_department: marketing
+    sq_status: blocked          # spec complete; blocked on CHG-001
+    sq_spec: departments/marketing/mkt-speaking-agent.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-006, CTX-007, CTX-008, CTX-009, CTX-011, "CTX-004|CTX-005"]
+    sq_owns: speaking artifacts
+    sq_consumer: "live speaking and event work"
+
+# ---------------------------------------------------------------------------
+# LAYER 3 — PRODUCT
+# ---------------------------------------------------------------------------
+
+  sqe-pilot-evidence:
+    registry: product
+    owner: jessica
+    enabled: true
+    product: scout-quest-education     # maps to OS key `education` via PRODUCT_KEYS
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.50
+    monthly_cap_usd: 25.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: product
+    sq_status: active
+    sq_spec: products/scout-quest-education/sqe-pilot-evidence.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-002, CTX-004, CTX-006, CTX-007, CTX-008, CTX-011]
+    sq_owns: education pilot claim register
+    sq_consumer: "pilot articles and event content"
+    sq_note: "sits on the D3 boundary — D3 is a hard prohibition, not a ceiling"
+
+  sqe-standards-alignment:
+    registry: product
+    owner: jessica
+    enabled: true
+    product: scout-quest-education
+    data_classes: [D0, D1, D2]
+    per_run_cap_usd: 0.60
+    monthly_cap_usd: 25.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: product
+    sq_status: active
+    sq_spec: products/scout-quest-education/sqe-standards-alignment.md
+    sq_risk_ceiling: high
+    sq_context: [CTX-001, CTX-002, CTX-004, CTX-006, CTX-008, CTX-011]
+    sq_owns: standards alignment map
+    sq_consumer: "product/build scoping and district-facing material"
+
+  swx-clinical-evidence:
+    registry: product
+    owner: jessica
+    enabled: true
+    product: soundwiserx
+    data_classes: [D0, D1]
+    per_run_cap_usd: 0.80
+    monthly_cap_usd: 30.00
+    allowed_models: [asl-default]
+    rollback_version: null
+    sq_layer: product
+    sq_status: active
+    sq_spec: products/soundwiserx/swx-clinical-evidence.md
+    sq_risk_ceiling: critical
+    sq_context: [CTX-001, CTX-002, CTX-005, CTX-006, CTX-007, CTX-008, CTX-011]
+    sq_owns: clinical evidence register
+    sq_consumer: "clinical evidence and compliance work; clinical-audience content"
+    sq_note: "tier-1 sources only; no search; human clinical review required"
+
+# ---------------------------------------------------------------------------
+# EXISTING — declared here for completeness, NOT authored by this session
+# ---------------------------------------------------------------------------
+
+  agent-ux-researcher:
+    sq_layer: department
+    sq_department: product-design
+    sq_status: active
+    sq_spec: "<lives in asl-gateway — not readable from this session>"
+    sq_source: "Jessica's account in conversation — NOT read from the spec"
+    sq_note: >
+      Per Jessica: built Aug 2026, public D0-D2 data only, never D3,
+      evaluator-checked for fabricated citations; first work order referenced as
+      WO-UXR-001 (note: does not match the canonical WO-<PRODUCT>-<NNNN> form, so
+      the real code may differ). None of this was verified against the spec, which
+      lives in asl-gateway and was not readable. The ingest fields are left blank
+      rather than guessed. Reconcile against spend_policy.yaml before use.
+
+# ---------------------------------------------------------------------------
+# DETERMINISTIC GATES — not agents, no model, no spend.
+# Listed so the control set is visible in one place. Spec: enterprise/GATES.md
+# ---------------------------------------------------------------------------
+gates:
+  GATE-intake:   {implemented_as: schema validation,     owner: security-compliance, change_class: 2, status: specified}
+  GATE-authz:    {implemented_as: registry lookup,       owner: security-compliance, change_class: 3, status: specified}
+  GATE-contract: {implemented_as: json-schema validation,owner: engineering,         change_class: 2, status: specified}
+  GATE-runtime:  {implemented_as: counters + allowlists, owner: engineering,         change_class: 3, status: specified}
+  GATE-release:  {implemented_as: static artifact scan,  owner: security-compliance, change_class: 3, status: specified}
+  GATE-audit:    {implemented_as: append-only ledger,    owner: security-compliance, change_class: 3, status: partial}
+  # GATE-audit is 'partial': change_log and security_reports already ship
+  # append-only with no delete policy (migration 0008). The agent-run record
+  # described in §5.4 is not yet written anywhere.
+
+# ---------------------------------------------------------------------------
+# BUDGET SUMMARY — ceilings, not forecasts
+# ---------------------------------------------------------------------------
+budget:
+  enterprise_monthly_cap_usd: 210.00   # 8 specs; 2 disabled
+  marketing_monthly_cap_usd:  130.00   # 5 specs; all blocked on CHG-001
+  product_monthly_cap_usd:     80.00   # 3 specs
+  total_declared_ceiling_usd: 420.00
+  enabled_today_ceiling_usd:  260.00   # only enabled: true entries (9 agents)
+  note: >
+    Per Constitution 3.3 every WORKFLOW must declare a monthly budget before
+    activation. These are per-AGENT caps. Workflow budgets are declared in the
+    work order and are not yet written. Thresholds per 5.2: 80% warn,
+    100% hard cutoff, >120% review, >150% suspension. No agent may raise its
+    own cap.

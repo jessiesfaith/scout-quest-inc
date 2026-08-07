@@ -197,3 +197,265 @@
   color: var(--ok);
   font-size: 12.5px;
 }
+
+/* ------------------------------------------------------------------
+   Agent Platform — the tree, the pipeline, and the work-order feed.
+   Added by the 0018 slice. The mockup has no tree, so these are new
+   rules rather than ported ones; they reuse the design's existing
+   variables throughout so a palette change still reaches them.
+   ------------------------------------------------------------------ */
+
+/* Tree: nested lists with CSS connectors. No charting library, no CDN —
+   it prints, it is searchable, and the DOM is the data. */
+.os .tlist {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 22px;
+  position: relative;
+}
+.os .troot {
+  padding-left: 0;
+}
+.os .tnode {
+  position: relative;
+  padding: 6px 0 6px 0;
+}
+/* the elbow into each node, and the spine linking siblings */
+.os .tlist:not(.troot) > .tnode::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--line);
+}
+.os .tlist:not(.troot) > .tnode:last-child::before {
+  bottom: calc(100% - 22px);
+}
+.os .tlist:not(.troot) > .tnode::after {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 22px;
+  width: 12px;
+  border-top: 1px solid var(--line);
+}
+.os .tnbox {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 13px;
+  background: #fff;
+  display: inline-block;
+  max-width: 720px;
+}
+.os .tn-root {
+  background: var(--core);
+  color: #eef2f7;
+  border-color: var(--core);
+}
+.os .tn-root .tnsub {
+  color: #b9c3d1;
+}
+.os .tn-layer {
+  background: var(--a-soft);
+  border-color: transparent;
+}
+.os .tn-group {
+  background: var(--b-soft);
+  border-color: transparent;
+}
+.os .tnhead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.os .tnlabel {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+.os .tnsub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  max-width: 640px;
+}
+.os .tnowns {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.os .tnceil {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+/* Pipeline: the ordered stages a single work order passes through. */
+.os .pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+.os .pstage {
+  border-left: 4px solid var(--line);
+  border-radius: 0 8px 8px 0;
+  background: #fff;
+  padding: 8px 13px;
+}
+.os .pstage.p-gate {
+  border-left-color: var(--warn);
+  background: var(--warn-soft);
+}
+.os .pstage.p-orchestrator {
+  border-left-color: var(--a);
+  background: var(--a-soft);
+}
+.os .pstage.p-worker {
+  border-left-color: var(--b);
+}
+.os .pstage.p-evaluator,
+.os .pstage.p-adjudicator {
+  border-left-color: var(--g);
+  background: var(--g-soft);
+}
+.os .pstage.p-human {
+  border-left-color: var(--core);
+}
+.os .phead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.os .plabel {
+  font-weight: 700;
+  font-size: 13px;
+}
+.os .pactor {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.os .pgate {
+  font-size: 11px;
+}
+.os .pexit {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.os .pkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+  background: var(--line);
+}
+.os .pkey.p-gate { background: var(--warn); }
+.os .pkey.p-orchestrator { background: var(--a); }
+.os .pkey.p-worker { background: var(--b); }
+.os .pkey.p-evaluator { background: var(--g); }
+.os .pkey.p-human { background: var(--core); }
+
+/* Work orders: the stage track and the append-only activity feed. */
+.os .wotrack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0 12px;
+}
+.os .wostep {
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 3px 8px;
+  background: #eef2f7;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.os .wostep.done {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.os .wostep.now {
+  background: var(--b);
+  color: #fff;
+}
+.os .wostep.gate {
+  border: 1px dashed var(--warn);
+}
+.os .wostep.blockedstep {
+  background: var(--danger);
+  color: #fff;
+}
+.os .woactions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+.os .woinline {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.os .woinline input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 12.5px;
+  font-family: inherit;
+  min-width: 200px;
+}
+.os .wofeed {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: grid;
+  gap: 7px;
+}
+.os .woev {
+  border-left: 3px solid var(--line);
+  padding: 6px 11px;
+  background: var(--card);
+  border-radius: 0 8px 8px 0;
+}
+.os .woev.ev-gate { border-left-color: var(--warn); }
+.os .woev.ev-verdict { border-left-color: var(--g); }
+.os .woev.ev-approval { border-left-color: var(--ok); }
+.os .woev.ev-escalation { border-left-color: var(--danger); }
+.os .woev-h {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.os .woev-k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.os .woev-s {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.os .woev-m {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.os .woev-d {
+  font-size: 12.5px;
+  margin-top: 4px;
+}
