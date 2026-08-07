@@ -26,14 +26,20 @@ union all select 'events FK is RESTRICT not CASCADE',
        -- require that one to be RESTRICT ('r'), not merely to exist.
        (count(*) = 1)::text from pg_constraint
        where conname like 'work_order_events_work_order_id%' and confdeltype = 'r'
+-- These two use has_column_privilege(), not information_schema. The earlier
+-- draft read information_schema.column_privileges, which reports GRANTS and
+-- not effective access — it cannot see that a table-level grant overrides a
+-- column-level revoke. That is exactly the defect 0019 fixes, and the wrong
+-- instrument would have reported it either as a bare fact about grants or,
+-- worse, as a pass. has_column_privilege() composes table-level and
+-- column-level and answers the question actually being asked: may this role
+-- write this column. bool_or over the column list keeps it to one row.
 union all select 'governance columns not directly writable',
-       (count(*) = 0)::text from information_schema.column_privileges
-       where table_name='work_orders' and privilege_type='UPDATE' and grantee='authenticated'
-         and column_name in ('stage','status','approved_at','approved_by','risk_tier','remediation_rounds')
+       (not bool_or(has_column_privilege('authenticated', 'public.work_orders', c, 'UPDATE')))::text
+       from unnest(array['stage','status','approved_at','approved_by','risk_tier','remediation_rounds']) as c
 union all select 'seq not caller-settable',
-       (count(*) = 0)::text from information_schema.column_privileges
-       where table_name='work_order_events' and privilege_type='INSERT' and grantee='authenticated'
-         and column_name in ('seq','created_by','created_by_email','created_at')
+       (not bool_or(has_column_privilege('authenticated', 'public.work_order_events', c, 'INSERT')))::text
+       from unnest(array['seq','created_by','created_by_email','created_at']) as c
 union all select 'agent_gates read-only (1 policy)',
        -- Asserts the CURRENT state, which is the gap: there is no write policy.
        -- If a write policy is ever added this flips to false on purpose.

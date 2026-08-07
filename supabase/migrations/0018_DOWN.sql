@@ -267,9 +267,10 @@ alter table public.agents
 -- 11. Record the revert — append, never delete
 -- =====================================================================
 
+-- Column list matches 0018 exactly: created_by_email is NOT named, because
+-- 0008's stamp_change_log trigger writes it.
 insert into public.change_log (
-  product, module, tab, change_type, description,
-  created_by_email, source, source_ref
+  product, module, tab, change_type, description, source, source_ref
 ) values (
   'company', 'IT', 'Agent Platform', 'removed',
   'Migration 0018 reverted by 0018_DOWN.sql. The 16 library agent rows, the 6 gates, the work-order lifecycle constraints and functions, agent_performance, and the work_order_events table and its contents were removed. ingest_agents() restored to its 0015 body, which overwrites provenance with ''spend-policy'' instead of reconciling. The 0018 entry above this one is left in place: change_log has no delete policy for anyone, and this is what that looks like when something is undone.',
