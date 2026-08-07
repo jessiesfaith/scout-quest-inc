@@ -270,6 +270,43 @@ so in a comment: a key-holder who could set `GATE-runtime` to `'built'` would
 make the screen assert a control that does not exist. The VERIFY check
 asserting exactly one policy is therefore correct as written.
 
+## 8b. The repo is public, and the OS says it is private
+
+Noticed 2026-08-06 while opening the PR. GitHub shows `jessiesfaith/scout-quest-inc`
+with a **Public** badge. IT › Infrastructure lists that same repo as:
+
+> **Source control** · service · **GitHub (private)** · `jessiesfaith/scout-quest-inc` · D0–D2 · LIVE
+
+**Jessica's decision, recorded 2026-08-06: the public repos stay public for
+now.** This is therefore not a defect to fix but a state to describe
+correctly — and right now the OS describes it wrongly, which is the same
+category of failure as 0018's inert REVOKEs and the reason `agent_gates`
+refuses a write policy: *a screen asserting a control that does not exist.*
+
+**No secrets are exposed.** Checked rather than assumed: `.gitignore` carries
+`.env*` with narrow exceptions for the two value-free templates; neither
+`.env.local` nor `.env.ingest` is tracked; and no `sb_secret_…` or JWT-shaped
+value appears anywhere in master's tree. The D3 boundary is also unaffected —
+regulated data lives on the local plane and never reaches this repo.
+
+**What is exposed** is the entire governance corpus: every agent spec, the
+constitution, GAP_ANALYSIS, the migrations, HANDOFF.md and this file. That is
+a legitimate thing to publish deliberately. It is not a legitimate thing to
+publish while telling yourself it is private.
+
+**Outstanding, and NOT done in this session** because the Infrastructure row
+lives in the database, is edited on the screen, and is not version-controlled:
+
+1. Edit IT › Infrastructure → Source control → change "GitHub (private)" to
+   "GitHub (public)".
+2. Record it in Security Tooling › Change Log, which is what that screen's own
+   footer instructs for anything structural.
+
+Worth deciding separately, since public is now a considered choice rather than
+an oversight: whether `docs/agents/context/CTX-002-data-classes.md` and
+`CTX-007-compliance-boundaries.md` should say out loud that the repo is a
+public artifact, so future specs are written knowing their audience.
+
 ## 8. Still open — NOT decided here
 
 Surfaced only, as instructed:
