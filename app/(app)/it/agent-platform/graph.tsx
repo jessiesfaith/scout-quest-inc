@@ -182,6 +182,39 @@ function layout(nodes: GraphNode[], edges: GraphEdge[]) {
   return pos;
 }
 
+/**
+ * Hop distance from one node, breadth-first, bounded by `depth`.
+ * A node absent from the result is further away than `depth`, or unreachable.
+ */
+function bfsDist(
+  from: string,
+  neighbours: Map<string, Set<string>>,
+  depth: number,
+) {
+  const d = new Map<string, number>([[from, 0]]);
+  let frontier = [from];
+  while (frontier.length) {
+    const next: string[] = [];
+    for (const cur of frontier) {
+      const dc = d.get(cur)!;
+      if (dc >= depth) continue;
+      for (const nb of neighbours.get(cur) ?? []) {
+        if (!d.has(nb)) {
+          d.set(nb, dc + 1);
+          next.push(nb);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return d;
+}
+
+// Column geometry for the lined-up view. Wide enough that a label like
+// gov-compliance-reviewer clears its neighbours in the next column.
+const COL_W = 265;
+const ROW_H = 46;
+
 function radius(kind: GraphNode["kind"], degree: number) {
   if (kind === "root") return 15;
   if (kind === "layer") return 12;
@@ -213,6 +246,8 @@ export function AgentGraph({
   // What carries the information is the DISTANCE, so depth is adjustable and
   // every level is shaded differently.
   const [depth, setDepth] = useState(4);
+  /** Re-arrange into hop columns when a dot is clicked. */
+  const [lineUp, setLineUp] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pt>({ x: 0, y: 0 });
   /** Dots the reader has dragged. Overrides the computed layout, per node. */
@@ -280,26 +315,68 @@ export function AgentGraph({
   // Breadth-first from the focused dot, keeping the hop count. Null means
   // nothing is focused, so nothing dims. A node absent from the map is
   // unreachable within `depth` and dims out entirely.
-  const dist = useMemo(() => {
-    if (!focusMode || !active) return null;
-    const d = new Map<string, number>([[active, 0]]);
-    let frontier = [active];
-    while (frontier.length) {
-      const next: string[] = [];
-      for (const cur of frontier) {
-        const dc = d.get(cur)!;
-        if (dc >= depth) continue;
-        for (const nb of neighbours.get(cur) ?? []) {
-          if (!d.has(nb)) {
-            d.set(nb, dc + 1);
-            next.push(nb);
-          }
-        }
+  const dist = useMemo(
+    () => (!focusMode || !active ? null : bfsDist(active, neighbours, depth)),
+    [focusMode, active, neighbours, depth],
+  );
+
+  /**
+   * The lined-up arrangement: the clicked dot on the left, then one column
+   * per hop moving right, so every connection runs the same way and can be
+   * read without dragging anything.
+   *
+   * Keyed on `selected`, deliberately NOT on `active`. If it followed the
+   * hover the whole map would rearrange itself under the cursor every time
+   * the pointer crossed a dot, which is unusable. Hovering still re-shades;
+   * only a click re-arranges.
+   */
+  const arranged = useMemo(() => {
+    if (!lineUp || !selected) return null;
+    const d = bfsDist(selected, neighbours, depth);
+    const byHop = new Map<number, GraphNode[]>();
+    const unreached: GraphNode[] = [];
+    for (const n of visibleNodes) {
+      const h = d.get(n.id);
+      if (h === undefined) unreached.push(n);
+      else {
+        const a = byHop.get(h);
+        if (a) a.push(n);
+        else byHop.set(h, [n]);
       }
-      frontier = next;
     }
-    return d;
-  }, [focusMode, active, neighbours, depth]);
+    const at = new Map<string, Pt>();
+    const columns: { hop: number; x: number; top: number }[] = [];
+    const hops = [...byHop.keys()].sort((a, b) => a - b);
+    for (const h of hops) {
+      // Agents first, then areas, then context pages, each alphabetical —
+      // a stable order, so the same click always produces the same picture.
+      const list = byHop.get(h)!.sort((p, q) => {
+        const rank = (n: GraphNode) =>
+          n.kind === "agent" ? 0 : n.kind === "ctx" ? 2 : 1;
+        return rank(p) - rank(q) || p.label.localeCompare(q.label);
+      });
+      const top = -((list.length - 1) * ROW_H) / 2;
+      list.forEach((n, i) => at.set(n.id, { x: h * COL_W, y: top + i * ROW_H }));
+      columns.push({ hop: h, x: h * COL_W, top });
+    }
+    // Everything out of range is parked in a block off to the right rather
+    // than left lying under the columns. It stays on the canvas because
+    // "nothing else is connected" is itself worth being able to see.
+    if (unreached.length) {
+      const startX = ((hops.at(-1) ?? 0) + 1) * COL_W + 90;
+      const perCol = Math.ceil(unreached.length / 2);
+      const top = -((perCol - 1) * ROW_H) / 2;
+      unreached
+        .sort((p, q) => p.label.localeCompare(q.label))
+        .forEach((n, i) => {
+          at.set(n.id, {
+            x: startX + Math.floor(i / perCol) * 200,
+            y: top + (i % perCol) * ROW_H,
+          });
+        });
+    }
+    return { at, columns };
+  }, [lineUp, selected, neighbours, depth, visibleNodes]);
 
   /** Reachable agents grouped by hop, for the inspector. */
   const reachByHop = useMemo(() => {
@@ -318,34 +395,39 @@ export function AgentGraph({
       .map(([hop, ids]) => ({ hop, ids: ids.sort() }));
   }, [dist, nodeById]);
 
-  /** Where a dot actually is: where the reader put it, else where the
-   *  simulation put it. */
-  const posOf = (id: string): Pt => moved.get(id) ?? pos.get(id)!;
+  /**
+   * Where a dot actually is, in precedence order: where the reader dragged
+   * it, else where the line-up put it, else where the simulation put it.
+   * A hand-placed dot outranks both — having moved something deliberately,
+   * you should not find it moved back.
+   */
+  const posOf = (id: string): Pt =>
+    moved.get(id) ?? arranged?.at.get(id) ?? pos.get(id)!;
 
-  // NOTE: the viewBox is deliberately computed from the ORIGINAL layout and
-  // not from dragged positions. If it tracked them it would rescale mid-drag,
-  // and a dot that rescales while you are holding it does not stay under the
-  // cursor. Drag something off the edge and zoom out or pan to follow it.
+  // The viewBox follows the ARRANGEMENT but not the dragging. Re-arranging is
+  // a discrete change and the frame should fit the new shape; a drag is
+  // continuous, and a frame that rescaled mid-drag would slide the dot out
+  // from under the cursor.
   const view = useMemo(() => {
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
       maxY = -Infinity;
-    for (const n of nodes) {
-      const p = pos.get(n.id)!;
+    for (const n of visibleNodes) {
+      const p = arranged?.at.get(n.id) ?? pos.get(n.id)!;
       minX = Math.min(minX, p.x);
       minY = Math.min(minY, p.y);
       maxX = Math.max(maxX, p.x);
       maxY = Math.max(maxY, p.y);
     }
-    const pad = 70;
+    const pad = arranged ? 110 : 70;
     return {
       x: minX - pad,
-      y: minY - pad,
+      y: minY - pad - (arranged ? 30 : 0), // room for the column headings
       w: maxX - minX + pad * 2,
-      h: maxY - minY + pad * 2,
+      h: maxY - minY + pad * 2 + (arranged ? 30 : 0),
     };
-  }, [nodes, pos]);
+  }, [visibleNodes, pos, arranged]);
 
   const sel = selected ? nodeById.get(selected) : undefined;
   const selAgent = sel?.kind === "agent" ? sel.agent : undefined;
@@ -475,6 +557,15 @@ export function AgentGraph({
         >
           Shared context pages
         </button>
+        <button
+          type="button"
+          className={`chip${lineUp ? " on" : ""}`}
+          aria-pressed={lineUp}
+          title="On click, lay the connected dots out in columns by hop instead of leaving them where the layout put them"
+          onClick={() => setLineUp((v) => !v)}
+        >
+          ⇥ Line up on click
+        </button>
         <span className="mmdepth">
           <span className="mmdepth-l">levels</span>
           {[1, 2, 3, 4, 9].map((d) => (
@@ -544,6 +635,21 @@ export function AgentGraph({
               (view.x + view.w / 2) * (1 / zoom - 1)
             } ${(view.y + view.h / 2) * (1 / zoom - 1)})`}
           >
+            {/* Column headings, so the arrangement explains itself rather
+                than looking like the layout simply fell into rows. */}
+            {arranged?.columns.map((c) => (
+              <text
+                key={`hd-${c.hop}`}
+                className="mmcolhd"
+                x={c.x}
+                y={c.top - 34}
+              >
+                {c.hop === 0
+                  ? "selected"
+                  : `${c.hop} hop${c.hop === 1 ? "" : "s"}`}
+              </text>
+            ))}
+
             {visibleEdges.map((e, i) => {
               const a = posOf(e.source);
               const b = posOf(e.target);
@@ -645,10 +751,12 @@ export function AgentGraph({
                 below it.
               </p>
               <p className="note" style={{ marginTop: 10 }}>
-                Hover to light up one agent and everything it reaches, shaded by
-                how many hops away. <b>Drag any dot</b> to arrange the map the
-                way you want it; drag the background to pan, and scroll to zoom.
-                Reset puts everything back.
+                Clicking lines the connected dots up in columns — the agent you
+                picked on the left, then everything one hop away, then two, so
+                every connection runs the same direction. Hover to light up a
+                dot without moving anything. <b>Drag any dot</b> to override the
+                arrangement, drag the background to pan, scroll to zoom. Reset
+                puts it all back.
               </p>
             </div>
           ) : selAgent ? (
