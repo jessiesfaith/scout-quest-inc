@@ -215,6 +215,18 @@ export function AgentGraph({
   const [depth, setDepth] = useState(4);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pt>({ x: 0, y: 0 });
+  /** Dots the reader has dragged. Overrides the computed layout, per node. */
+  const [moved, setMoved] = useState<Map<string, Pt>>(new Map());
+  const svgRef = useRef<SVGSVGElement>(null);
+  const nodeDrag = useRef<{
+    id: string;
+    x: number;
+    y: number;
+    ox: number;
+    oy: number;
+  } | null>(null);
+  /** Did this pointer sequence move a dot? If so, it was a drag, not a click. */
+  const didDrag = useRef(false);
   const drag = useRef<{
     x: number;
     y: number;
@@ -306,6 +318,14 @@ export function AgentGraph({
       .map(([hop, ids]) => ({ hop, ids: ids.sort() }));
   }, [dist, nodeById]);
 
+  /** Where a dot actually is: where the reader put it, else where the
+   *  simulation put it. */
+  const posOf = (id: string): Pt => moved.get(id) ?? pos.get(id)!;
+
+  // NOTE: the viewBox is deliberately computed from the ORIGINAL layout and
+  // not from dragged positions. If it tracked them it would rescale mid-drag,
+  // and a dot that rescales while you are holding it does not stay under the
+  // cursor. Drag something off the edge and zoom out or pan to follow it.
   const view = useMemo(() => {
     let minX = Infinity,
       minY = Infinity,
@@ -352,31 +372,71 @@ export function AgentGraph({
     ev.preventDefault();
     setZoom((z) => Math.min(3, Math.max(0.4, z * (ev.deltaY < 0 ? 1.12 : 0.89))));
   }
-  // Panning deliberately does NOT capture the pointer when the press lands
-  // on a node. Pointer capture retargets the compatibility mouse events to
-  // the capturing element, so an SVG-wide capture sends every click to the
-  // svg and no dot is ever clickable — the whole point of the map. Pressing
-  // the background still captures, which is what keeps a pan smooth when the
-  // cursor runs outside the canvas.
-  function onPointerDown(ev: React.PointerEvent<SVGSVGElement>) {
-    const onNode =
-      ev.target instanceof Element && ev.target.closest(".mmnode") !== null;
-    drag.current = { x: ev.clientX, y: ev.clientY, px: pan.x, py: pan.y };
-    if (!onNode) {
-      ev.currentTarget.setPointerCapture(ev.pointerId);
-      drag.current.captured = true;
-    }
+  // Screen pixels per viewBox unit. preserveAspectRatio defaults to
+  // xMidYMid meet, so the scale is uniform and is the SMALLER of the two
+  // ratios — the axis that has to fit.
+  function fitScale() {
+    const r = svgRef.current?.getBoundingClientRect();
+    if (!r?.width || !r?.height) return 1;
+    return Math.min(r.width / view.w, r.height / view.h);
   }
+
+  // Panning deliberately does NOT capture the pointer when the press lands on
+  // a node. Pointer capture retargets the compatibility mouse events to the
+  // capturing element, so an SVG-wide capture sends every click to the svg and
+  // no dot is ever clickable. Pressing the background still captures, which is
+  // what keeps a pan smooth when the cursor runs outside the canvas.
+  function onPointerDown(ev: React.PointerEvent<SVGSVGElement>) {
+    const el = ev.target instanceof Element ? ev.target.closest(".mmnode") : null;
+    const id = el?.getAttribute("data-id");
+    didDrag.current = false;
+    if (id) {
+      const p = posOf(id);
+      nodeDrag.current = { id, x: ev.clientX, y: ev.clientY, ox: p.x, oy: p.y };
+      return;
+    }
+    drag.current = {
+      x: ev.clientX,
+      y: ev.clientY,
+      px: pan.x,
+      py: pan.y,
+      captured: true,
+    };
+    ev.currentTarget.setPointerCapture(ev.pointerId);
+  }
+
   function onPointerMove(ev: React.PointerEvent<SVGSVGElement>) {
+    const fit = fitScale();
+    const nd = nodeDrag.current;
+    if (nd) {
+      const dx = ev.clientX - nd.x;
+      const dy = ev.clientY - nd.y;
+      // A few pixels of slop, so a slightly unsteady click still selects
+      // rather than nudging the dot and swallowing the click.
+      if (!didDrag.current && Math.abs(dx) + Math.abs(dy) < 4) return;
+      didDrag.current = true;
+      // The node's coordinates live INSIDE scale(zoom), so a pixel of cursor
+      // travel is 1/(fit·zoom) units here.
+      const k = 1 / (fit * zoom);
+      setMoved((m) =>
+        new Map(m).set(nd.id, { x: nd.ox + dx * k, y: nd.oy + dy * k }),
+      );
+      return;
+    }
     const d = drag.current;
     if (!d) return;
-    const k = view.w / 900 / zoom;
+    // Pan is applied OUTSIDE scale(zoom), so it does not divide by zoom —
+    // which the previous version did, making a pan drift from the cursor at
+    // any zoom other than 1.
+    const k = 1 / fit;
     setPan({ x: d.px + (ev.clientX - d.x) * k, y: d.py + (ev.clientY - d.y) * k });
   }
+
   function onPointerUp(ev: React.PointerEvent<SVGSVGElement>) {
     if (drag.current?.captured)
       ev.currentTarget.releasePointerCapture(ev.pointerId);
     drag.current = null;
+    nodeDrag.current = null;
   }
 
   if (nodes.length <= 1) {
@@ -448,14 +508,27 @@ export function AgentGraph({
             setZoom(1);
             setPan({ x: 0, y: 0 });
             setSelected(null);
+            setMoved(new Map());
           }}
+          title="Zoom, pan, selection, and any dots you have dragged"
         >
           Reset
         </button>
+        {moved.size > 0 && (
+          <button
+            type="button"
+            className="chip"
+            onClick={() => setMoved(new Map())}
+            title="Put the dragged dots back where the layout put them"
+          >
+            ↺ layout ({moved.size})
+          </button>
+        )}
       </div>
 
       <div className="mmwrap">
         <svg
+          ref={svgRef}
           className="mmsvg"
           viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
           role="img"
@@ -472,8 +545,8 @@ export function AgentGraph({
             } ${(view.y + view.h / 2) * (1 / zoom - 1)})`}
           >
             {visibleEdges.map((e, i) => {
-              const a = pos.get(e.source);
-              const b = pos.get(e.target);
+              const a = posOf(e.source);
+              const b = posOf(e.target);
               if (!a || !b) return null;
               // An edge lights only if BOTH ends were reached and they sit on
               // consecutive rings — an edge between two same-hop nodes is not
@@ -501,7 +574,7 @@ export function AgentGraph({
             })}
 
             {visibleNodes.map((n) => {
-              const p = pos.get(n.id)!;
+              const p = posOf(n.id);
               const hop = dist?.get(n.id);
               const dimmed = dist ? hop === undefined : false;
               const r = radius(n.kind, degree.get(n.id) ?? 0);
@@ -528,11 +601,20 @@ export function AgentGraph({
               return (
                 <g
                   key={n.id}
+                  data-id={n.id}
                   className={cls}
                   transform={`translate(${p.x} ${p.y})`}
                   onMouseEnter={() => setHovered(n.id)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={() => setSelected((s) => (s === n.id ? null : n.id))}
+                  onClick={() => {
+                    // A drag ends in a click on the same element. Consume it,
+                    // or repositioning a dot would also select or deselect it.
+                    if (didDrag.current) {
+                      didDrag.current = false;
+                      return;
+                    }
+                    setSelected((s) => (s === n.id ? null : n.id));
+                  }}
                   tabIndex={0}
                   role="button"
                   aria-label={title}
@@ -563,8 +645,10 @@ export function AgentGraph({
                 below it.
               </p>
               <p className="note" style={{ marginTop: 10 }}>
-                Hover to light up one agent and everything it touches. Drag to
-                pan, scroll to zoom.
+                Hover to light up one agent and everything it reaches, shaded by
+                how many hops away. <b>Drag any dot</b> to arrange the map the
+                way you want it; drag the background to pan, and scroll to zoom.
+                Reset puts everything back.
               </p>
             </div>
           ) : selAgent ? (
