@@ -198,6 +198,8 @@ export type TreeAgent = {
   // callers are not forced to select columns they do not draw.
   context_pages?: string | null;
   blocked_reason?: string | null;
+  /** §3.8 — who consumes this output. The agent's own statement of scope. */
+  consumer?: string | null;
 };
 
 export type TreeNode = {
@@ -206,10 +208,17 @@ export type TreeNode = {
   sub?: string;
   kind: "root" | "layer" | "group" | "agent";
   agent?: TreeAgent;
-  /** An area the agent reached from outside the one that owns it. */
-  tone?: "cross";
+  /**
+   * How an area outside the agent's own was reached. `cross` is recorded or
+   * declared evidence; `inherited` is structural — the enterprise layer runs
+   * everywhere by definition. Keeping them apart matters: one happened, the
+   * other is a standing capability.
+   */
+  tone?: "cross" | "inherited";
   /** Small muted label in the node head — the layer, on the agent tree. */
   tag?: string;
+  /** The agent's own declaration of who consumes it, and therefore its scope. */
+  scope?: string;
   children: TreeNode[];
 };
 
@@ -328,15 +337,26 @@ export function buildOrgTree(agents: TreeAgent[]): TreeNode {
 // question from the other end: "what does this agent reach?" — the agent is
 // the first level and the areas it touches hang beneath it.
 //
-// An area is counted as touched for one of three reasons, and the reason is
+// An area is counted as touched for one of four reasons, and the reason is
 // always shown, because they are not equally strong:
 //
 //   its own area  — ownership. Structural, always true.
 //   N work orders — recorded. It happened, and the ledger says so.
-//   loads CTX-00n — inferred, and the weakest of the three. A product brand
+//   inherited     — structural. Every department and product inherits the
+//                   enterprise layer; no area gets its own copy. This is why
+//                   an evaluator with no recorded runs still reaches
+//                   everywhere, and omitting it made six of the eight
+//                   enterprise agents look like they touched nothing.
+//   loads CTX-00n — inferred, and the weakest of the four. A product brand
 //                   page IS that product's area, so an agent that loads one
 //                   can reach into that product's work. It is a capability,
 //                   not an event.
+//
+// Inherited reach is drawn ONLY for an agent that is enabled. A planned or
+// suspended agent is not running in any area, and drawing it as though it
+// were would make this screen assert a control that does not exist — the
+// failure mode 0018's inert REVOKEs and the "GitHub (private)" row already
+// are. Their declared scope still shows, so nothing is hidden.
 //
 // The inference is deliberately narrow. It fires only for pages whose title
 // marks them as a brand page, and only when that title names a product that
@@ -361,6 +381,7 @@ type AreaTouch = {
   label: string;
   home: boolean;
   work: number;
+  inherited: boolean;
   brandPages: string[];
 };
 
@@ -369,6 +390,7 @@ function describeTouch(t: AreaTouch): string {
   if (t.home) bits.push("its own area");
   if (t.work > 0)
     bits.push(`${t.work} work order${t.work === 1 ? "" : "s"} recorded here`);
+  if (t.inherited) bits.push("inherits the enterprise layer");
   if (t.brandPages.length)
     bits.push(`may load ${t.brandPages.join(", ")}`);
   return bits.join(" · ");
@@ -392,6 +414,14 @@ export function buildAgentAreaTree(
     m.set(w.product_name, (m.get(w.product_name) ?? 0) + 1);
   }
 
+  // Every area that exists in the org — the homes of the agents themselves.
+  // "Enterprise" is excluded because it is the layer doing the inheriting,
+  // not one of the areas that inherits it, and an area with no agents is not
+  // an area yet.
+  const inheritingAreas = [
+    ...new Set(agents.map(homeArea)),
+  ].filter((a) => a !== "Enterprise" && a !== "Not in the library");
+
   const ordered = [...agents].sort((x, y) => {
     const r =
       (LAYER_RANK[x.layer ?? ""] ?? 3) - (LAYER_RANK[y.layer ?? ""] ?? 3);
@@ -406,7 +436,7 @@ export function buildAgentAreaTree(
       if (!t)
         touches.set(
           label,
-          (t = { label, home: false, work: 0, brandPages: [] }),
+          (t = { label, home: false, work: 0, inherited: false, brandPages: [] }),
         );
       return t;
     };
@@ -414,6 +444,10 @@ export function buildAgentAreaTree(
 
     for (const [area, n] of workByAgent.get(a.agent_id) ?? [])
       put(area).work += n;
+
+    // The enterprise layer runs in every area — but only if it is switched on.
+    if (a.layer === "enterprise" && a.enabled === true)
+      for (const area of inheritingAreas) put(area).inherited = true;
 
     for (const c of parseContextPages(a.context_pages)) {
       const title = CTX_TITLES[c];
@@ -426,9 +460,15 @@ export function buildAgentAreaTree(
       }
     }
 
+    // Evidence outranks inheritance in both colour and order: an area where
+    // something actually happened should not be buried among eight areas
+    // where something merely may.
+    const evidenced = (t: AreaTouch) => t.work > 0 || t.brandPages.length > 0;
+
     const children: TreeNode[] = [...touches.values()]
       .sort((p, q) => {
         if (p.home !== q.home) return p.home ? -1 : 1;
+        if (evidenced(p) !== evidenced(q)) return evidenced(p) ? -1 : 1;
         if (p.work !== q.work) return q.work - p.work;
         return p.label.localeCompare(q.label);
       })
@@ -437,7 +477,11 @@ export function buildAgentAreaTree(
         label: t.label,
         sub: describeTouch(t),
         kind: "group" as const,
-        tone: t.home ? undefined : ("cross" as const),
+        tone: t.home
+          ? undefined
+          : evidenced(t)
+            ? ("cross" as const)
+            : ("inherited" as const),
         children: [],
       }));
 
@@ -448,6 +492,7 @@ export function buildAgentAreaTree(
       kind: "agent" as const,
       agent: a,
       tag: a.layer ?? "not in the library",
+      scope: a.consumer ?? undefined,
       children,
     };
   });

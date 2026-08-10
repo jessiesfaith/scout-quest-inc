@@ -271,6 +271,23 @@
   background: var(--warn-soft);
   border-color: var(--warn);
 }
+/* Inherited reach: real, but structural rather than recorded. Deliberately
+   quieter than tn-cross so evidence and capability never look alike. */
+.os .tn-inherited {
+  background: var(--card);
+  border-color: var(--line);
+  border-style: dashed;
+}
+.os .tnscope {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.os .tnwhy {
+  font-size: 11px;
+  color: var(--warn);
+  margin-top: 4px;
+}
 .os .tntag {
   font-size: 10px;
   text-transform: uppercase;
@@ -290,6 +307,11 @@
 .os .tnkey-cross {
   background: var(--warn-soft);
   border-color: var(--warn);
+}
+.os .tnkey-inherited {
+  background: var(--card);
+  border-color: var(--line);
+  border-style: dashed;
 }
 
 /* Secondary navigation inside a tab. Chips rather than another row of
@@ -648,10 +670,98 @@
   fill: var(--ink);
   font-weight: 700;
 }
-.os .mmnode.dim .mmdot,
-.os .mmnode.dim .mmtext {
-  opacity: 0.13;
+/* Hop shading. Applied to the group so the dot and its label fade together.
+   Distance is the information here — a binary "reachable" lights nearly the
+   whole graph within two hops, because CTX-001 is loaded by almost every
+   agent, so the rings are what make it readable. */
+.os .mmnode.h0 {
+  opacity: 1;
 }
+.os .mmnode.h1 {
+  opacity: 1;
+}
+.os .mmnode.h2 {
+  opacity: 0.66;
+}
+.os .mmnode.h3 {
+  opacity: 0.44;
+}
+.os .mmnode.h4 {
+  opacity: 0.28;
+}
+.os .mmnode.dim {
+  opacity: 0.09;
+}
+.os .mmedge.h1 {
+  opacity: 0.9;
+}
+.os .mmedge.h2 {
+  opacity: 0.5;
+}
+.os .mmedge.h3 {
+  opacity: 0.32;
+}
+.os .mmedge.h4 {
+  opacity: 0.2;
+}
+/* The clicked dot keeps a hard outline at every level so it never gets lost
+   among the ring it sits at the centre of. */
+.os .mmnode.h0 .mmdot {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+.os .mmnode.h0 .mmtext {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+/* Depth control */
+.os .mmdepth {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.os .mmdepth-l {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.os .chip.mmd {
+  padding: 5px 9px;
+  min-width: 26px;
+  justify-content: center;
+}
+
+/* Reachability readout in the inspector */
+.os .mmhop {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+.os .mmhop-n {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #eef2f7;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.os .mmhop-ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 9px;
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.os .mmhop.h2 .mmhop-ids { color: var(--muted); }
+.os .mmhop.h3 .mmhop-ids,
+.os .mmhop.h4 .mmhop-ids { color: var(--muted); opacity: 0.8; }
 
 /* The inspector beside the map */
 .os .mmside {

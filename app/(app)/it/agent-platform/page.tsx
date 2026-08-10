@@ -676,6 +676,7 @@ export default async function AgentPlatformPage({
             source: a.source,
             context_pages: a.context_pages,
             blocked_reason: a.blocked_reason,
+            consumer: a.consumer,
           }))}
           gates={gateList}
           view={view}

@@ -55,7 +55,7 @@ function Node({ node }: { node: TreeNode }) {
     <li className="tnode">
       <div
         className={`tnbox ${KIND_CLASS[node.kind]}${
-          node.tone === "cross" ? " tn-cross" : ""
+          node.tone ? ` tn-${node.tone}` : ""
         }`}
       >
         <div className="tnhead">
@@ -81,6 +81,19 @@ function Node({ node }: { node: TreeNode }) {
           <div className="tnowns">
             owns: <b>{a.owns_object}</b>
           </div>
+        )}
+        {/* The agent's own words on who consumes it. Inherited reach says an
+            enterprise agent runs everywhere; this says under what conditions,
+            which is the part the areas below cannot carry. */}
+        {node.scope && (
+          <div className="tnscope">
+            runs for: <b>{node.scope}</b>
+          </div>
+        )}
+        {/* Shown for exactly the agents whose inherited reach is withheld, so
+            the absence is explained rather than looking like an oversight. */}
+        {a && a.enabled === false && a.blocked_reason && (
+          <div className="tnwhy">not running: {a.blocked_reason}</div>
         )}
       </div>
       {node.children.length > 0 && (
@@ -122,6 +135,9 @@ export function AgentTree({
 
   const agentTree = buildAgentAreaTree(agents, workOrders);
   const reachOut = agentTree.filter((n) =>
+    n.children.some((c) => c.tone),
+  ).length;
+  const evidenced = agentTree.filter((n) =>
     n.children.some((c) => c.tone === "cross"),
   ).length;
   const areas = new Set(agentTree.flatMap((n) => n.children.map((c) => c.label)));
@@ -170,9 +186,9 @@ export function AgentTree({
           The Company Tree read downward — an area, then the agents it owns.
           This is the same fact from the other end: the <b>agent</b> is the
           first level, and beneath it sits every <b>area it touches</b>. The
-          line under each area says why it is there, because the three reasons
-          are not equally strong — ownership is structural, a work order is
-          recorded evidence, and a brand page is only a capability.
+          line under each area says why it is there, because the reasons are
+          not equally strong — ownership and inheritance are structural, a work
+          order is recorded evidence, and a brand page is only a capability.
         </p>
 
         <div className="tiles">
@@ -181,18 +197,18 @@ export function AgentTree({
             <div className="l">agents</div>
           </div>
           <div className="tile">
-            <div className="n" style={{ color: reachOut > 0 ? "var(--warn)" : undefined }}>
-              {reachOut}
+            <div className="n">{reachOut}</div>
+            <div className="l">reach beyond their own area</div>
+          </div>
+          <div className="tile">
+            <div className="n" style={{ color: evidenced > 0 ? "var(--warn)" : undefined }}>
+              {evidenced}
             </div>
-            <div className="l">reach outside their own area</div>
+            <div className="l">…on recorded or declared evidence</div>
           </div>
           <div className="tile">
             <div className="n">{areas.size}</div>
             <div className="l">distinct areas touched</div>
-          </div>
-          <div className="tile">
-            <div className="n">{workOrders.length}</div>
-            <div className="l">work orders behind this</div>
           </div>
         </div>
 
@@ -215,24 +231,39 @@ export function AgentTree({
             <i className="tnkey tnkey-home" /> the area that owns it
           </span>
           <span>
-            <i className="tnkey tnkey-cross" /> an area it reaches from outside
+            <i className="tnkey tnkey-cross" /> reaches it on recorded or
+            declared evidence
+          </span>
+          <span>
+            <i className="tnkey tnkey-inherited" /> inherits — the enterprise
+            layer runs in every area
           </span>
         </p>
 
         <p className="note">
-          <b>An amber box is not a violation.</b> A shared agent working in a
-          product area is the design working — the library stays at sixteen
-          agents precisely because Education and Soundwiserx reuse them instead
-          of cloning them. It is worth seeing because it is the path along which
-          a change to one product&apos;s context can reach the other&apos;s
-          output.
+          <b>Every department and product inherits the enterprise layer</b> — no
+          area gets its own copy of an evaluator. That is why an enterprise
+          agent with no recorded runs still reaches everywhere, shown as the
+          dashed boxes. <b>A dashed box is a standing capability; an amber one
+          is something that happened.</b> Keeping them apart is the whole point:
+          a shared agent working in a product area is the design working, and
+          the library stays at sixteen agents precisely because Education and
+          Soundwiserx reuse them rather than cloning them.
         </p>
 
         <p className="note">
-          Work-order counts are drawn from the {workOrders.length} most recent
-          work orders on this database, so an agent showing only its own area
-          may simply have no recorded runs yet. Absence here is absence of
-          evidence, not evidence of absence.
+          <b>Inherited reach is shown only for an agent that is enabled.</b> A
+          planned or suspended agent is not running in any area, so drawing it
+          as though it were would make this screen assert a control that does
+          not exist. Those agents show their own area and the reason they are
+          held, and nothing more.
+        </p>
+
+        <p className="note">
+          Work-order counts come from the {workOrders.length} most recent work
+          orders on this database. With none recorded, no area here rests on
+          observed runs — the amber boxes are all declared brand-page reach.
+          Absence is absence of evidence, not evidence of absence.
         </p>
       </>
     );
