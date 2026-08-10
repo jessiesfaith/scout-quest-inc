@@ -207,6 +207,12 @@ export function AgentGraph({
   const [hovered, setHovered] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(true);
   const [showContext, setShowContext] = useState(true);
+  // How many hops out from the clicked dot to light up. The closure is not
+  // interesting as a yes/no: CTX-001 is loaded by almost every agent, so
+  // "everything reachable" is very nearly the whole graph within two hops.
+  // What carries the information is the DISTANCE, so depth is adjustable and
+  // every level is shaded differently.
+  const [depth, setDepth] = useState(4);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pt>({ x: 0, y: 0 });
   const drag = useRef<{
@@ -259,14 +265,46 @@ export function AgentGraph({
   }, [visibleEdges]);
 
   const active = hovered ?? selected;
-  // The lit set: the focused node and everything one hop from it. Null means
-  // nothing is focused, so nothing dims.
-  const lit = useMemo(() => {
+  // Breadth-first from the focused dot, keeping the hop count. Null means
+  // nothing is focused, so nothing dims. A node absent from the map is
+  // unreachable within `depth` and dims out entirely.
+  const dist = useMemo(() => {
     if (!focusMode || !active) return null;
-    const s = new Set<string>([active]);
-    for (const n of neighbours.get(active) ?? []) s.add(n);
-    return s;
-  }, [focusMode, active, neighbours]);
+    const d = new Map<string, number>([[active, 0]]);
+    let frontier = [active];
+    while (frontier.length) {
+      const next: string[] = [];
+      for (const cur of frontier) {
+        const dc = d.get(cur)!;
+        if (dc >= depth) continue;
+        for (const nb of neighbours.get(cur) ?? []) {
+          if (!d.has(nb)) {
+            d.set(nb, dc + 1);
+            next.push(nb);
+          }
+        }
+      }
+      frontier = next;
+    }
+    return d;
+  }, [focusMode, active, neighbours, depth]);
+
+  /** Reachable agents grouped by hop, for the inspector. */
+  const reachByHop = useMemo(() => {
+    if (!dist) return [];
+    const byHop = new Map<number, string[]>();
+    for (const [id, h] of dist) {
+      if (h === 0) continue;
+      const n = nodeById.get(id);
+      if (n?.kind !== "agent") continue;
+      const arr = byHop.get(h);
+      if (arr) arr.push(id);
+      else byHop.set(h, [id]);
+    }
+    return [...byHop.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([hop, ids]) => ({ hop, ids: ids.sort() }));
+  }, [dist, nodeById]);
 
   const view = useMemo(() => {
     let minX = Infinity,
@@ -377,6 +415,25 @@ export function AgentGraph({
         >
           Shared context pages
         </button>
+        <span className="mmdepth">
+          <span className="mmdepth-l">levels</span>
+          {[1, 2, 3, 4, 9].map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={`chip mmd${depth === d ? " on" : ""}`}
+              aria-pressed={depth === d}
+              title={
+                d === 9
+                  ? "Every node reachable from the selected dot"
+                  : `Up to ${d} hop${d === 1 ? "" : "s"} away`
+              }
+              onClick={() => setDepth(d)}
+            >
+              {d === 9 ? "all" : d}
+            </button>
+          ))}
+        </span>
         <span className="mmspace" />
         <button type="button" className="chip" onClick={() => setZoom((z) => Math.min(3, z * 1.2))}>
           +
@@ -418,11 +475,22 @@ export function AgentGraph({
               const a = pos.get(e.source);
               const b = pos.get(e.target);
               if (!a || !b) return null;
-              const dimmed = lit ? !(lit.has(e.source) && lit.has(e.target)) : false;
+              // An edge lights only if BOTH ends were reached and they sit on
+              // consecutive rings — an edge between two same-hop nodes is not
+              // part of how the focus spreads, and drawing it muddies the
+              // ripple that makes the levels readable.
+              const ds = dist?.get(e.source);
+              const dt = dist?.get(e.target);
+              const on =
+                !dist ||
+                (ds !== undefined && dt !== undefined && Math.abs(ds - dt) === 1);
+              const hop = on && dist ? Math.max(ds!, dt!) : 0;
               return (
                 <line
                   key={`${e.source}-${e.target}-${e.kind}-${i}`}
-                  className={`mmedge mme-${e.kind}${dimmed ? " dim" : ""}`}
+                  className={`mmedge mme-${e.kind}${on ? "" : " dim"}${
+                    on && dist ? ` h${Math.min(hop, 4)}` : ""
+                  }`}
                   x1={a.x}
                   y1={a.y}
                   x2={b.x}
@@ -434,7 +502,8 @@ export function AgentGraph({
 
             {visibleNodes.map((n) => {
               const p = pos.get(n.id)!;
-              const dimmed = lit ? !lit.has(n.id) : false;
+              const hop = dist?.get(n.id);
+              const dimmed = dist ? hop === undefined : false;
               const r = radius(n.kind, degree.get(n.id) ?? 0);
               const isSel = selected === n.id;
               const cls = [
@@ -443,6 +512,7 @@ export function AgentGraph({
                 n.kind === "agent" ? LAYER_CLASS[n.layer ?? "unfiled"] : "",
                 n.kind === "agent" && n.agent?.enabled === false ? "mm-off" : "",
                 dimmed ? "dim" : "",
+                hop !== undefined ? `h${Math.min(hop, 4)}` : "",
                 isSel ? "sel" : "",
               ]
                 .filter(Boolean)
@@ -551,6 +621,37 @@ export function AgentGraph({
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {reachByHop.length > 0 && (
+                <>
+                  <h4 className="mmh4" style={{ marginTop: 14 }}>
+                    Reaches, by hop
+                  </h4>
+                  {reachByHop.map(({ hop, ids }) => (
+                    <div key={hop} className={`mmhop h${Math.min(hop, 4)}`}>
+                      <span className="mmhop-n">{hop}</span>
+                      <span className="mmhop-ids">
+                        {ids.map((id) => (
+                          <button
+                            key={id}
+                            type="button"
+                            className="mmlink"
+                            onClick={() => setSelected(id)}
+                          >
+                            {id}
+                          </button>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="note" style={{ marginTop: 6 }}>
+                    Hop 1 is a direct link. Beyond that the path runs{" "}
+                    <i>through</i> something — usually a shared context page —
+                    so a distant agent is not one this agent talks to. It is one
+                    that would be affected by the same change.
+                  </p>
+                </>
               )}
 
               <p style={{ marginTop: 12 }}>
