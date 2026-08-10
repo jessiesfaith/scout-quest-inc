@@ -499,6 +499,227 @@ export function buildAgentAreaTree(
 }
 
 // ---------------------------------------------------------------------
+// The brain tree — the same agents, deliberately repeated
+// ---------------------------------------------------------------------
+//
+// The web view draws each agent ONCE and connects it to everything it
+// reaches, which is why it turns into a hairball: eval-factuality is one dot
+// with a dozen lines leaving it. This view makes the opposite trade. An agent
+// appears once per PLACE it appears — under Enterprise because that is where
+// it is owned, again under every area that inherits it, and again at every
+// stage of every work order where it acts.
+//
+// Repetition is the point. A tree that repeats a node stays a tree: no edge
+// ever crosses another, so a branch can be followed with a finger. The cost
+// is that "how many eval-factuality are there?" stops being obvious, which is
+// what clicking one and lighting all of them is for.
+//
+// Still no agent-to-agent edge anywhere. A parent here means "contains" or
+// "acts at", never "hands work to".
+
+export type BrainNode = {
+  /** Unique per INSTANCE — the same agent has several. */
+  id: string;
+  label: string;
+  kind: "root" | "area" | "agent" | "wo" | "stage";
+  /** Set on every instance of an agent, so all copies can be lit at once. */
+  agentId?: string;
+  sub?: string;
+  /** Why this instance is here. */
+  tone?: "home" | "inherited" | "evidence" | "gate" | "human" | "terminal";
+  agent?: TreeAgent;
+  /** Work-order code, on work-order and stage nodes. */
+  wo?: string;
+  children: BrainNode[];
+};
+
+/**
+ * The stage path a work order has taken and will take, with the actor at
+ * each step. This is the "start to finish" of a single kicked-off session:
+ * intake through to closed, with the agents that act named at the stage they
+ * act in — which is where an evaluator shows up three work orders over.
+ */
+function stagePath(wo: GraphWo, tier: string | null): BrainNode[] {
+  const reached = LIVE_STAGES.findIndex((s) => s.id === wo.stage);
+  const terminal = wo.stage === "closed" || wo.stage === "blocked";
+  const evaluators =
+    EVALUATORS_BY_TIER[(tier ?? "low") as RiskTier] ?? [];
+
+  const out: BrainNode[] = LIVE_STAGES.map((s, i) => {
+    const done = terminal ? wo.stage === "closed" : i < reached;
+    const now = !terminal && i === reached;
+    const node: BrainNode = {
+      id: `${wo.id}::${s.id}`,
+      label: s.label,
+      kind: "stage",
+      wo: wo.wo_code ?? undefined,
+      sub: done ? "done" : now ? "here now" : "not yet",
+      tone:
+        s.actor === "gate" ? "gate" : s.actor === "human" ? "human" : undefined,
+      children: [],
+    };
+
+    // The agents that act at this stage, each as its own instance.
+    if (s.actor === "worker" && wo.agent)
+      node.children.push({
+        id: `${wo.id}::${s.id}::${wo.agent}`,
+        label: wo.agent,
+        kind: "agent",
+        agentId: wo.agent,
+        sub: s.id === "remediate" ? "reworking" : "doing the work",
+        children: [],
+      });
+
+    if (s.actor === "evaluator")
+      for (const e of evaluators)
+        node.children.push({
+          id: `${wo.id}::${s.id}::${e}`,
+          label: e,
+          kind: "agent",
+          agentId: e,
+          sub: "sealed verdict",
+          children: [],
+        });
+
+    if (s.actor === "adjudicator")
+      node.children.push({
+        id: `${wo.id}::${s.id}::eval-adjudicator`,
+        label: "eval-adjudicator",
+        kind: "agent",
+        agentId: "eval-adjudicator",
+        sub: "reads the verdicts",
+        children: [],
+      });
+
+    if (s.actor === "orchestrator")
+      node.children.push({
+        id: `${wo.id}::${s.id}::orch-enterprise`,
+        label: "orch-enterprise",
+        kind: "agent",
+        agentId: "orch-enterprise",
+        sub: "routes, never decides",
+        children: [],
+      });
+
+    return node;
+  });
+
+  if (terminal)
+    out.push({
+      id: `${wo.id}::terminal`,
+      label: wo.stage === "closed" ? "Closed" : "Blocked",
+      kind: "stage",
+      wo: wo.wo_code ?? undefined,
+      sub:
+        wo.stage === "closed"
+          ? "reached the end"
+          : "a gate refused it — a successful ending",
+      tone: "terminal",
+      children: [],
+    });
+
+  return out;
+}
+
+export function buildBrainTree(
+  agents: TreeAgent[],
+  workOrders: GraphWo[],
+  /** The one work order whose full path is expanded, if any. */
+  openWo: string | null,
+  tierOf: Map<string, string | null>,
+): BrainNode {
+  const inst = (
+    a: TreeAgent,
+    where: string,
+    sub: string,
+    tone: BrainNode["tone"],
+  ): BrainNode => ({
+    id: `${where}::${a.agent_id}`,
+    label: a.agent_id,
+    kind: "agent",
+    agentId: a.agent_id,
+    sub,
+    tone,
+    agent: a,
+    children: [],
+  });
+
+  const enterprise = agents.filter((a) => a.layer === "enterprise");
+  const inheritable = enterprise.filter((a) => a.enabled === true);
+  const areas = [
+    ...new Set(agents.map(homeArea)),
+  ].filter((x) => x !== "Enterprise" && x !== "Not in the library");
+
+  const children: BrainNode[] = [];
+
+  if (enterprise.length)
+    children.push({
+      id: "area::Enterprise",
+      label: "Enterprise",
+      kind: "area",
+      sub: "owned here, inherited everywhere",
+      children: enterprise.map((a) =>
+        inst(a, "ent", a.question ?? "", "home"),
+      ),
+    });
+
+  for (const area of areas.sort()) {
+    const own = agents.filter((a) => a.layer !== "enterprise" && homeArea(a) === area);
+    children.push({
+      id: `area::${area}`,
+      label: area,
+      kind: "area",
+      sub: `${own.length} of its own, ${inheritable.length} inherited`,
+      children: [
+        ...own.map((a) => inst(a, `own::${area}`, a.question ?? "", "home")),
+        // The repetition that makes this view worth having.
+        ...inheritable.map((a) =>
+          inst(a, `inh::${area}`, "inherited from Enterprise", "inherited"),
+        ),
+      ],
+    });
+  }
+
+  const unfiled = agents.filter(
+    (a) => !(LAYERS as readonly string[]).includes(a.layer ?? ""),
+  );
+  if (unfiled.length)
+    children.push({
+      id: "area::unfiled",
+      label: "Not in the library",
+      kind: "area",
+      sub: "mirrored from the spend policy — no governance layer declared",
+      children: unfiled.map((a) =>
+        inst(a, "unf", "mirrored from the spend policy", undefined),
+      ),
+    });
+
+  if (workOrders.length)
+    children.push({
+      id: "area::wos",
+      label: "Work orders",
+      kind: "area",
+      sub: "click one to open its path from kickoff to close",
+      children: workOrders.map((w) => ({
+        id: `wo::${w.id}`,
+        label: w.wo_code ?? w.title.slice(0, 28),
+        kind: "wo" as const,
+        wo: w.wo_code ?? undefined,
+        sub: `${w.title} — ${w.stage ?? w.status}`,
+        children: openWo === w.id ? stagePath(w, tierOf.get(w.id) ?? null) : [],
+      })),
+    });
+
+  return {
+    id: "root",
+    label: "Scout Quest Enterprise",
+    kind: "root",
+    sub: "Enterprise Constitution v1.4",
+    children,
+  };
+}
+
+// ---------------------------------------------------------------------
 // The graph — the mind-map view of the same facts
 // ---------------------------------------------------------------------
 //

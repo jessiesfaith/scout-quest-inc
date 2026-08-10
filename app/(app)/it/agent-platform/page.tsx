@@ -680,6 +680,7 @@ export default async function AgentPlatformPage({
           }))}
           gates={gateList}
           view={view}
+          tiers={Object.fromEntries(woList.map((w) => [w.id, w.risk_tier]))}
           workOrders={woList.map((w) => ({
             id: w.id,
             wo_code: w.wo_code,

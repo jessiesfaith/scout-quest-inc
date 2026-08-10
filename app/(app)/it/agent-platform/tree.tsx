@@ -10,9 +10,11 @@ import {
   type GraphWo,
 } from "@/lib/agent-library";
 import { AgentGraph } from "./graph";
+import { BrainTree } from "./brain";
 
 export const TREE_VIEWS = [
   { id: "map", label: "Mind Map" },
+  { id: "brain", label: "Brain Tree" },
   { id: "company", label: "Company Tree" },
   { id: "agent", label: "Agent Tree" },
 ] as const;
@@ -112,8 +114,11 @@ export function AgentTree({
   gates,
   workOrders,
   view,
+  tiers,
 }: {
   agents: TreeAgent[];
+  /** work order id -> risk tier, used by the Brain Tree's evaluator panel. */
+  tiers: Record<string, string | null>;
   gates: {
     gate_id: string;
     name: string;
@@ -173,6 +178,26 @@ export function AgentTree({
         </p>
 
         <AgentGraph agents={agents} workOrders={workOrders} />
+      </>
+    );
+
+  if (view === "brain")
+    return (
+      <>
+        {nav}
+        <h2 className="sec">The brain tree</h2>
+
+        <p className="note" style={{ marginTop: 0 }}>
+          The same agents as the Mind Map, drawn as a branching tree instead of
+          a web — and <b>deliberately repeated</b>. An agent appears once under
+          Enterprise where it is owned, again under every area that inherits
+          it, and again at every work-order stage where it acts. Nothing
+          crosses, so a branch can be followed with a finger.{" "}
+          <b>Click any copy and all of them light.</b> Click a work order to
+          unfold its whole path from kickoff to close.
+        </p>
+
+        <BrainTree agents={agents} workOrders={workOrders} tiers={tiers} />
       </>
     );
 
