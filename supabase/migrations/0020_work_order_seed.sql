@@ -136,7 +136,14 @@ insert into public.work_orders (
  0, 'manual', null,
  now() - interval '4 hours', null, null, null, 0.0000)
 
-on conflict (wo_code) do nothing;
+-- The predicate is NOT optional. 0018 made this index PARTIAL on purpose —
+--   create unique index work_orders_wo_code_key
+--     on public.work_orders (wo_code) where wo_code is not null;
+-- because ledger-ingested rows carry no code. Postgres will not infer a
+-- partial unique index from a bare `on conflict (wo_code)`; the statement has
+-- to repeat the index's own predicate or it fails with 42P10, "no unique or
+-- exclusion constraint matching the ON CONFLICT specification". Which it did.
+on conflict (wo_code) where wo_code is not null do nothing;
 
 -- =====================================================================
 -- 2. The activity feeds
