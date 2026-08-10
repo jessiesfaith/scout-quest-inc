@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   openWorkOrder,
   advanceWorkOrder,
@@ -317,13 +317,25 @@ export function WorkOrderCard({
   events,
   canWrite,
   productName,
+  focused = false,
 }: {
   wo: Wo;
   events: WoEvent[];
   canWrite: boolean;
   productName: string | null;
+  /** Arrived here from a dot on the map — open the feed and scroll to it. */
+  focused?: boolean;
 }) {
-  const [openFeed, setOpenFeed] = useState(false);
+  // Feed starts open when this is the card the link named, so the entries
+  // above and below the one you came for are already on screen.
+  const [openFeed, setOpenFeed] = useState(focused);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!focused) return;
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focused]);
+
   const [advState, advAction, advPending] = useActionState(
     advanceWorkOrder,
     initial,
@@ -345,7 +357,11 @@ export function WorkOrderCard({
     wo.budget_ceiling_usd != null && spent > Number(wo.budget_ceiling_usd);
 
   return (
-    <div className="card" style={{ marginBottom: 14 }}>
+    <div
+      ref={cardRef}
+      className={`card${focused ? " wofocused" : ""}`}
+      style={{ marginBottom: 14 }}
+    >
       <div className="wohead">
         <span className="wt">{wo.title}</span>
         <code>{wo.wo_code ?? "—"}</code>

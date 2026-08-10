@@ -194,6 +194,10 @@ export type TreeAgent = {
   monthly_cap_usd: number | null;
   enabled: boolean | null;
   source: string;
+  // Used by the graph's inspector, not by the tree. Optional so the tree's
+  // callers are not forced to select columns they do not draw.
+  context_pages?: string | null;
+  blocked_reason?: string | null;
 };
 
 export type TreeNode = {
@@ -202,6 +206,10 @@ export type TreeNode = {
   sub?: string;
   kind: "root" | "layer" | "group" | "agent";
   agent?: TreeAgent;
+  /** An area the agent reached from outside the one that owns it. */
+  tone?: "cross";
+  /** Small muted label in the node head — the layer, on the agent tree. */
+  tag?: string;
   children: TreeNode[];
 };
 
@@ -310,4 +318,308 @@ export function buildOrgTree(agents: TreeAgent[]): TreeNode {
     kind: "root",
     children,
   };
+}
+
+// ---------------------------------------------------------------------
+// The agent tree — the org tree turned inside out
+// ---------------------------------------------------------------------
+//
+// The company tree asks "who does this area own?". This asks the same
+// question from the other end: "what does this agent reach?" — the agent is
+// the first level and the areas it touches hang beneath it.
+//
+// An area is counted as touched for one of three reasons, and the reason is
+// always shown, because they are not equally strong:
+//
+//   its own area  — ownership. Structural, always true.
+//   N work orders — recorded. It happened, and the ledger says so.
+//   loads CTX-00n — inferred, and the weakest of the three. A product brand
+//                   page IS that product's area, so an agent that loads one
+//                   can reach into that product's work. It is a capability,
+//                   not an event.
+//
+// The inference is deliberately narrow. It fires only for pages whose title
+// marks them as a brand page, and only when that title names a product that
+// actually exists in the data — inventing an area would be worse than
+// drawing no line at all.
+
+const LAYER_RANK: Record<string, number> = {
+  enterprise: 0,
+  department: 1,
+  product: 2,
+};
+
+/** The area that owns an agent, as a display label. */
+export function homeArea(a: TreeAgent): string {
+  if (a.layer === "enterprise") return "Enterprise";
+  if (a.layer === "department") return a.department ?? "Unassigned";
+  if (a.layer === "product") return a.product_name ?? "Company-wide";
+  return "Not in the library";
+}
+
+type AreaTouch = {
+  label: string;
+  home: boolean;
+  work: number;
+  brandPages: string[];
+};
+
+function describeTouch(t: AreaTouch): string {
+  const bits: string[] = [];
+  if (t.home) bits.push("its own area");
+  if (t.work > 0)
+    bits.push(`${t.work} work order${t.work === 1 ? "" : "s"} recorded here`);
+  if (t.brandPages.length)
+    bits.push(`may load ${t.brandPages.join(", ")}`);
+  return bits.join(" · ");
+}
+
+export function buildAgentAreaTree(
+  agents: TreeAgent[],
+  workOrders: GraphWo[],
+): TreeNode[] {
+  // Only areas that exist in the data. The brand-page inference is matched
+  // against this set so it can never conjure a product.
+  const known = new Set<string>();
+  for (const a of agents) if (a.product_name) known.add(a.product_name);
+  for (const w of workOrders) if (w.product_name) known.add(w.product_name);
+
+  const workByAgent = new Map<string, Map<string, number>>();
+  for (const w of workOrders) {
+    if (!w.agent || !w.product_name) continue;
+    let m = workByAgent.get(w.agent);
+    if (!m) workByAgent.set(w.agent, (m = new Map()));
+    m.set(w.product_name, (m.get(w.product_name) ?? 0) + 1);
+  }
+
+  const ordered = [...agents].sort((x, y) => {
+    const r =
+      (LAYER_RANK[x.layer ?? ""] ?? 3) - (LAYER_RANK[y.layer ?? ""] ?? 3);
+    return r !== 0 ? r : x.agent_id.localeCompare(y.agent_id);
+  });
+
+  return ordered.map((a) => {
+    const home = homeArea(a);
+    const touches = new Map<string, AreaTouch>();
+    const put = (label: string) => {
+      let t = touches.get(label);
+      if (!t)
+        touches.set(
+          label,
+          (t = { label, home: false, work: 0, brandPages: [] }),
+        );
+      return t;
+    };
+    put(home).home = true;
+
+    for (const [area, n] of workByAgent.get(a.agent_id) ?? [])
+      put(area).work += n;
+
+    for (const c of parseContextPages(a.context_pages)) {
+      const title = CTX_TITLES[c];
+      // Brand pages only. Matching every context page by title would let
+      // "CTX-002 Data classes" claim a product called "Data".
+      if (!title || !title.toLowerCase().startsWith("brand")) continue;
+      const hay = title.toLowerCase();
+      for (const area of known) {
+        if (hay.includes(area.toLowerCase())) put(area).brandPages.push(c);
+      }
+    }
+
+    const children: TreeNode[] = [...touches.values()]
+      .sort((p, q) => {
+        if (p.home !== q.home) return p.home ? -1 : 1;
+        if (p.work !== q.work) return q.work - p.work;
+        return p.label.localeCompare(q.label);
+      })
+      .map((t) => ({
+        key: `${a.agent_id}::${t.label}`,
+        label: t.label,
+        sub: describeTouch(t),
+        kind: "group" as const,
+        tone: t.home ? undefined : ("cross" as const),
+        children: [],
+      }));
+
+    return {
+      key: a.agent_id,
+      label: a.agent_id,
+      sub: a.question ?? undefined,
+      kind: "agent" as const,
+      agent: a,
+      tag: a.layer ?? "not in the library",
+      children,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------
+// The graph — the mind-map view of the same facts
+// ---------------------------------------------------------------------
+//
+// Three edge kinds, all of them observations rather than promises:
+//
+//   owns    — the ownership tree, same facts as buildOrgTree.
+//   context — the agent's spec lists this CTX page. Two agents that load
+//             the same page are connected THROUGH the page, which is what
+//             makes shared context visible without inventing an
+//             agent-to-agent edge that the architecture forbids.
+//   work    — a recorded work order placed this agent in a product area
+//             that is not its home. Evidence, not configuration: the edge
+//             exists because it happened, and its weight is the count.
+//
+// No edge means sequence. That is the pipeline's story, deliberately kept
+// on a separate diagram (see tree.tsx).
+
+/** Titles for the CTX pages in docs/agents/context/, keyed by id. */
+export const CTX_TITLES: Record<string, string> = {
+  "CTX-001": "Enterprise canon",
+  "CTX-002": "Data classes",
+  "CTX-003": "Risk tiers & gates",
+  "CTX-004": "Brand — Scout Quest Education",
+  "CTX-005": "Brand — Soundwiserx",
+  "CTX-006": "Audiences",
+  "CTX-007": "Compliance boundaries",
+  "CTX-008": "Evidence & citation",
+  "CTX-009": "Channels & cadence",
+  "CTX-010": "Budgets & stop conditions",
+  "CTX-011": "Output contracts",
+};
+
+/**
+ * "CTX-001, CTX-004|CTX-005" → ["CTX-001", "CTX-004", "CTX-005"].
+ * The pipe means "one of, chosen by product" — for connectivity both count,
+ * since the agent can load either.
+ */
+export function parseContextPages(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const out: string[] = [];
+  for (const token of raw.split(/[,|]/)) {
+    const t = token.trim();
+    if (/^CTX-\d{3}$/.test(t) && !out.includes(t)) out.push(t);
+  }
+  return out;
+}
+
+/** The slice of a work order the graph needs — product resolved to a name. */
+export type GraphWo = {
+  id: string;
+  wo_code: string | null;
+  title: string;
+  agent: string | null;
+  stage: string | null;
+  status: string;
+  product_name: string | null;
+};
+
+export type GraphNode = {
+  id: string;
+  label: string;
+  kind: "root" | "layer" | "group" | "agent" | "ctx";
+  /** Colours the dot — the layer itself, or the layer a group sits under. */
+  layer?: string | null;
+  sub?: string;
+  agent?: TreeAgent;
+};
+
+export type GraphEdge = {
+  source: string;
+  target: string;
+  kind: "owns" | "context" | "work";
+  /** work edges: how many work orders back this edge. */
+  n?: number;
+};
+
+export function buildAgentGraph(
+  agents: TreeAgent[],
+  workOrders: GraphWo[],
+): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  const byId = new Map<string, GraphNode>();
+  const add = (n: GraphNode) => {
+    if (!byId.has(n.id)) {
+      byId.set(n.id, n);
+      nodes.push(n);
+    }
+  };
+  const link = (
+    source: string,
+    target: string,
+    kind: GraphEdge["kind"],
+    n?: number,
+  ) => edges.push({ source, target, kind, n });
+
+  add({ id: "root", label: "Scout Quest Enterprise", kind: "root" });
+
+  const layerNode = (l: string, label: string) => {
+    const id = `layer-${l}`;
+    if (!byId.has(id)) {
+      add({ id, label, kind: "layer", layer: l });
+      link("root", id, "owns");
+    }
+    return id;
+  };
+  const groupNode = (layer: "department" | "product", name: string) => {
+    const id = `${layer === "department" ? "dept" : "prod"}-${name}`;
+    if (!byId.has(id)) {
+      const parent = layerNode(
+        layer,
+        layer === "department" ? "Department" : "Product",
+      );
+      add({ id, label: name, kind: "group", layer });
+      link(parent, id, "owns");
+    }
+    return id;
+  };
+
+  // Where each agent hangs on the ownership tree — needed again below to
+  // decide whether a work order counts as leaving home.
+  const homeOf = new Map<string, string>();
+
+  for (const a of agents) {
+    const filed = (LAYERS as readonly string[]).includes(a.layer ?? "");
+    add({
+      id: a.agent_id,
+      label: a.agent_id,
+      kind: "agent",
+      layer: filed ? a.layer : "unfiled",
+      agent: a,
+    });
+    let home: string;
+    if (a.layer === "enterprise") home = layerNode("enterprise", "Enterprise");
+    else if (a.layer === "department")
+      home = groupNode("department", a.department ?? "Unassigned");
+    else if (a.layer === "product")
+      home = groupNode("product", a.product_name ?? "Company-wide");
+    else home = layerNode("unfiled", "Not in the library");
+    homeOf.set(a.agent_id, home);
+    link(home, a.agent_id, "owns");
+
+    for (const c of parseContextPages(a.context_pages)) {
+      add({ id: c, label: c, kind: "ctx", sub: CTX_TITLES[c] });
+      link(a.agent_id, c, "context");
+    }
+  }
+
+  // Work-order evidence. Company-wide work orders name no area, and a work
+  // order in the agent's own area is already the owns edge — neither draws.
+  //
+  // Counted in a nested map rather than under a joined string key: a product
+  // name is free text and could contain whatever separator was chosen.
+  const touches = new Map<string, Map<string, number>>();
+  for (const w of workOrders) {
+    if (!w.agent || !w.product_name) continue;
+    if (!byId.has(w.agent)) continue; // no dot to draw from
+    const area = groupNode("product", w.product_name);
+    if (homeOf.get(w.agent) === area) continue;
+    let byArea = touches.get(w.agent);
+    if (!byArea) touches.set(w.agent, (byArea = new Map()));
+    byArea.set(area, (byArea.get(area) ?? 0) + 1);
+  }
+  for (const [agentId, byArea] of touches) {
+    for (const [area, n] of byArea) link(agentId, area, "work", n);
+  }
+
+  return { nodes, edges };
 }
