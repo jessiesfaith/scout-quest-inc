@@ -264,6 +264,44 @@
   background: var(--b-soft);
   border-color: transparent;
 }
+/* An area an agent reached from outside the one that owns it. Amber to
+   match the cross-area edge on the map — same fact, same colour. Declared
+   after .tn-group so it wins the tie. */
+.os .tn-cross {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+.os .tntag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.os .tnkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+  background: var(--b-soft);
+  border: 1px solid transparent;
+  vertical-align: -1px;
+}
+.os .tnkey-cross {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+
+/* Secondary navigation inside a tab. Chips rather than another row of
+   .g2tab, so a sub-view never reads as a top-level tab. */
+.os a.chip {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.os .subnav {
+  margin-bottom: 14px;
+}
 .os .tnhead {
   display: flex;
   align-items: center;
@@ -458,6 +496,326 @@
 .os .woev-d {
   font-size: 12.5px;
   margin-top: 4px;
+}
+
+/* ------------------------------------------------------------------
+   Agent mind map — the graph view on the Tree tab.
+   Drawn as SVG from a force layout computed in graph.tsx; everything
+   here is presentation only. Prefixed mm* so it cannot collide with the
+   tree (t*), pipeline (p*) or work-order (wo*) rules above.
+   ------------------------------------------------------------------ */
+.os .mmbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.os .mmspace {
+  flex: 1 1 auto;
+}
+.os .mmwrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+@media (min-width: 1100px) {
+  .os .mmwrap {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+.os .mmsvg {
+  width: 100%;
+  height: 560px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+  display: block;
+}
+.os .mmsvg:active {
+  cursor: grabbing;
+}
+
+/* Edges. Colour carries the KIND of relationship, never a direction of
+   control — there is no arrowhead anywhere on this diagram on purpose. */
+.os .mmedge {
+  stroke: var(--line);
+  stroke-width: 1.1;
+  transition: opacity 0.15s ease;
+}
+.os .mme-owns {
+  stroke: #c3cbd6;
+}
+.os .mme-context {
+  stroke: var(--a);
+  stroke-dasharray: 3 4;
+  opacity: 0.55;
+}
+.os .mme-work {
+  stroke: var(--warn);
+  opacity: 0.9;
+}
+.os .mmedge.dim {
+  opacity: 0.07;
+}
+
+/* Nodes */
+.os .mmnode {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.os .mmnode:focus {
+  outline: none;
+}
+.os .mmdot {
+  fill: var(--muted);
+  stroke: var(--card);
+  stroke-width: 2;
+  transition: opacity 0.15s ease;
+}
+/* Sizes are SVG user units, not screen pixels — the viewBox scales them.
+   The halo (stroke painted under the fill) is what keeps a label readable
+   where two of them overlap, which at this node count is unavoidable. */
+.os .mmtext {
+  font-size: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  fill: var(--muted);
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke fill;
+  stroke: var(--card);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  transition: opacity 0.15s ease;
+}
+.os .mmk-root .mmdot {
+  fill: var(--core);
+}
+.os .mmk-root .mmtext,
+.os .mmk-layer .mmtext,
+.os .mmk-group .mmtext {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 9.5px;
+  fill: var(--ink);
+}
+.os .mmk-layer .mmdot {
+  fill: var(--a);
+}
+.os .mmk-group .mmdot {
+  fill: var(--b);
+}
+.os .mmk-ctx .mmdot {
+  fill: #b6bfcb;
+}
+.os .mmk-ctx .mmtext {
+  font-size: 7px;
+}
+.os .mm-enterprise .mmdot {
+  fill: var(--g);
+}
+.os .mm-department .mmdot {
+  fill: var(--b);
+}
+.os .mm-product .mmdot {
+  fill: var(--a);
+}
+.os .mm-unfiled .mmdot {
+  fill: #b6bfcb;
+}
+/* Disabled enterprise-wide by the policy kill switch: hollow, not merely
+   pale — a dimmed dot already means "not in focus" and the two states must
+   not look alike. */
+.os .mm-off .mmdot {
+  fill: var(--card);
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 2 2;
+}
+.os .mmnode:hover .mmdot,
+.os .mmnode:focus .mmdot {
+  stroke: var(--a);
+  stroke-width: 3;
+}
+.os .mmnode.sel .mmdot {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+.os .mmnode.sel .mmtext {
+  fill: var(--ink);
+  font-weight: 700;
+}
+.os .mmnode.dim .mmdot,
+.os .mmnode.dim .mmtext {
+  opacity: 0.13;
+}
+
+/* The inspector beside the map */
+.os .mmside {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 14px 15px;
+  font-size: 13px;
+}
+@media (min-width: 1100px) {
+  .os .mmside {
+    position: sticky;
+    top: 18px;
+    max-height: 560px;
+    overflow-y: auto;
+  }
+}
+.os .mmempty {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.os .mmhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.os .mmq {
+  font-size: 12.5px;
+  margin: 0 0 10px;
+}
+.os .mmkv {
+  margin: 0 0 12px;
+  display: grid;
+  gap: 6px;
+}
+.os .mmkv div {
+  display: grid;
+  gap: 1px;
+}
+.os .mmkv dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.os .mmkv dd {
+  margin: 0;
+  font-size: 12.5px;
+}
+.os .mmh3 {
+  font-size: 14px;
+  margin: 22px 0 8px;
+}
+.os .mmh4 {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+.os .mmwos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.os .mmwo {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  text-decoration: none;
+  color: inherit;
+}
+.os .mmwo:hover {
+  border-color: var(--a);
+  background: var(--a-soft);
+}
+.os .mmwo-t {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.os .mmwo-m {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.os .mmlink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--a);
+  cursor: pointer;
+}
+.os .mmlink:hover {
+  text-decoration: underline;
+}
+.os .mmcross {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  font-size: 12.5px;
+}
+.os .mmn {
+  font-size: 11px;
+  color: var(--muted);
+}
+.os .mmlegend {
+  margin-top: 10px;
+}
+.os .mmkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--line);
+  vertical-align: -1px;
+}
+.os .mmkey.mm-enterprise { background: var(--g); }
+.os .mmkey.mm-department { background: var(--b); }
+.os .mmkey.mm-product { background: var(--a); }
+.os .mmkey.mmkey-ctx { background: #b6bfcb; }
+.os .mmkey.mmkey-line {
+  width: 16px;
+  height: 0;
+  border-radius: 0;
+  border-top: 2px solid var(--line);
+  vertical-align: 3px;
+}
+.os .mmkey-line.mme-owns { border-top-color: #c3cbd6; }
+.os .mmkey-line.mme-context {
+  border-top-style: dashed;
+  border-top-color: var(--a);
+}
+.os .mmkey-line.mme-work { border-top-color: var(--warn); }
+
+/* The work order a map link named. */
+.os .wofocused {
+  border-color: var(--a);
+  box-shadow: 0 0 0 3px var(--a-soft);
+}
+.os .wofocus {
+  margin-top: 0;
+}
+
+@media print {
+  /* The controls do nothing on paper, and the inspector is a duplicate of
+     the tree below. The map itself prints. */
+  .os .mmbar,
+  .os .mmside {
+    display: none;
+  }
+  .os .mmsvg {
+    height: 420px;
+  }
 }
 
 /* ------------------------------------------------------------------

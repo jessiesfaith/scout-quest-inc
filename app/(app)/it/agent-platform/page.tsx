@@ -5,7 +5,7 @@ import { getPermissions } from "@/lib/reachable";
 import { checkPerm } from "@/lib/permissions";
 import { OsShell } from "../../shell";
 import { itNav, itCrumbHref } from "../nav";
-import { AgentTree } from "./tree";
+import { AgentTree, TREE_VIEWS } from "./tree";
 import {
   OpenWorkOrder,
   WorkOrderCard,
@@ -142,10 +142,21 @@ function ago(iso: string | null) {
 export default async function AgentPlatformPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    view?: string;
+    wo?: string;
+    agent?: string;
+  }>;
 }) {
-  const { tab: raw } = await searchParams;
+  const {
+    tab: raw,
+    view: rawView,
+    wo: focusWo,
+    agent: focusAgent,
+  } = await searchParams;
   const tab = TABS.find((t) => t.id === raw)?.id ?? "console";
+  const view = TREE_VIEWS.find((v) => v.id === rawView)?.id ?? "map";
 
   const { supabase, email, isOwner } = await getViewer();
   if (!(await checkPerm("IT: Agent Platform"))) redirect("/dashboard");
@@ -244,6 +255,17 @@ export default async function AgentPlatformPage({
   // operational fields are the policy's, so the repo is no longer the whole
   // story for it, and that is worth naming rather than blending in.
   const policyClaimed = library.filter((a) => a.source === "spend-policy");
+
+  // Deep link from a dot on the map. Filtered here rather than in the query
+  // so the tiles above keep counting the whole database — a filtered view
+  // that also moves the totals makes it impossible to tell what you are
+  // looking at.
+  const shown = focusWo
+    ? woList.filter((w) => w.id === focusWo)
+    : focusAgent
+      ? woList.filter((w) => w.agent === focusAgent)
+      : woList;
+  const focusMissed = (focusWo != null || focusAgent != null) && shown.length === 0;
 
   const eventsByWo = new Map<string, WoEvent[]>();
   for (const e of eventList) {
@@ -652,13 +674,52 @@ export default async function AgentPlatformPage({
             monthly_cap_usd: a.monthly_cap_usd,
             enabled: a.enabled,
             source: a.source,
+            context_pages: a.context_pages,
+            blocked_reason: a.blocked_reason,
           }))}
           gates={gateList}
+          view={view}
+          workOrders={woList.map((w) => ({
+            id: w.id,
+            wo_code: w.wo_code,
+            title: w.title,
+            agent: w.agent,
+            stage: w.stage,
+            status: w.status,
+            product_name: w.product_id
+              ? (productName.get(w.product_id) ?? null)
+              : null,
+          }))}
         />
       )}
 
       {tab === "wos" && (
         <>
+          {/* Arriving from a dot on the map. `agent` narrows the list;
+              `wo` additionally names one card, which opens with its feed
+              already expanded so the entries above and below are readable
+              without a second click. A stale link — an agent or work order
+              that no longer exists — says so rather than rendering an empty
+              page that looks like "nothing has happened". */}
+          {(focusAgent || focusWo) && (
+            <p className="note wofocus">
+              {focusAgent ? (
+                <>
+                  Showing work orders for <code>{focusAgent}</code>.{" "}
+                </>
+              ) : (
+                <>Showing one work order. </>
+              )}
+              <Link href="/it/agent-platform?tab=wos" className="crumb">
+                Show all
+              </Link>{" "}
+              ·{" "}
+              <Link href="/it/agent-platform?tab=tree" className="crumb">
+                Back to the map
+              </Link>
+            </p>
+          )}
+
           <div className="tiles">
             <div className="tile">
               <div className="n">{woList.length}</div>
@@ -686,8 +747,18 @@ export default async function AgentPlatformPage({
             <OpenWorkOrder agents={woAgents} products={products ?? []} />
           )}
 
+          {focusMissed && (
+            <p className="note" style={{ color: "var(--warn)" }}>
+              <b>That link no longer resolves.</b>{" "}
+              {focusWo
+                ? "The work order it names is not in the most recent 200, or has been removed."
+                : `No work order names ${focusAgent}.`}{" "}
+              Nothing is filtered below.
+            </p>
+          )}
+
           <h2 className="sec">Live</h2>
-          {woList.filter((w) => w.status === "open").length === 0 ? (
+          {shown.filter((w) => w.status === "open").length === 0 ? (
             <p className="note">
               No open work orders. Opening one walks it through the
               orchestrator&apos;s state machine by hand — which is rung 2 of the
@@ -695,7 +766,7 @@ export default async function AgentPlatformPage({
               before automating anything.
             </p>
           ) : (
-            woList
+            shown
               .filter((w) => w.status === "open")
               .map((w) => (
                 <WorkOrderCard
@@ -703,6 +774,7 @@ export default async function AgentPlatformPage({
                   wo={w as Wo}
                   events={eventsByWo.get(w.id) ?? []}
                   canWrite={canWrite}
+                  focused={w.id === focusWo}
                   productName={
                     w.product_id ? (productName.get(w.product_id) ?? null) : null
                   }
@@ -711,10 +783,10 @@ export default async function AgentPlatformPage({
           )}
 
           <h2 className="sec">Closed and blocked</h2>
-          {woList.filter((w) => w.status !== "open").length === 0 ? (
+          {shown.filter((w) => w.status !== "open").length === 0 ? (
             <p className="note">Nothing closed yet.</p>
           ) : (
-            woList
+            shown
               .filter((w) => w.status !== "open")
               .slice(0, 25)
               .map((w) => (
@@ -723,6 +795,7 @@ export default async function AgentPlatformPage({
                   wo={w as Wo}
                   events={eventsByWo.get(w.id) ?? []}
                   canWrite={canWrite}
+                  focused={w.id === focusWo}
                   productName={
                     w.product_id ? (productName.get(w.product_id) ?? null) : null
                   }
