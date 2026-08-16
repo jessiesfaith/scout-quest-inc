@@ -1,6 +1,6 @@
 {
   "name": "scout-quest-inc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,12 @@
     "postbuild": "node scripts/check-client-bundle.mjs",
     "check:secret": "node scripts/check-client-bundle.mjs",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:version": "node scripts/governance/version-check.mjs",
+    "check:drift": "node scripts/governance/manifest.mjs",
+    "check:specs": "node scripts/governance/spec-vs-db.mjs",
+    "check:appendonly": "node scripts/governance/append-only.mjs",
+    "check": "npm run check:version && npm run check:drift"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

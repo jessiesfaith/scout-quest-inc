@@ -1,6 +1,7 @@
 import Link from "next/link";
 import "./os.css";
 import "./os-extra.css";
+import { buildInfo, buildLabel } from "@/lib/version";
 
 // The Company OS shell, ported from design/agent_platform_dashboard.html.
 // The design is a single page that shows/hides `.screen` divs; here each
@@ -116,7 +117,31 @@ export function OsShell({
         )}
         {lead && <p className="lead">{lead}</p>}
         {children}
+
+        {/* Which build is this? Asked because on 2026-08-06 a merge landed,
+            the live site kept serving the old bundle, and the only way to
+            tell them apart was counting sub-tabs. The commit sha is the
+            part to trust — Vercel injects it from the ref it built, so
+            unlike the version number nobody can type it wrong. */}
+        <BuildFooter />
       </div>
     </div>
+  );
+}
+
+function BuildFooter() {
+  const b = buildInfo();
+  return (
+    <footer className="osfoot">
+      <span className="osfoot-k">Build</span>
+      <span className="osfoot-v" title="Version and schema are declared; the commit is what Vercel actually built.">
+        {buildLabel(b)}
+      </span>
+      {!b.commit && (
+        <span className="osfoot-warn">
+          running from a working copy, which may differ from what is committed
+        </span>
+      )}
+    </footer>
   );
 }
