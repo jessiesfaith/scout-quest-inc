@@ -117,7 +117,13 @@ create trigger context_page_versions_stamp
 -- once would lose which group a pack came from, and then "conditional"
 -- would have to be guessed from the string; two implementations that guess
 -- differently is worse than not having the view.
-create or replace view public.context_page_agents as
+-- security_invoker so the view runs as the CALLER and inherits the RLS on
+-- public.agents. Without it a view runs as its owner and RLS is bypassed
+-- entirely — which is exactly what shipped here and had to be fixed in
+-- 0023. Every other view in this schema carries this option; so does this
+-- one now.
+create or replace view public.context_page_agents
+with (security_invoker = on) as
 select
   trim(both from m.pack)        as page_id,
   a.agent_id,
