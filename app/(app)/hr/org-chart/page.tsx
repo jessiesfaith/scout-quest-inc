@@ -232,9 +232,19 @@ export default async function OrgChartPage() {
             who="Enterprise architecture & scale, security/compliance"
             tag="Current team"
           />
+          {/* CAIO is nowhere near as legible an acronym as CTO or CFO, so it
+              is expanded beside itself using the same muted idiom the CFO
+              node already uses. */}
           <Node
             type="team"
-            role="AI Software Engineer"
+            role={
+              <>
+                CAIO{" "}
+                <span style={{ fontWeight: 500, color: "var(--muted)" }}>
+                  (Chief AI Officer)
+                </span>
+              </>
+            }
             who="AI/ML build & product engineering"
             tag="Current team"
           />
