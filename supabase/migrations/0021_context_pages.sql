@@ -111,25 +111,27 @@ create trigger context_page_versions_stamp
 -- lets the reverse index be a query rather than something the app derives
 -- and could derive differently on a screen someone forgets to update.
 
+-- Split on commas FIRST, then on '|' within each group. A pack is
+-- conditional when its own group contains a '|' — which is exactly what
+-- parsePacks() in lib/context-packs.ts does. Flattening both separators at
+-- once would lose which group a pack came from, and then "conditional"
+-- would have to be guessed from the string; two implementations that guess
+-- differently is worse than not having the view.
 create or replace view public.context_page_agents as
 select
-  trim(both from p.pack)                            as page_id,
+  trim(both from m.pack)        as page_id,
   a.agent_id,
   a.layer,
   a.department,
   a.lifecycle,
   a.risk_ceiling,
   a.spec_path,
-  -- '|' means the agent loads whichever brand page fits the work order,
-  -- so the link is real but conditional. The screen says so.
-  (a.context_pages like '%|%'
-     and position(trim(both from p.pack) in
-         substring(a.context_pages from position('|' in a.context_pages) - 7)) > 0)
-                                                    as conditional
+  position('|' in g.grp) > 0    as conditional
 from public.agents a
-cross join lateral unnest(string_to_array(replace(a.context_pages, '|', ','), ',')) as p(pack)
+cross join lateral unnest(string_to_array(a.context_pages, ',')) as g(grp)
+cross join lateral unnest(string_to_array(g.grp, '|'))           as m(pack)
 where a.context_pages is not null
-  and trim(both from p.pack) ~ '^CTX-[0-9]{3}$';
+  and trim(both from m.pack) ~ '^CTX-[0-9]{3}$';
 
 comment on view public.context_page_agents is
   'Reverse index: one row per (context page, agent that loads it). Derived from agents.context_pages.';
