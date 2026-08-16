@@ -197,3 +197,965 @@
   color: var(--ok);
   font-size: 12.5px;
 }
+
+/* ------------------------------------------------------------------
+   Agent Platform — the tree, the pipeline, and the work-order feed.
+   Added by the 0018 slice. The mockup has no tree, so these are new
+   rules rather than ported ones; they reuse the design's existing
+   variables throughout so a palette change still reaches them.
+   ------------------------------------------------------------------ */
+
+/* Tree: nested lists with CSS connectors. No charting library, no CDN —
+   it prints, it is searchable, and the DOM is the data. */
+.os .tlist {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 22px;
+  position: relative;
+}
+.os .troot {
+  padding-left: 0;
+}
+.os .tnode {
+  position: relative;
+  padding: 6px 0 6px 0;
+}
+/* the elbow into each node, and the spine linking siblings */
+.os .tlist:not(.troot) > .tnode::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--line);
+}
+.os .tlist:not(.troot) > .tnode:last-child::before {
+  bottom: calc(100% - 22px);
+}
+.os .tlist:not(.troot) > .tnode::after {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 22px;
+  width: 12px;
+  border-top: 1px solid var(--line);
+}
+.os .tnbox {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 13px;
+  background: #fff;
+  display: inline-block;
+  max-width: 720px;
+}
+.os .tn-root {
+  background: var(--core);
+  color: #eef2f7;
+  border-color: var(--core);
+}
+.os .tn-root .tnsub {
+  color: #b9c3d1;
+}
+.os .tn-layer {
+  background: var(--a-soft);
+  border-color: transparent;
+}
+.os .tn-group {
+  background: var(--b-soft);
+  border-color: transparent;
+}
+/* An area an agent reached from outside the one that owns it. Amber to
+   match the cross-area edge on the map — same fact, same colour. Declared
+   after .tn-group so it wins the tie. */
+.os .tn-cross {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+/* Inherited reach: real, but structural rather than recorded. Deliberately
+   quieter than tn-cross so evidence and capability never look alike. */
+.os .tn-inherited {
+  background: var(--card);
+  border-color: var(--line);
+  border-style: dashed;
+}
+.os .tnscope {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.os .tnwhy {
+  font-size: 11px;
+  color: var(--warn);
+  margin-top: 4px;
+}
+.os .tntag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.os .tnkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+  background: var(--b-soft);
+  border: 1px solid transparent;
+  vertical-align: -1px;
+}
+.os .tnkey-cross {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+.os .tnkey-inherited {
+  background: var(--card);
+  border-color: var(--line);
+  border-style: dashed;
+}
+
+/* Secondary navigation inside a tab. Chips rather than another row of
+   .g2tab, so a sub-view never reads as a top-level tab. */
+.os a.chip {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.os .subnav {
+  margin-bottom: 14px;
+}
+.os .tnhead {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.os .tnlabel {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+.os .tnsub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  max-width: 640px;
+}
+.os .tnowns {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.os .tnceil {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+/* Pipeline: the ordered stages a single work order passes through. */
+.os .pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+.os .pstage {
+  border-left: 4px solid var(--line);
+  border-radius: 0 8px 8px 0;
+  background: #fff;
+  padding: 8px 13px;
+}
+.os .pstage.p-gate {
+  border-left-color: var(--warn);
+  background: var(--warn-soft);
+}
+.os .pstage.p-orchestrator {
+  border-left-color: var(--a);
+  background: var(--a-soft);
+}
+.os .pstage.p-worker {
+  border-left-color: var(--b);
+}
+.os .pstage.p-evaluator,
+.os .pstage.p-adjudicator {
+  border-left-color: var(--g);
+  background: var(--g-soft);
+}
+.os .pstage.p-human {
+  border-left-color: var(--core);
+}
+.os .phead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.os .plabel {
+  font-weight: 700;
+  font-size: 13px;
+}
+.os .pactor {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.os .pgate {
+  font-size: 11px;
+}
+.os .pexit {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.os .pkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+  background: var(--line);
+}
+.os .pkey.p-gate { background: var(--warn); }
+.os .pkey.p-orchestrator { background: var(--a); }
+.os .pkey.p-worker { background: var(--b); }
+.os .pkey.p-evaluator { background: var(--g); }
+.os .pkey.p-human { background: var(--core); }
+
+/* Work orders: the stage track and the append-only activity feed. */
+.os .wotrack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0 12px;
+}
+.os .wostep {
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 3px 8px;
+  background: #eef2f7;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.os .wostep.done {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.os .wostep.now {
+  background: var(--b);
+  color: #fff;
+}
+.os .wostep.gate {
+  border: 1px dashed var(--warn);
+}
+.os .wostep.blockedstep {
+  background: var(--danger);
+  color: #fff;
+}
+.os .woactions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 11px;
+}
+.os .woinline {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.os .woinline input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-size: 12.5px;
+  font-family: inherit;
+  min-width: 200px;
+}
+.os .wofeed {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: grid;
+  gap: 7px;
+}
+.os .woev {
+  border-left: 3px solid var(--line);
+  padding: 6px 11px;
+  background: var(--card);
+  border-radius: 0 8px 8px 0;
+}
+.os .woev.ev-gate { border-left-color: var(--warn); }
+.os .woev.ev-verdict { border-left-color: var(--g); }
+.os .woev.ev-approval { border-left-color: var(--ok); }
+.os .woev.ev-escalation { border-left-color: var(--danger); }
+.os .woev-h {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.os .woev-k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted);
+}
+.os .woev-s {
+  font-size: 11.5px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.os .woev-m {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.os .woev-d {
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+/* ------------------------------------------------------------------
+   Agent mind map — the graph view on the Tree tab.
+   Drawn as SVG from a force layout computed in graph.tsx; everything
+   here is presentation only. Prefixed mm* so it cannot collide with the
+   tree (t*), pipeline (p*) or work-order (wo*) rules above.
+   ------------------------------------------------------------------ */
+.os .mmbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.os .mmspace {
+  flex: 1 1 auto;
+}
+.os .mmwrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+@media (min-width: 1100px) {
+  .os .mmwrap {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+.os .mmsvg {
+  width: 100%;
+  height: 560px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: grab;
+  touch-action: none;
+  display: block;
+}
+.os .mmsvg:active {
+  cursor: grabbing;
+}
+
+/* Edges. Colour carries the KIND of relationship, never a direction of
+   control — there is no arrowhead anywhere on this diagram on purpose. */
+.os .mmedge {
+  stroke: var(--line);
+  stroke-width: 1.1;
+  transition: opacity 0.15s ease;
+}
+.os .mme-owns {
+  stroke: #c3cbd6;
+}
+.os .mme-context {
+  stroke: var(--a);
+  stroke-dasharray: 3 4;
+  opacity: 0.55;
+}
+.os .mme-work {
+  stroke: var(--warn);
+  opacity: 0.9;
+}
+.os .mmedge.dim {
+  opacity: 0.07;
+}
+
+/* Nodes. `grab` rather than `pointer` because a dot is draggable as well as
+   clickable, and the cursor is the only thing that says so. */
+.os .mmnode {
+  cursor: grab;
+  transition: opacity 0.15s ease;
+}
+.os .mmnode:active {
+  cursor: grabbing;
+}
+/* No transform transition: a dragged dot must track the cursor exactly, and
+   easing its position would make it lag behind the pointer. */
+.os .mmnode:focus {
+  outline: none;
+}
+.os .mmdot {
+  fill: var(--muted);
+  stroke: var(--card);
+  stroke-width: 2;
+  transition: opacity 0.15s ease;
+}
+/* Sizes are SVG user units, not screen pixels — the viewBox scales them.
+   The halo (stroke painted under the fill) is what keeps a label readable
+   where two of them overlap, which at this node count is unavoidable. */
+.os .mmtext {
+  font-size: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  fill: var(--muted);
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke fill;
+  stroke: var(--card);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  transition: opacity 0.15s ease;
+}
+.os .mmk-root .mmdot {
+  fill: var(--core);
+}
+.os .mmk-root .mmtext,
+.os .mmk-layer .mmtext,
+.os .mmk-group .mmtext {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 9.5px;
+  fill: var(--ink);
+}
+.os .mmk-layer .mmdot {
+  fill: var(--a);
+}
+.os .mmk-group .mmdot {
+  fill: var(--b);
+}
+.os .mmk-ctx .mmdot {
+  fill: #b6bfcb;
+}
+.os .mmk-ctx .mmtext {
+  font-size: 7px;
+}
+.os .mm-enterprise .mmdot {
+  fill: var(--g);
+}
+.os .mm-department .mmdot {
+  fill: var(--b);
+}
+.os .mm-product .mmdot {
+  fill: var(--a);
+}
+.os .mm-unfiled .mmdot {
+  fill: #b6bfcb;
+}
+/* Disabled enterprise-wide by the policy kill switch: hollow, not merely
+   pale — a dimmed dot already means "not in focus" and the two states must
+   not look alike. */
+.os .mm-off .mmdot {
+  fill: var(--card);
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 2 2;
+}
+.os .mmnode:hover .mmdot,
+.os .mmnode:focus .mmdot {
+  stroke: var(--a);
+  stroke-width: 3;
+}
+.os .mmnode.sel .mmdot {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+.os .mmnode.sel .mmtext {
+  fill: var(--ink);
+  font-weight: 700;
+}
+/* Hop shading. Applied to the group so the dot and its label fade together.
+   Distance is the information here — a binary "reachable" lights nearly the
+   whole graph within two hops, because CTX-001 is loaded by almost every
+   agent, so the rings are what make it readable. */
+.os .mmnode.h0 {
+  opacity: 1;
+}
+.os .mmnode.h1 {
+  opacity: 1;
+}
+.os .mmnode.h2 {
+  opacity: 0.66;
+}
+.os .mmnode.h3 {
+  opacity: 0.44;
+}
+.os .mmnode.h4 {
+  opacity: 0.28;
+}
+.os .mmnode.dim {
+  opacity: 0.09;
+}
+.os .mmedge.h1 {
+  opacity: 0.9;
+}
+.os .mmedge.h2 {
+  opacity: 0.5;
+}
+.os .mmedge.h3 {
+  opacity: 0.32;
+}
+.os .mmedge.h4 {
+  opacity: 0.2;
+}
+/* The clicked dot keeps a hard outline at every level so it never gets lost
+   among the ring it sits at the centre of. */
+.os .mmnode.h0 .mmdot {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+.os .mmnode.h0 .mmtext {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------------
+   Brain tree — a dendrogram where an agent is repeated at every place
+   it appears. Prefixed bt* so it cannot collide with the web view's
+   mm* rules, which it sits beside on the same tab.
+   ------------------------------------------------------------------ */
+.os .btsvg {
+  height: 680px;
+}
+.os .btlink {
+  fill: none;
+  stroke: #c8d0da;
+  stroke-width: 1.2;
+  transition: opacity 0.15s ease;
+}
+.os .btlink.dim {
+  opacity: 0.12;
+}
+.os .btnode {
+  cursor: default;
+  transition: opacity 0.15s ease;
+}
+.os .btk-agent,
+.os .btk-wo {
+  cursor: pointer;
+}
+.os .btnode.dim {
+  opacity: 0.13;
+}
+.os .btdot {
+  fill: var(--muted);
+  stroke: var(--card);
+  stroke-width: 1.5;
+}
+.os .btk-root .btdot { fill: var(--core); }
+.os .btk-area .btdot { fill: var(--a); }
+.os .btk-wo   .btdot { fill: var(--b); }
+.os .btk-agent .btdot { fill: var(--g); }
+.os .btt-inherited .btdot {
+  fill: var(--card);
+  stroke: var(--g);
+  stroke-width: 2;
+  stroke-dasharray: 1.5 1.5;
+}
+.os .btt-gate .btdot { fill: var(--warn); }
+.os .btt-human .btdot { fill: var(--core); }
+.os .btt-terminal .btdot { fill: var(--ok); }
+/* Switched off enterprise-wide: hollow, never merely pale — a dimmed dot
+   already means "not in focus" and the two must not look alike. */
+.os .bt-off .btdot {
+  fill: var(--card);
+  stroke: var(--muted);
+  stroke-dasharray: 2 2;
+}
+.os .btnode.sel .btdot {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+.os .bttext {
+  font-size: 10.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  fill: var(--muted);
+  pointer-events: none;
+  paint-order: stroke fill;
+  stroke: var(--card);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+.os .btk-root .bttext,
+.os .btk-area .bttext {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 11.5px;
+  fill: var(--ink);
+}
+.os .btnode.sel .bttext { fill: var(--ink); font-weight: 700; }
+.os .btcount {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.os .btlit {
+  font-size: 12.5px;
+  background: var(--a-soft);
+  border-radius: 8px;
+  padding: 7px 11px;
+  margin: 0 0 10px;
+}
+.os .btwhere {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 3px 0;
+  border-top: 1px solid var(--line);
+}
+.os .btkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--g);
+  vertical-align: -1px;
+}
+.os .btkey.btt-inherited {
+  background: var(--card);
+  border: 2px dashed var(--g);
+}
+.os .btkey.btt-gate { background: var(--warn); }
+.os .btkey.btt-human { background: var(--core); }
+
+/* Column headings for the lined-up view */
+.os .mmcolhd {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  fill: var(--muted);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* Depth control */
+.os .mmdepth {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.os .mmdepth-l {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.os .chip.mmd {
+  padding: 5px 9px;
+  min-width: 26px;
+  justify-content: center;
+}
+
+/* Reachability readout in the inspector */
+.os .mmhop {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+.os .mmhop-n {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  background: #eef2f7;
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.os .mmhop-ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 9px;
+  font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.os .mmhop.h2 .mmhop-ids { color: var(--muted); }
+.os .mmhop.h3 .mmhop-ids,
+.os .mmhop.h4 .mmhop-ids { color: var(--muted); opacity: 0.8; }
+
+/* The inspector beside the map */
+.os .mmside {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 14px 15px;
+  font-size: 13px;
+}
+@media (min-width: 1100px) {
+  .os .mmside {
+    position: sticky;
+    top: 18px;
+    max-height: 560px;
+    overflow-y: auto;
+  }
+}
+.os .mmempty {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.os .mmhead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.os .mmq {
+  font-size: 12.5px;
+  margin: 0 0 10px;
+}
+.os .mmkv {
+  margin: 0 0 12px;
+  display: grid;
+  gap: 6px;
+}
+.os .mmkv div {
+  display: grid;
+  gap: 1px;
+}
+.os .mmkv dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.os .mmkv dd {
+  margin: 0;
+  font-size: 12.5px;
+}
+.os .mmh3 {
+  font-size: 14px;
+  margin: 22px 0 8px;
+}
+.os .mmh4 {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+.os .mmwos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+}
+.os .mmwo {
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  text-decoration: none;
+  color: inherit;
+}
+.os .mmwo:hover {
+  border-color: var(--a);
+  background: var(--a-soft);
+}
+.os .mmwo-t {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.os .mmwo-m {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.os .mmlink {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--a);
+  cursor: pointer;
+}
+.os .mmlink:hover {
+  text-decoration: underline;
+}
+.os .mmcross {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 5px;
+  font-size: 12.5px;
+}
+.os .mmn {
+  font-size: 11px;
+  color: var(--muted);
+}
+.os .mmlegend {
+  margin-top: 10px;
+}
+.os .mmkey {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--line);
+  vertical-align: -1px;
+}
+.os .mmkey.mm-enterprise { background: var(--g); }
+.os .mmkey.mm-department { background: var(--b); }
+.os .mmkey.mm-product { background: var(--a); }
+.os .mmkey.mmkey-ctx { background: #b6bfcb; }
+.os .mmkey.mmkey-line {
+  width: 16px;
+  height: 0;
+  border-radius: 0;
+  border-top: 2px solid var(--line);
+  vertical-align: 3px;
+}
+.os .mmkey-line.mme-owns { border-top-color: #c3cbd6; }
+.os .mmkey-line.mme-context {
+  border-top-style: dashed;
+  border-top-color: var(--a);
+}
+.os .mmkey-line.mme-work { border-top-color: var(--warn); }
+
+/* The work order a map link named. */
+.os .wofocused {
+  border-color: var(--a);
+  box-shadow: 0 0 0 3px var(--a-soft);
+}
+.os .wofocus {
+  margin-top: 0;
+}
+
+@media print {
+  /* The controls do nothing on paper, and the inspector is a duplicate of
+     the tree below. The map itself prints. */
+  .os .mmbar,
+  .os .mmside {
+    display: none;
+  }
+  .os .mmsvg {
+    height: 420px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Build footer — which version is actually running.
+   Quiet by design: it must be findable when you go looking and
+   invisible when you are not. Reuses the design's own variables so a
+   palette change reaches it.
+   ------------------------------------------------------------------ */
+.os .osfoot {
+  margin: 42px 0 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+.os .osfoot-k {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  opacity: 0.75;
+}
+.os .osfoot-v {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+}
+/* Only ever seen on a developer's machine — a deployed build has a sha. */
+.os .osfoot-warn {
+  color: var(--warn, #9a6b00);
+}
+
+/* ---------- Context packs (IT › Agent Platform › Context) ---------- */
+
+.os .ctxgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .os .ctxgrid { grid-template-columns: minmax(0, 1fr); }
+}
+.os .ctxdoc { overflow-x: auto; }
+.os .ctxside {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+.os .ctxh3 {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin: 14px 0 7px;
+}
+.os .ctxh3:first-child { margin-top: 0; }
+.os .ctxlist { list-style: none; margin: 0; padding: 0; }
+.os .ctxlist li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.os .ctxlist li:last-child { border-bottom: none; }
+
+/* The diff. Colour carries the meaning, but never alone: an added line also
+   gets a "+", a removed line a "−" and a line-through, so the change is
+   still legible without colour vision. */
+.os .dfwrap {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.os .dfrow { display: flex; white-space: pre-wrap; word-break: break-word; }
+.os .dfno {
+  flex: 0 0 42px;
+  text-align: right;
+  padding-right: 9px;
+  color: var(--muted);
+  opacity: .7;
+  user-select: none;
+}
+.os .dfsign {
+  flex: 0 0 18px;
+  text-align: center;
+  user-select: none;
+  font-weight: 700;
+}
+.os .dftext { flex: 1 1 auto; min-width: 0; }
+.os .df-add { background: var(--ok-soft, #e7f6ec); }
+.os .df-add .dfsign, .os .df-add .dftext { color: var(--ok, #15803d); }
+.os .df-del { background: #fdecea; }
+.os .df-del .dfsign, .os .df-del .dftext { color: var(--danger, #b42318); }
+.os .df-del .dftext { text-decoration: line-through; text-decoration-thickness: 1px; }
+.os .dfgap {
+  padding: 3px 0 3px 60px;
+  color: var(--muted);
+  background: #f7f9fb;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+}
+.os .dfstat { font-weight: 700; font-size: 12px; }
+.os .dfadd { color: var(--ok, #15803d); }
+.os .dfdel { color: var(--danger, #b42318); }
