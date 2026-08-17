@@ -28,6 +28,18 @@ export function hashText(text: string) {
   return createHash("sha256").update(text.replace(/\r\n/g, "\n"), "utf8").digest("hex");
 }
 
+/**
+ * Line count, by the same rule as scripts/governance/manifest.mjs and `wc -l`:
+ * newlines, plus one only if the last line has no trailing newline. Not
+ * `split("\n").length`, which counts the empty string after a final newline
+ * as a line and so reads one high on every well-formed file (TCK-0007).
+ */
+export function countLines(norm: string) {
+  if (norm.length === 0) return 0;
+  const newlines = (norm.match(/\n/g) || []).length;
+  return norm.endsWith("\n") ? newlines : newlines + 1;
+}
+
 function declaredVersion(text: string) {
   const m = text.match(/\*\*version\*\*\s*([0-9]+(?:\.[0-9]+)*)/i);
   return m ? m[1] : null;
@@ -60,7 +72,7 @@ export async function readPacks(): Promise<Pack[]> {
       declaredVersion: declaredVersion(norm),
       sha256: hashText(raw),
       bytes: Buffer.byteLength(norm, "utf8"),
-      lines: norm.split("\n").length,
+      lines: countLines(norm),
       content: norm,
     });
   }

@@ -32,6 +32,17 @@ function hash(text) {
   return createHash("sha256").update(text.replace(/\r\n/g, "\n"), "utf8").digest("hex");
 }
 
+/**
+ * Line count by the manifest.mjs / `wc -l` rule: newlines, plus one only if
+ * the last line lacks a trailing newline. `split("\n").length` reads one high
+ * on every file that ends in a newline, which is all of them (TCK-0007).
+ */
+function countLines(norm) {
+  if (norm.length === 0) return 0;
+  const newlines = (norm.match(/\n/g) || []).length;
+  return norm.endsWith("\n") ? newlines : newlines + 1;
+}
+
 /** The `> **version** 1.0` line each pack carries in its header blockquote. */
 function declaredVersion(text) {
   const m = text.match(/\*\*version\*\*\s*([0-9]+(?:\.[0-9]+)*)/i);
@@ -75,7 +86,7 @@ const pages = files.map((f) => {
     declared_version: declaredVersion(norm),
     sha256: hash(raw),
     bytes: Buffer.byteLength(norm, "utf8"),
-    lines: norm.split("\n").length,
+    lines: countLines(norm),
     content: norm,
   };
 });

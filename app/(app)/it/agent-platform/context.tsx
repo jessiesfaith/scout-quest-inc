@@ -46,38 +46,49 @@ const ctxHref = (id: string) => `/it/agent-platform?tab=context&ctx=${id}`;
 const agentHref = (id: string) =>
   `/it/agent-platform?tab=tree&view=map&agent=${encodeURIComponent(id)}`;
 
+/** Escape a string for literal use inside a RegExp. */
+const reEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 /**
  * Turn bare and back-ticked identifiers into markdown links, so a reader can
- * follow a reference the way they would in a wiki. Fenced code blocks are
- * left exactly as written — a code sample that mentions CTX-003 is a sample,
- * not a cross-reference.
+ * follow a reference the way they would in a wiki.
+ *
+ * Three things are left exactly as written, because a mention inside them is
+ * a sample or a literal, not a cross-reference:
+ *   - fenced code blocks (``` at column 0 or indented),
+ *   - inline code spans whose content is anything other than a bare id —
+ *     `CTX-003` becomes a link, `CTX-003-risk-tiers.md` does not,
+ *   - existing markdown links.
+ *
+ * Agent ids come from the database and ultimately from a config file on the
+ * governed plane, so they are escaped as regex literals rather than trusted
+ * to contain only characters that need no escaping (TCK-0004).
  */
 function linkify(md: string, agentIds: string[]) {
-  const fences = md.split(/(^```[\s\S]*?^```)/m);
-  const agentRe = agentIds.length
-    ? new RegExp(`\`(${agentIds.map((a) => a.replace(/[-]/g, "\\-")).join("|")})\``, "g")
-    : null;
+  const agentAlt = agentIds.length ? agentIds.map(reEscape).join("|") : null;
 
-  return fences
-    .map((chunk) => {
-      if (chunk.startsWith("```")) return chunk;
-      let out = chunk;
-      // `CTX-003` and bare CTX-003, but never one already inside a link.
-      out = out.replace(/(\[[^\]]*\]\([^)]*\))|`(CTX-\d{3})`|\b(CTX-\d{3})\b/g, (m, link, tick, bare) => {
-        if (link) return link;
-        const id = tick ?? bare;
-        return `[\`${id}\`](${ctxHref(id)})`;
-      });
-      if (agentRe) {
-        out = out.replace(/(\[[^\]]*\]\([^)]*\))/g, "\u0000$1\u0000");
-        out = out
-          .split("\u0000")
-          .map((seg) => (seg.startsWith("[") ? seg : seg.replace(agentRe, (_m, id) => `[\`${id}\`](${agentHref(id)})`)))
-          .join("");
-      }
-      return out;
-    })
-    .join("");
+  // One tokenizer pass. Anything matched by a "protected" alternative is
+  // emitted verbatim; only bare `id` spans and bare words are rewritten.
+  const CTX = String.raw`CTX-\d{3}`;
+  const tokenRe = new RegExp(
+    [
+      String.raw`(^[ \t]*\`\`\`[\s\S]*?^[ \t]*\`\`\`[ \t]*$)`, // 1 fenced block
+      String.raw`(\[[^\]\n]*\]\([^)\n]*\))`,                   // 2 existing link
+      String.raw`\`(${CTX})\``,                                 // 3 `CTX-003` exactly
+      agentAlt ? String.raw`\`(${agentAlt})\`` : "(?!x)x",     // 4 `agent-id` exactly
+      String.raw`(\`[^\`\n]*\`)`,                              // 5 any other inline code
+      String.raw`\b(${CTX})\b`,                                 // 6 bare CTX-003
+    ].join("|"),
+    "gm",
+  );
+
+  return md.replace(tokenRe, (m, fence, link, ctxTick, agentTick, otherCode, ctxBare) => {
+    if (fence || link || otherCode) return m;
+    if (ctxTick) return `[\`${ctxTick}\`](${ctxHref(ctxTick)})`;
+    if (agentTick) return `[\`${agentTick}\`](${agentHref(agentTick)})`;
+    if (ctxBare) return `[\`${ctxBare}\`](${ctxHref(ctxBare)})`;
+    return m;
+  });
 }
 
 function MdLink({ href, children }: { href?: string; children?: React.ReactNode }) {
@@ -124,16 +135,32 @@ export function ContextIndex({
           <div className="s tealtx">draft — may carry UNSET fields</div>
         </div>
         <div className="tile">
-          <div
-            className="n"
-            style={{ color: storeReady ? "var(--ok)" : "var(--muted)" }}
-          >
-            {storeReady ? captured.size : "—"}
-          </div>
-          <div className="l">captured to history</div>
-          <div className="s tealtx">
-            {storeReady ? "comparable over time" : "run 0021 + 0022"}
-          </div>
+          {(() => {
+            // 0021 seeds every page with sha256 = '' so the row exists before
+            // its first capture. Those are placeholders, not history — count
+            // only rows a capture has actually written (TCK-0005).
+            const real = [...captured.values()].filter((c) => c.sha256 !== "").length;
+            return (
+              <>
+                <div
+                  className="n"
+                  style={{ color: !storeReady ? "var(--muted)" : real ? "var(--ok)" : "var(--warn)" }}
+                >
+                  {storeReady ? real : "—"}
+                </div>
+                <div className="l">captured to history</div>
+                <div className="s tealtx">
+                  {!storeReady
+                    ? "run 0021 + 0022"
+                    : real === 0
+                      ? "no captures yet — run 0022"
+                      : real < packs.length
+                        ? `${packs.length - real} never captured`
+                        : "comparable over time"}
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
 
