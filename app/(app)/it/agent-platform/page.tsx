@@ -16,6 +16,15 @@ import {
 } from "./context";
 import { readPacks, loadersByPack } from "@/lib/context-packs";
 import {
+  TicketBoard,
+  TicketTrace,
+  STATUSES as TICKET_STATUSES,
+  TYPES as TICKET_TYPES,
+  type Ticket,
+  type TicketLink,
+  type TicketEvent,
+} from "./tickets";
+import {
   OpenWorkOrder,
   WorkOrderCard,
   type Wo,
@@ -123,6 +132,7 @@ const TABS = [
   { id: "library", label: "Agent Library" },
   { id: "tree", label: "Tree" },
   { id: "context", label: "Context" },
+  { id: "tickets", label: "Tickets" },
   { id: "wos", label: "Work Orders" },
   { id: "perf", label: "Performance" },
   { id: "spend", label: "Model Spend" },
@@ -159,6 +169,10 @@ export default async function AgentPlatformPage({
     agent?: string;
     ctx?: string;
     diff?: string;
+    tck?: string;
+    status?: string;
+    type?: string;
+    demo?: string;
   }>;
 }) {
   const {
@@ -168,7 +182,17 @@ export default async function AgentPlatformPage({
     agent: focusAgent,
     ctx: rawCtx,
     diff: rawDiff,
+    tck: rawTck,
+    status: rawStatus,
+    type: rawType,
+    demo: rawDemo,
   } = await searchParams;
+  // Ticket filters are matched against the closed vocabularies, so an
+  // arbitrary string can neither reach a query nor render as a filter chip.
+  const tckRef = /^TCK-\d{4}$/.test(rawTck ?? "") ? rawTck! : null;
+  const tckStatus = (TICKET_STATUSES as readonly string[]).includes(rawStatus ?? "") ? rawStatus! : null;
+  const tckType = (TICKET_TYPES as readonly string[]).includes(rawType ?? "") ? rawType! : null;
+  const showDemo = rawDemo === "1";
   // Validated here rather than at the filesystem: only a well-formed id may
   // ever reach a path join, and only a hex digest may reach a query.
   const ctxId = /^CTX-\d{3}$/.test(rawCtx ?? "") ? rawCtx! : null;
@@ -265,6 +289,46 @@ export default async function AgentPlatformPage({
     storeReady = !capErr;
     capturedPages = caps ?? [];
     storedVersions = vers ?? [];
+  }
+
+  // Tickets. Three tables, all read-only here — the board is a record, and
+  // status changes go through the database so the trigger writes history.
+  // Absent tables (before 0024) degrade to an empty board with a note.
+  let tickets: Ticket[] = [];
+  let ticketLinks: TicketLink[] = [];
+  let ticketEvents: TicketEvent[] = [];
+  let ticketsError: string | null = null;
+  let ctxPackIds = new Set<string>();
+  // Read the clock once, here in the data phase, so ticket age is fixed at
+  // fetch time — not sampled during render.
+  const nowMs = new Date().getTime();
+  if (tab === "tickets") {
+    const [{ data: tk, error: tkErr }, { data: tl }, { data: te }, { data: cp }] = await Promise.all([
+      supabase
+        .from("tickets")
+        .select(
+          "id, ref, title, detail, type, severity, status, source, found_at, found_by, fix_commit, fix_migration, fixed_at, verified_at, verified_by, verified_how, accepted_reason, is_demo, created_at, updated_at",
+        )
+        .returns<Ticket[]>(),
+      tckRef
+        ? supabase.from("ticket_links").select("ticket_id, kind, ref, note").returns<TicketLink[]>()
+        : Promise.resolve({ data: [] as TicketLink[] }),
+      tckRef
+        ? supabase
+            .from("ticket_events")
+            .select("ticket_id, from_status, to_status, note, actor_email, created_at")
+            .order("created_at", { ascending: true })
+            .returns<TicketEvent[]>()
+        : Promise.resolve({ data: [] as TicketEvent[] }),
+      tckRef
+        ? supabase.from("context_pages").select("id").returns<{ id: string }[]>()
+        : Promise.resolve({ data: [] as { id: string }[] }),
+    ]);
+    ticketsError = tkErr ? tkErr.message : null;
+    tickets = tk ?? [];
+    ticketLinks = tl ?? [];
+    ticketEvents = te ?? [];
+    ctxPackIds = new Set((cp ?? []).map((c) => c.id));
   }
 
   const productName = new Map(
@@ -705,6 +769,50 @@ export default async function AgentPlatformPage({
           </p>
         </>
       )}
+
+      {tab === "tickets" &&
+        (() => {
+          if (ticketsError)
+            return (
+              <p className="note" style={{ color: "var(--danger)" }}>
+                Could not load tickets: {ticketsError}. Have migrations 0024 and
+                0025 been run?
+              </p>
+            );
+
+          if (tckRef) {
+            const t = tickets.find((x) => x.ref === tckRef);
+            if (!t)
+              return (
+                <p className="note" style={{ color: "var(--danger)" }}>
+                  No such ticket: <code>{tckRef}</code>.{" "}
+                  <Link href="/it/agent-platform?tab=tickets" className="crumb">
+                    ← all tickets
+                  </Link>
+                </p>
+              );
+            return (
+              <TicketTrace
+                ticket={t}
+                links={ticketLinks.filter((l) => l.ticket_id === t.id)}
+                events={ticketEvents.filter((e) => e.ticket_id === t.id)}
+                woIdByCode={new Map(woList.filter((w) => w.wo_code).map((w) => [w.wo_code as string, w.id]))}
+                agentIds={new Set(agentList.map((a) => a.agent_id))}
+                ctxIds={ctxPackIds}
+              />
+            );
+          }
+
+          return (
+            <TicketBoard
+              tickets={tickets}
+              status={tckStatus}
+              type={tckType}
+              showDemo={showDemo}
+              nowMs={nowMs}
+            />
+          );
+        })()}
 
       {tab === "context" &&
         (() => {

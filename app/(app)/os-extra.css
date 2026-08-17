@@ -1159,3 +1159,42 @@
 .os .dfstat { font-weight: 700; font-size: 12px; }
 .os .dfadd { color: var(--ok, #15803d); }
 .os .dfdel { color: var(--danger, #b42318); }
+
+/* ---------- Tickets (IT › Agent Platform › Tickets) ---------- */
+
+.os .tkfilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 8px;
+}
+.os .tkfilters:last-of-type { margin-bottom: 14px; }
+.os .tkfl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 46px;
+}
+.os .tkgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 0 16px;
+  align-items: start;
+  margin-top: 6px;
+}
+@media (max-width: 900px) {
+  .os .tkgrid { grid-template-columns: minmax(0, 1fr); }
+}
+.os .tkdl { margin: 0; display: grid; grid-template-columns: 78px 1fr; gap: 9px 12px; }
+.os .tkdl dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.os .tkdl dd { margin: 0; font-size: 13px; min-width: 0; word-break: break-word; }
