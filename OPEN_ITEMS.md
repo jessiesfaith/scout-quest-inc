@@ -1,5 +1,17 @@
 # Open items — adversarial review, August 2026
 
+> **This file has been superseded by the Tickets board.** Everything below is
+> now a ticket at **IT › Agent Platform › Tickets** (`?tab=tickets`), with a
+> status, a type, evidence where it has been fixed, and a trace to the code
+> and governance it touches. The board is the record; this file is kept as
+> the narrative of how the review ran and why the leads are unverified.
+>
+> As of 2026-08-17: the three items under "Verified — fix these first" are
+> **TCK-0008** (fixed in 0027), **TCK-0009** (fixed in 0027) and the badge
+> colour item, which was fixed inline. The 22 leads under "Unverified" are
+> tickets TCK-0010 through TCK-0032, all still status `unverified` — nobody
+> has yet confirmed or refuted them. Start there.
+
 ## What this is, and how much to trust it
 
 A cross-slice review ran against the whole Company OS on 2026-08-02. Every
