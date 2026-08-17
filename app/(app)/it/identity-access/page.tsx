@@ -36,11 +36,15 @@ export default async function IdentityAccessPage() {
       .from("role_assignments")
       .select("id, team_member_id, role_id")
       .returns<AssignmentRow[]>(),
-    supabase
-      .from("profiles")
-      .select("id, email, full_name")
-      .order("email")
-      .returns<ProfileOption[]>(),
+    // Not the profiles table: its 0001 read policy returns one row to a
+    // non-owner, which made a delegated admin's picker show only
+    // themselves — and render every existing link as "no linked account"
+    // (TCK-0009). account_directory() is gated on the IA key and returns
+    // id/email/full_name for every login, and nothing else.
+    supabase.rpc("account_directory") as unknown as Promise<{
+      data: ProfileOption[] | null;
+      error: { message: string } | null;
+    }>,
   ]);
 
   const byMember = new Map<string, { id: string; role_id: string }[]>();

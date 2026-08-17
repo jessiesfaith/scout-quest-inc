@@ -104,6 +104,21 @@ function LinkAccountForm({
 }) {
   const [state, formAction, pending] = useActionState(linkAccount, initialState);
 
+  // A link to an account this viewer cannot see must never render as
+  // "no linked account": with defaultValue matching no <option>, the
+  // browser falls back to the first one and a Save writes null, revoking
+  // that person's access (TCK-0009). Show what is true and refuse the
+  // form until the picker can actually represent it.
+  const orphaned = !!current && !profiles.some((p) => p.id === current);
+  if (orphaned) {
+    return (
+      <span className="note" style={{ color: "var(--warn)", fontSize: 12 }}>
+        Linked to an account this list cannot show. Not editable from here —
+        it would unlink them.
+      </span>
+    );
+  }
+
   return (
     <form action={formAction} className="addmember" style={{ margin: 0 }}>
       <input type="hidden" name="team_member_id" value={memberId} />
