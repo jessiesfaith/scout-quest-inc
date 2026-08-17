@@ -1198,3 +1198,26 @@
   padding-top: 2px;
 }
 .os .tkdl dd { margin: 0; font-size: 13px; min-width: 0; word-break: break-word; }
+
+/* Context index — the full "Loaded by" list, wrapped, one chip per agent. */
+.os .ctxloaders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 6px;
+  margin-top: 3px;
+  max-width: 460px;
+}
+.os .ctxloader {
+  font-size: 11.5px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.os .ctxloader code { font-size: 11px; }
+.os .ctxcond {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--warn);
+  line-height: 1;
+}

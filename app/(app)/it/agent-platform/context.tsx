@@ -207,14 +207,28 @@ export function ContextIndex({
                       <span style={{ color: "var(--muted)" }}>no agent</span>
                     ) : (
                       <>
-                        <b>{who.length}</b>{" "}
-                        <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                          {who
-                            .slice(0, 3)
-                            .map((w) => w.agent.agent_id)
-                            .join(", ")}
-                          {who.length > 3 ? ` +${who.length - 3}` : ""}
-                        </span>
+                        <b>{who.length}</b>
+                        {/* Every loader, each a link — no "+N". The point of
+                            this column is to SEE the assignments, and a
+                            truncated list defeats it. Conditional loads
+                            ("CTX-004|CTX-005") are marked. */}
+                        <div className="ctxloaders">
+                          {who.map(({ agent, conditional }) => (
+                            <Link
+                              key={agent.agent_id}
+                              href={agentHref(agent.agent_id)}
+                              className="crumb ctxloader"
+                              title={
+                                (agent.layer ?? "") +
+                                (agent.lifecycle ? ` · ${agent.lifecycle}` : "") +
+                                (conditional ? " · whichever brand page fits" : "")
+                              }
+                            >
+                              <code>{agent.agent_id}</code>
+                              {conditional && <span className="ctxcond">?</span>}
+                            </Link>
+                          ))}
+                        </div>
                       </>
                     )}
                   </td>

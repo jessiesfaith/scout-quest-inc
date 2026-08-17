@@ -37,7 +37,7 @@ export const APP_VERSION: string = pkg.version;
  * If you add a migration, bump this and run:
  *   node scripts/governance/version-check.mjs
  */
-export const SCHEMA_VERSION = "0027";
+export const SCHEMA_VERSION = "0028";
 
 export type BuildInfo = {
   version: string;
