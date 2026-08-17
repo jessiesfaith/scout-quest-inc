@@ -218,13 +218,16 @@ function Row({
         </td>
         <td style={{ fontSize: 12, color: "var(--muted)" }}>
           {contract.effective_on ?? "—"} → {contract.expires_on ?? "—"}
+          {/* t-lo is red, t-hi is green, everywhere else in the app: a
+              complete contract is t-hi, a high-severity finding is t-lo.
+              An agreement past its end date is the urgent one (TCK-0010). */}
           {lapsed && (
-            <span className="tag t-hi" style={{ marginLeft: 5 }}>
+            <span className="tag t-lo" style={{ marginLeft: 5 }}>
               expired
             </span>
           )}
           {expiring && (
-            <span className="tag t-lo" style={{ marginLeft: 5 }}>
+            <span className="tag t-med" style={{ marginLeft: 5 }}>
               expiring
             </span>
           )}
