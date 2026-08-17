@@ -404,7 +404,14 @@ export default async function AgentPlatformPage({
         { label: "Agent Platform" },
       ]}
       lead="The governed agent library and the work orders they execute. Rows sourced from the ASL ledger and the spend policy are a mirror: the database refuses to let anyone edit them, because the next sync would overwrite the change anyway. Library rows mirror the specs in docs/agents/ and are read-only here for the same reason — editing an agent means editing its spec. Rows marked 'entered by hand' are this module's own. Model spend is mirrored and never editable."
-      nav={itNav("/it/agent-platform", held)}
+      nav={itNav(
+        // Tickets and Context have their own seat in the IT bar; light that
+        // one when it is the tab in view, otherwise light Agent Platform.
+        tab === "tickets" || tab === "context"
+          ? `/it/agent-platform?tab=${tab}`
+          : "/it/agent-platform",
+        held,
+      )}
     >
       <div className="g2nav">
         {TABS.map((t) => (
