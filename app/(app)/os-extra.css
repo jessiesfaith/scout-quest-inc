@@ -1083,3 +1083,118 @@
 .os .osfoot-warn {
   color: var(--warn, #9a6b00);
 }
+
+/* ---------- Context packs (IT › Agent Platform › Context) ---------- */
+
+.os .ctxgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .os .ctxgrid { grid-template-columns: minmax(0, 1fr); }
+}
+.os .ctxdoc { overflow-x: auto; }
+.os .ctxside {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+.os .ctxh3 {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  margin: 14px 0 7px;
+}
+.os .ctxh3:first-child { margin-top: 0; }
+.os .ctxlist { list-style: none; margin: 0; padding: 0; }
+.os .ctxlist li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.os .ctxlist li:last-child { border-bottom: none; }
+
+/* The diff. Colour carries the meaning, but never alone: an added line also
+   gets a "+", a removed line a "−" and a line-through, so the change is
+   still legible without colour vision. */
+.os .dfwrap {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.os .dfrow { display: flex; white-space: pre-wrap; word-break: break-word; }
+.os .dfno {
+  flex: 0 0 42px;
+  text-align: right;
+  padding-right: 9px;
+  color: var(--muted);
+  opacity: .7;
+  user-select: none;
+}
+.os .dfsign {
+  flex: 0 0 18px;
+  text-align: center;
+  user-select: none;
+  font-weight: 700;
+}
+.os .dftext { flex: 1 1 auto; min-width: 0; }
+.os .df-add { background: var(--ok-soft, #e7f6ec); }
+.os .df-add .dfsign, .os .df-add .dftext { color: var(--ok, #15803d); }
+.os .df-del { background: #fdecea; }
+.os .df-del .dfsign, .os .df-del .dftext { color: var(--danger, #b42318); }
+.os .df-del .dftext { text-decoration: line-through; text-decoration-thickness: 1px; }
+.os .dfgap {
+  padding: 3px 0 3px 60px;
+  color: var(--muted);
+  background: #f7f9fb;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+}
+.os .dfstat { font-weight: 700; font-size: 12px; }
+.os .dfadd { color: var(--ok, #15803d); }
+.os .dfdel { color: var(--danger, #b42318); }
+
+/* ---------- Tickets (IT › Agent Platform › Tickets) ---------- */
+
+.os .tkfilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 8px;
+}
+.os .tkfilters:last-of-type { margin-bottom: 14px; }
+.os .tkfl {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 46px;
+}
+.os .tkgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 0 16px;
+  align-items: start;
+  margin-top: 6px;
+}
+@media (max-width: 900px) {
+  .os .tkgrid { grid-template-columns: minmax(0, 1fr); }
+}
+.os .tkdl { margin: 0; display: grid; grid-template-columns: 78px 1fr; gap: 9px 12px; }
+.os .tkdl dt {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 2px;
+}
+.os .tkdl dd { margin: 0; font-size: 13px; min-width: 0; word-break: break-word; }
