@@ -293,11 +293,18 @@ export function TicketBoard({
             {t}
           </Link>
         ))}
+        <Link
+          href={`/it/agent-platform?tab=tickets&view=register${showDemo ? "&demo=1" : ""}`}
+          className="chip"
+          style={{ marginLeft: "auto" }}
+          title="Every ticket with what is wrong and what was done, printed in full."
+        >
+          register ↓
+        </Link>
         {demoCount > 0 && (
           <Link
             href={q({ demo: showDemo ? null : "1" })}
             className={`chip${showDemo ? " on" : ""}`}
-            style={{ marginLeft: "auto" }}
             title="Demo tickets exercise the trace with placeholder evidence. They are flagged in the database and removable in one statement."
           >
             {showDemo ? "hiding demo" : `show ${demoCount} demo`}
@@ -614,6 +621,191 @@ export function TicketTrace({
           </p>
         </div>
       </div>
+    </>
+  );
+}
+
+// ---------- register ----------
+// Every ticket, what is wrong, and what was done about it — read verbatim
+// from the record, so this is the board printed rather than a summary of
+// it. Grouped by status (worst first), then severity, then ref. The
+// solution box is honest about its own absence: an unverified claim has
+// no solution because writing one would invent a fix for something that
+// may not exist.
+
+const REGISTER_ORDER = ["verified", "fixed", "in-progress", "open", "unverified", "accepted-risk", "rejected"] as const;
+const SEV_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+const REGISTER_SECTIONS: { status: string; title: string; intro: string | null }[] = [
+  {
+    status: "verified",
+    title: "Verified — real, fixed, and proven",
+    intro:
+      "Each was found by a review, independently confirmed by a second agent told to disprove it, fixed, and then observed working. The observation is the solution text.",
+  },
+  {
+    status: "fixed",
+    title: "Fixed — awaiting evidence",
+    intro:
+      "The change is written and named. Kept separate from verified on purpose: on 2026-08-16 a migration fixed a live leak and carried a self-check that could never run, printing the same reassuring notice either way. Fixed is a claim; verified is an observation.",
+  },
+  { status: "in-progress", title: "In progress", intro: null },
+  { status: "open", title: "Open — confirmed, not yet fixed", intro: null },
+  {
+    status: "unverified",
+    title: "Unverified — raised, never checked",
+    intro:
+      "Claims from a review that hit a usage limit before its verifiers ran. Each names a file and line. In completed reviews roughly a third to a half of such claims are rejected on trace, so expect a similar split here. Until checked, they are neither defects nor dismissed.",
+  },
+  {
+    status: "accepted-risk",
+    title: "Accepted risk",
+    intro: "Real, and deliberately not being fixed. The reason is recorded on each — an unexplained accepted risk is indistinguishable from a forgotten one.",
+  },
+  {
+    status: "rejected",
+    title: "Rejected — investigated and found not real",
+    intro:
+      "Kept, not deleted. What was considered and dropped is part of the record, and the ratio of rejected to confirmed is the evidence that verification does work.",
+  },
+];
+
+function fixRefOf(t: Ticket) {
+  return t.fix_migration ? `migration ${t.fix_migration}` : t.fix_commit ? `commit ${t.fix_commit.slice(0, 7)}` : null;
+}
+
+function RegisterCard({ t }: { t: Ticket }) {
+  const fix = fixRefOf(t);
+  return (
+    <div className={`rgcard rg-${t.severity}`} id={t.ref}>
+      <div className="rghead">
+        <TicketRef t={t} />
+        <span className={`badge ${TYPE_BADGE[t.type] ?? "b-reg"}`}>{t.type}</span>
+        <span className={`tag ${SEV_TAG[t.severity] ?? "t-med"}`}>{t.severity}</span>
+        <span className={`tag ${STATUS_TAG[t.status] ?? "t-med"}`}>{t.status}</span>
+        {t.is_demo && <span className="tag t-med">demo</span>}
+        <span className="rgtitle">{t.title}</span>
+      </div>
+
+      <div className="rglbl">What is wrong</div>
+      <p className="rgp">{t.detail ?? <span className="rgnone">No detail recorded.</span>}</p>
+
+      {t.status === "verified" ? (
+        <>
+          <div className="rglbl rg-ok">Solution — fixed in {fix ?? "—"}, and observed working</div>
+          <p className="rgp">{t.verified_how}</p>
+          {(t.verified_by || t.verified_at) && (
+            <div className="rgmeta">
+              {t.verified_at ? stamp(t.verified_at) : ""}
+              {t.verified_by ? ` · ${t.verified_by}` : ""}
+            </div>
+          )}
+        </>
+      ) : t.status === "fixed" ? (
+        <>
+          <div className="rglbl rg-warn">Solution — fixed in {fix ?? "—"}</div>
+          <p className="rgp rgnone">
+            Change is written and named. Nobody has yet recorded observing it work, so it is not verified.
+          </p>
+        </>
+      ) : t.status === "accepted-risk" ? (
+        <>
+          <div className="rglbl">Not being fixed, because</div>
+          <p className="rgp">{t.accepted_reason}</p>
+        </>
+      ) : t.status === "rejected" ? (
+        <>
+          <div className="rglbl">Outcome</div>
+          <p className="rgp rgnone">Investigated and found not to be a real defect. Kept for the record.</p>
+        </>
+      ) : t.status === "unverified" ? (
+        <>
+          <div className="rglbl">Solution</div>
+          <p className="rgp rgnone">
+            None yet — this claim has not been confirmed or refuted. Verify before acting; do not assume it is false.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="rglbl rg-warn">Solution</div>
+          <p className="rgp rgnone">Confirmed real. Not fixed yet.</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+export function TicketRegister({ tickets, showDemo }: { tickets: Ticket[]; showDemo: boolean }) {
+  const real = tickets.filter((t) => !t.is_demo);
+  const demo = tickets.filter((t) => t.is_demo);
+  const sorted = [...real].sort(
+    (a, b) =>
+      REGISTER_ORDER.indexOf(a.status as never) - REGISTER_ORDER.indexOf(b.status as never) ||
+      (SEV_ORDER[a.severity] ?? 9) - (SEV_ORDER[b.severity] ?? 9) ||
+      a.ref.localeCompare(b.ref),
+  );
+  const counts: Record<string, number> = {};
+  for (const t of real) counts[t.status] = (counts[t.status] ?? 0) + 1;
+
+  return (
+    <>
+      <p className="note" style={{ marginTop: 0 }}>
+        <Link href="/it/agent-platform?tab=tickets" className="crumb">
+          ← board
+        </Link>{" "}
+        · Every ticket, what is wrong, and what was done about it. Text is the
+        ticket record itself — <em>what is wrong</em> is its detail, <em>solution</em> is
+        its recorded evidence — not a summary.
+      </p>
+
+      <div className="tiles">
+        {[
+          ["verified", "verified — fixed and observed working"],
+          ["fixed", "fixed — change named, not yet observed"],
+          ["open", "open — confirmed, not yet fixed"],
+          ["unverified", "unverified — raised, never checked"],
+        ].map(([k, l]) => (
+          <div className="tile" key={k}>
+            <div className="n">{counts[k] ?? 0}</div>
+            <div className="l">{l}</div>
+          </div>
+        ))}
+      </div>
+
+      {REGISTER_SECTIONS.map((s) => {
+        const rows = sorted.filter((t) => t.status === s.status);
+        if (rows.length === 0) return null;
+        return (
+          <div key={s.status}>
+            <h2 className="sec">
+              {s.title} <span style={{ color: "var(--muted)", fontWeight: 400 }}>({rows.length})</span>
+            </h2>
+            {s.intro && <p className="note">{s.intro}</p>}
+            {rows.map((t) => (
+              <RegisterCard key={t.id} t={t} />
+            ))}
+          </div>
+        );
+      })}
+
+      {demo.length > 0 && (
+        <div>
+          <h2 className="sec">
+            Demo <span style={{ color: "var(--muted)", fontWeight: 400 }}>({demo.length})</span>
+          </h2>
+          <p className="note">
+            Numbered in the 9000s so they never collide with a real ticket. They exist to
+            walk the trace — Constitution → context pack → agent → work order — before
+            real records fill it.{" "}
+            {!showDemo && (
+              <Link href="/it/agent-platform?tab=tickets&view=register&demo=1" className="crumb">
+                Show them
+              </Link>
+            )}
+          </p>
+          {showDemo && demo.map((t) => <RegisterCard key={t.id} t={t} />)}
+        </div>
+      )}
     </>
   );
 }
