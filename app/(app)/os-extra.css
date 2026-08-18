@@ -1221,3 +1221,27 @@
   color: var(--warn);
   line-height: 1;
 }
+
+/* Ticket register — the board printed in full, one card per ticket. */
+.os .rgcard {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 10px;
+  padding: 13px 16px;
+  margin: 0 0 10px;
+}
+.os .rg-high   { border-left-color: var(--danger); }
+.os .rg-medium { border-left-color: var(--warn); }
+.os .rg-low    { border-left-color: var(--line); }
+.os .rghead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+.os .rgtitle { flex-basis: 100%; font-weight: 600; font-size: 14.5px; margin-top: 2px; }
+.os .rglbl {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700;
+  color: var(--muted); margin: 10px 0 3px;
+}
+.os .rglbl.rg-ok   { color: var(--ok); }
+.os .rglbl.rg-warn { color: var(--warn); }
+.os .rgp { margin: 0; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
+.os .rgnone { color: var(--muted); font-style: italic; }
+.os .rgmeta { font-size: 11.5px; color: var(--muted); margin-top: 4px; }

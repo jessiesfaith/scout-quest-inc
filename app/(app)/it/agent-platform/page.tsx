@@ -18,6 +18,7 @@ import { readPacks, loadersByPack } from "@/lib/context-packs";
 import {
   TicketBoard,
   TicketTrace,
+  TicketRegister,
   STATUSES as TICKET_STATUSES,
   TYPES as TICKET_TYPES,
   type Ticket,
@@ -809,6 +810,11 @@ export default async function AgentPlatformPage({
               />
             );
           }
+
+          // ?view=register prints every ticket in full. `view` is otherwise
+          // the Tree tab's parameter; tabs are exclusive so they cannot clash.
+          if (rawView === "register")
+            return <TicketRegister tickets={tickets} showDemo={showDemo} />;
 
           return (
             <TicketBoard
